@@ -29,7 +29,7 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     stopifnot(inherits(sample_exp, "matrix"))
     stopifnot(is.numeric(sample_exp))
     data_type <- match.arg(data_type)
-    
+
     # save the expression value of common genes
     common_genes <- intersect(unlist(paper_marker), rownames(marker_exp))
     common_genes <- intersect(common_genes, rownames(sample_exp))
@@ -38,7 +38,7 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     marker_exp <- marker_exp[common_genes, , drop = FALSE]
     if (identical(data_type, "rnaseq")) sam_exp <- log2(sam_exp + 1L)
 
-    # prepare marker matrix
+    # prepare marker tag matrix
     marker_tag_mat <- lapply(paper_marker, function(markers) {
         data.table::fifelse(
             common_genes %in% markers,
@@ -58,8 +58,7 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
 
     # run GSVA
     result <- GSVA::gsva(
-        sam_exp,
-        paper_marker,
+        sam_exp, paper_marker,
         method = "ssgsea",
         ssgsea.norm = TRUE
     )
