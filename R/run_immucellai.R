@@ -21,6 +21,11 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
             "GSVA must be installed to use this function."
         )
     }
+    if (!requireNamespace("pracma", quietly = TRUE)) {
+        rlang::abort(
+            "pracma must be installed to use this function."
+        )
+    }
     stopifnot(inherits(sample_exp, "matrix"))
     stopifnot(is.numeric(sample_exp))
     data_type <- match.arg(data_type)
