@@ -1,0 +1,94 @@
+#' Immune Cell Abundance Identifier
+#'
+#' ImmuCellAI (Immune Cell Abundance Identifier,
+#' <http://bioinfo.life.hust.edu.cn/ImmuCellAI/>) is a tool to estimate the
+#' abundance of 24 immune cells from gene expression dataset including RNA-Seq
+#' and microarray data
+#'
+#' @param sample_exp Gene expression matrix
+#' @param data_type One of "rnaseq" and "microarray"
+#' @return a matrix
+#' @examples
+#' sample_exp <- readRDS(system.file(
+#'     "extdata", "run_immucellai_sample_exp.rds",
+#'     package = "biomisc"
+#' ))
+#' run_immucellai(sample_exp, "microarray")
+#' @export
+run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
+    if (!requireNamespace("GSVA", quietly = TRUE)) {
+        rlang::abort(
+            "GSVA must be installed to use this function."
+        )
+    }
+    stopifnot(inherits(sample_exp, "matrix"))
+    stopifnot(is.numeric(sample_exp))
+    data_type <- match.arg(data_type)
+    
+    # save the expression value of common genes
+    common_genes <- intersect(unlist(paper_marker), rownames(marker_exp))
+    common_genes <- intersect(common_genes, rownames(sample_exp))
+
+    sam_exp <- sample_exp[common_genes, , drop = FALSE]
+    marker_exp <- marker_exp[common_genes, , drop = FALSE]
+    if (identical(data_type, "rnaseq")) sam_exp <- log2(sam_exp + 1L)
+
+    # prepare marker matrix
+    marker_tag_mat <- lapply(paper_marker, function(markers) {
+        data.table::fifelse(
+            common_genes %in% markers,
+            1L, 0L
+        )
+    })
+
+    # prepare sample expression matrix
+    sam_exp <- apply(sam_exp, 2L, function(exp) {
+        res <- lapply(names(paper_marker), function(cell) {
+            exp / marker_exp[, cell, drop = TRUE] * marker_tag_mat[[cell]]
+        })
+        data.table::setDT(res)
+        rowSums(res)
+    })
+    rownames(sam_exp) <- common_genes
+
+    # run GSVA
+    result <- GSVA::gsva(
+        sam_exp,
+        paper_marker,
+        method = "ssgsea",
+        ssgsea.norm = TRUE
+    )
+
+    if (ncol(result) < 3) {
+        result[result < 0] <- 0
+    } else {
+        result <- result - apply(result, 1L, min)
+    }
+
+    result_norm <- compensation(result, compensation_matrix)
+    InfiltrationScore <- colSums(
+        result_norm[
+            c("Bcell", "CD4_T", "CD8_T", "DC", "Macrophage", "Monocyte", "Neutrophil", "NK"), ,
+            drop = FALSE
+        ]
+    )
+    InfiltrationScore <- (InfiltrationScore / max(InfiltrationScore)) * 0.9
+    result_mat <- rbind(result_norm, InfiltrationScore = InfiltrationScore)
+    t(result_mat)
+}
+
+compensation <- function(raw_score, compensation_matrix) {
+    diag(compensation_matrix) <- 1
+    common_cells <- rownames(raw_score)[
+        rownames(raw_score) %in% rownames(compensation_matrix)
+    ]
+    scores <- apply(raw_score[common_cells, , drop = FALSE], 2L, function(x) {
+        pracma::lsqlincon(
+            compensation_matrix[common_cells, common_cells], x,
+            lb = 0L
+        )
+    })
+    scores[scores < 0L] <- 0
+    rownames(scores) <- common_cells
+    scores
+}
