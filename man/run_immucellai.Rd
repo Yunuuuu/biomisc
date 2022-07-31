@@ -12,7 +12,7 @@ run_immucellai(sample_exp, data_type = c("microarray", "rnaseq"))
 \item{data_type}{One of "rnaseq" and "microarray"}
 }
 \value{
-a matrix
+a data.frame
 }
 \description{
 ImmuCellAI (Immune Cell Abundance Identifier,

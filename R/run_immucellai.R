@@ -7,7 +7,7 @@
 #'
 #' @param sample_exp Gene expression matrix
 #' @param data_type One of "rnaseq" and "microarray"
-#' @return a matrix
+#' @return a data.frame
 #' @examples
 #' sample_exp <- readRDS(system.file(
 #'     "extdata", "run_immucellai_sample_exp.rds",
@@ -59,26 +59,27 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
         ssgsea.norm = TRUE
     )
 
-    if (ncol(result) < 3) {
-        result[result < 0] <- 0
+    if (ncol(result) < 3L) {
+        result[result < 0L] <- 0L
     } else {
         result <- result - apply(result, 1L, min)
     }
 
     result_norm <- compensation(result, compensation_matrix)
-    InfiltrationScore <- colSums(
+    infiltrating_score <- colSums(
         result_norm[
             c("Bcell", "CD4_T", "CD8_T", "DC", "Macrophage", "Monocyte", "Neutrophil", "NK"), ,
             drop = FALSE
         ]
     )
-    InfiltrationScore <- (InfiltrationScore / max(InfiltrationScore)) * 0.9
-    result_mat <- rbind(result_norm, InfiltrationScore = InfiltrationScore)
-    t(result_mat)
+    infiltrating_score <- (infiltrating_score / max(infiltrating_score)) * 0.9
+    result_mat <- rbind(result_norm, infiltrating_score = infiltrating_score)
+    res <- data.table::as.data.table(t(result_mat), keep.rownames = "Samples")
+    data.table::setDF(res)[]
 }
 
 compensation <- function(raw_score, compensation_matrix) {
-    diag(compensation_matrix) <- 1
+    diag(compensation_matrix) <- 1L
     common_cells <- rownames(raw_score)[
         rownames(raw_score) %in% rownames(compensation_matrix)
     ]
@@ -88,7 +89,7 @@ compensation <- function(raw_score, compensation_matrix) {
             lb = 0L
         )
     })
-    scores[scores < 0L] <- 0
+    scores[scores < 0L] <- 0L
     rownames(scores) <- common_cells
     scores
 }
