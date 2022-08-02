@@ -10,15 +10,21 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.0
+Imports: 
+    data.table,
+    future.apply,
+    rlang (>= 0.4.11)
 Suggests: 
+    circlize,
+    ComplexHeatmap,
     GSVA,
     pracma,
     roxygen2,
+    stats,
     testthat (>= 3.0.0)
-Config/testthat/edition: 3
-Imports: 
-    data.table,
-    rlang (>= 0.4.11)
 Depends: 
-    R (>= 2.10)
-LazyData: true
+    R (>= 3.5.0)
+Config/testthat/edition: 3
+Config/testthat/parallel: true
+ByteCompile: true
+
