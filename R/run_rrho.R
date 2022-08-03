@@ -72,6 +72,8 @@
 # rrho_heatmap(res3)
 # rrho_corrected_pval(res3)
 # rrho_corrected_pval(res3, "permutation", 20)
+# temp_rrho_res <- readRDS("data-raw/diff_rrho_res.rds")
+# rrho_heatmap(temp_rrho_res)
 #' Rank-Rank Hypergeometric Overlap Test
 #'
 #' The function tests for significant overlap between two sorted lists using the method in the reference.
@@ -89,17 +91,25 @@
 run_rrho <- function(list1, list2, stepsize = NULL, alternative = NULL,
                      log_base = exp(1L)) {
     alternative <- match.arg(alternative, c("enrichment", "two.sided"))
+    # remove NA value and zero value
+    list1 <- list1[
+        !is.na(list1) & !abs(list1 - 0L) < sqrt(.Machine$double.eps)
+    ]
+    list2 <- list2[
+        !is.na(list2) & !abs(list2 - 0L) < sqrt(.Machine$double.eps)
+    ]
+    # keep items in both lists
     common_names <- intersect(
         names(list1), names(list2)
     )
     list1 <- list1[common_names]
     list2 <- list2[common_names]
     rlang::inform(
-        sprintf("Found %d genes shared by both", length(common_names))
+        sprintf("Found %d genes shared by both list.", length(common_names))
     )
     if (is.null(stepsize)) stepsize <- set_stepsize(list1, list2)
 
-    ## Order lists along list2
+    ## Order both lists
     list1 <- list1[order(list1, decreasing = TRUE)]
     list2 <- list2[order(list2, decreasing = TRUE)]
     hyper_res <- calculate_hyper_overlap(
@@ -109,7 +119,6 @@ run_rrho <- function(list1, list2, stepsize = NULL, alternative = NULL,
     )
 
     hyperlogp <- -log(hyper_res$pvalue, base = log_base)
-
     list(
         hypermat = hyperlogp,
         hypermat_counts = hyper_res$counts,
@@ -274,8 +283,14 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     )
 
     # split parameters
-    row_split <- get_dir(row_ranked_list)
-    column_split <- get_dir(column_ranked_list)
+    row_split <- factor(
+        get_dir(row_ranked_list),
+        levels = c("down", "up")
+    )
+    column_split <- factor(
+        get_dir(column_ranked_list),
+        levels = c("up", "down")
+    )
 
     if (is.null(col)) {
         col <- circlize::colorRamp2(
@@ -295,7 +310,6 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     } else {
         legend_name <- rrho_obj$log_base
     }
-
     ComplexHeatmap::Heatmap(
         hypermat_signed,
         name = paste0("-log", legend_name, "(P-value)"),
@@ -334,13 +348,15 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
                 graphics = column_label_graphic,
                 verbose = FALSE, border = FALSE
             ),
-            show_annotation_name = TRUE,
+            show_annotation_name = FALSE,
             show_legend = FALSE
         ),
         row_split = row_split,
         cluster_rows = FALSE,
+        cluster_row_slices = FALSE,
         column_split = column_split,
         cluster_columns = FALSE,
+        cluster_column_slices = FALSE,
         col = col,
         heatmap_legend_param = list(
             title_position = "leftcenter-rot"
