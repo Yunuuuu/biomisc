@@ -504,10 +504,10 @@ rrho_corrected_pval <- function(rrho_obj, method = NULL, perm = 200L) {
             future.globals = list(rrho_obj = rrho_obj),
             future.seed = TRUE
         )
-        decdf <- function(x) {
+        pecdf <- function(x) {
             min(stats::ecdf(perm_pvalues)(x) + 1L / perm, 1L)
         }
-        1 - decdf(min(rrho_obj$hypermat_pvalue, na.rm = TRUE))
+        pecdf(min(rrho_obj$hypermat_pvalue, na.rm = TRUE))
     }
 }
 
