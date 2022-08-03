@@ -115,7 +115,6 @@ run_rrho <- function(list1, list2, stepsize = NULL, alternative = NULL,
         hypermat_counts = hyper_res$counts,
         hypermat_signs = hyper_res$signs,
         hypermat_pvalue = hyper_res$pvalue,
-        hypermat_quadrant = hyper_res$quadrant,
         ranked_list = list(
             list1 = list1,
             list2 = list2
@@ -145,28 +144,40 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         by = rrho_obj$stepsize
     )
     res <- lapply(quadrant, function(x) {
+        quadrant_dir <- strsplit(x, "-")[[1L]]
+        # transform logical index to integer value and omit NA value
+        quadrant_row_index <- which(
+            get_dir(rrho_obj$ranked_list$list1[hypermat_index]) ==
+                quadrant_dir[[1L]]
+        )
+        quadrant_col_index <- which(
+            get_dir(rrho_obj$ranked_list$list2[hypermat_index]) ==
+                quadrant_dir[[2L]]
+        )
         quadrant_hypermat <- hypermat_signed[
-            rrho_obj$hypermat_quadrant == x
+            quadrant_row_index, quadrant_col_index
         ]
         if (!length(quadrant_hypermat)) {
             return(NULL)
         }
         quadrant_max_value <- max(quadrant_hypermat, na.rm = TRUE)
-        sig_coord <- which(
-            rrho_obj$hypermat_quadrant == x &
-                abs(hypermat_signed - quadrant_max_value) < sqrt(.Machine$double.eps),
+        quadrant_sig_coord <- which(
+            abs(quadrant_hypermat - quadrant_max_value) <
+                sqrt(.Machine$double.eps),
             arr.ind = TRUE
         )
-        quadrant_dir <- strsplit(x, "-")[[1L]]
+        sig_coord <- integer(2L)
+        sig_coord[[1L]] <- quadrant_row_index[quadrant_sig_coord[1L, "row"]]
+        sig_coord[[2L]] <- quadrant_col_index[quadrant_sig_coord[1L, "col"]]
         row_index <- switch(quadrant_dir[[1L]],
-            up = seq_len(hypermat_index[sig_coord[1L, "row"]]),
+            up = seq_len(hypermat_index[[sig_coord[[1L]]]]),
             down = seq_len(sig_coord$nitems) >=
-                hypermat_index[[sig_coord[1L, "row"]]]
+                hypermat_index[[sig_coord[[1L]]]]
         )
         col_index <- switch(quadrant_dir[[2L]],
-            up = seq_len(hypermat_index[sig_coord[1L, "col"]]),
+            up = seq_len(hypermat_index[[sig_coord[[2L]]]]),
             down = seq_len(sig_coord$nitems) >=
-                hypermat_index[[sig_coord[1L, "col"]]]
+                hypermat_index[[sig_coord[[2L]]]]
         )
         intersect(
             names(rrho_obj$ranked_list$list1)[row_index],
@@ -199,81 +210,73 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         )
     }
     hypermat_signed <- t(rrho_obj$hypermat * rrho_obj$hypermat_signs)
-    hypermat_quadrant <- t(rrho_obj$hypermat_quadrant)
     hypermat_signed <- hypermat_signed[
         rev(seq_len(ncol(hypermat_signed))), ,
         drop = FALSE
     ]
+    hypermat_index <- seq(
+        1L, rrho_obj$nitems,
+        by = rrho_obj$stepsize
+    )
 
-    # column ranked list - bottom bar
-    column_ranked_list <- rrho_obj$ranked_list$list1
-    column_label <- character(length(column_ranked_list))
-    if (any(column_ranked_list > 0L)) {
-        column_label[[1L]] <- "up-regulated"
+    # Since now the matrix is transposed
+    # row corresponding to list2
+    # column corresponding to list1
+
+    # row ranked list - left bar
+    row_ranked_list <- rev(rrho_obj$ranked_list$list2[hypermat_index])
+    row_label <- character(length(row_ranked_list))
+    if (any(row_ranked_list > 0L)) {
+        row_label[[length(row_ranked_list)]] <- "up"
     }
-    if (any(column_ranked_list < 0L)) {
-        column_label[[length(column_ranked_list)]] <- "down-regulated"
+    if (any(row_ranked_list < 0L)) {
+        row_label[[1L]] <- "down"
     }
-    column_label_graphic <- list(
-        `up-regulated` = function(x, y, w, h) {
+    row_label_graphic <- list(
+        up = function(x, y, w, h) {
             grid::grid.text(
                 "up-regulated", x, y,
-                just = "left",
+                hjust = 1, rot = -90,
                 grid::gpar(fontface = "bold")
             )
         },
-        `down-regulated` = function(x, y, w, h) {
+        down = function(x, y, w, h) {
             grid::grid.text(
                 "down-regulated", x, y,
-                just = "right",
+                hjust = 0, rot = -90,
                 grid::gpar(fontface = "bold")
             )
         }
     )
 
-    # row ranked list - left bar
-    row_ranked_list <- rev(rrho_obj$ranked_list$list2)
-    row_label <- character(length(row_ranked_list))
-    if (any(row_ranked_list < 0L)) {
-        row_label[[1L]] <- "down-regulated"
+    # column ranked list - bottom bar
+    column_ranked_list <- rrho_obj$ranked_list$list1[hypermat_index]
+    column_label <- character(length(column_ranked_list))
+    if (any(column_ranked_list > 0L)) {
+        column_label[[1L]] <- "up"
     }
-    if (any(row_ranked_list > 0L)) {
-        row_label[[length(row_ranked_list)]] <- "up-regulated"
+    if (any(column_ranked_list < 0L)) {
+        column_label[[length(column_ranked_list)]] <- "down"
     }
-    row_label_graphic <- list(
-        `up-regulated` = function(x, y, w, h) {
+    column_label_graphic <- list(
+        up = function(x, y, w, h) {
             grid::grid.text(
                 "up-regulated", x, y,
-                just = "right", rot = -90,
-                grid::gpar(fontface = "bold")
+                hjust = 0, grid::gpar(fontface = "bold")
             )
         },
-        `down-regulated` = function(x, y, w, h) {
+        down = function(x, y, w, h) {
             grid::grid.text(
-                "up-regulated", x, y,
-                just = "left", rot = -90,
-                grid::gpar(fontface = "bold")
+                "down-regulated", x, y,
+                hjust = 1, grid::gpar(fontface = "bold")
             )
         }
     )
 
     # split parameters
-    row_split <- strsplit(
-        hypermat_quadrant[
-            rev(seq_len(ncol(hypermat_signed))), 1L,
-            drop = TRUE
-        ],
-        "-"
-    )
-    row_split <- data.table::transpose(row_split)[[1L]]
-    column_split <- strsplit(
-        hypermat_quadrant[
-            1L, ,
-            drop = TRUE
-        ],
-        "-"
-    )
-    column_split <- data.table::transpose(column_split)[[2L]]
+    row_split <- get_dir(row_ranked_list)
+    column_split <- get_dir(column_ranked_list)
+
     if (is.null(col)) {
         col <- circlize::colorRamp2(
             seq(
@@ -292,6 +295,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     } else {
         legend_name <- rrho_obj$log_base
     }
+
     ComplexHeatmap::Heatmap(
         hypermat_signed,
         name = paste0("-log", legend_name, "(P-value)"),
@@ -330,7 +334,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
                 graphics = column_label_graphic,
                 verbose = FALSE, border = FALSE
             ),
-            show_annotation_name = FALSE,
+            show_annotation_name = TRUE,
             show_legend = FALSE
         ),
         row_split = row_split,
@@ -466,6 +470,7 @@ calculate_hyper_overlap <- function(list1, list2, n, stepsize, alternative, tol 
         row_ids = row_ids,
         col_ids = col_ids
     )
+    indexes <- as.matrix(indexes)
     overlaps <- apply(indexes, 1L, function(x) {
         hyper_test(
             names(list1)[seq_len(x[["row_ids"]])],
@@ -487,26 +492,16 @@ calculate_hyper_overlap <- function(list1, list2, n, stepsize, alternative, tol 
         overlaps["signs", , drop = TRUE],
         ncol = number_of_obj
     )
-    overall_quadrant <- get_quadrant(list1, list2)
-    matrix_quadrant <- matrix(
-        overall_quadrant[as.matrix(indexes)],
-        ncol = number_of_obj
-    )
     list(
         counts = matrix_counts,
         pvalue = matrix_pvals,
-        signs = matrix_signs,
-        quadrant = matrix_quadrant
+        signs = matrix_signs
     )
 }
 
-get_quadrant <- function(list1, list2) {
-    res <- matrix("none", nrow = length(list1), ncol = length(list2))
-    res[list1 > 0L, list2 > 0L] <- "up-up"
-    res[list1 < 0L, list2 > 0L] <- "down-up"
-    res[list1 > 0L, list2 < 0L] <- "up-down"
-    res[list1 < 0L, list2 < 0L] <- "down-down"
-    # rownames(res) <- names(list1)
-    # colnames(res) <- names(list2)
-    res
+get_dir <- function(x) {
+    data.table::fcase(
+        x < 0L, "down",
+        x > 0L, "up"
+    )
 }
