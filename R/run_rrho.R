@@ -33,6 +33,12 @@
 #     res1$counts, res2$counts
 # ))
 # res3 <- run_rrho(sample1, sample2, 1)
+# set.seed(1)
+# rrho_corrected_pval(res3, "perm", 10)
+# rrho_corrected_pval(res3, "perm", 10)
+# set.seed(1)
+# rrho_corrected_pval(res3, "perm", 10)
+# rrho_corrected_pval(res3, "perm", 10)
 # res4 <- RRHO::RRHO(
 #     as.data.frame(tibble::enframe(sample1)),
 #     as.data.frame(tibble::enframe(sample2)),
@@ -110,8 +116,8 @@ run_rrho <- function(list1, list2, stepsize = NULL, alternative = NULL,
     if (is.null(stepsize)) stepsize <- set_stepsize(list1, list2)
 
     ## Order both lists
-    list1 <- list1[order(list1, decreasing = TRUE)]
-    list2 <- list2[order(list2, decreasing = TRUE)]
+    list1 <- sort(list1, decreasing = TRUE)
+    list2 <- sort(list2, decreasing = TRUE)
     hyper_res <- calculate_hyper_overlap(
         list1, list2,
         n = length(common_names),
@@ -136,6 +142,89 @@ run_rrho <- function(list1, list2, stepsize = NULL, alternative = NULL,
     )
 }
 
+
+## Suggest default step size
+set_stepsize <- function(list1, list2) {
+    n1 <- length(list1)
+    n2 <- length(list2)
+    ceiling(sqrt(min(c(n1, n2))))
+}
+
+## Compute the overlaps between two *numeric* lists:
+hyper_test <- function(sample1, sample2, alternative, n, tol) {
+    count <- length(intersect(sample1, sample2))
+    a <- length(sample1)
+    b <- length(sample2)
+    if (identical(alternative, "enrichment")) {
+        pvalue <- stats::phyper(
+            q = count - 1L, m = a, n = n - a + 1L,
+            k = b, lower.tail = FALSE, log.p = FALSE
+        )
+        sign <- 1L
+    } else if (identical(alternative, "two.sided")) {
+        the_mean <- a * b / n
+        sign <- as.integer(sign(count - the_mean))
+        if (sign < 0L) {
+            lower <- count
+            upper <- 2L * the_mean - count
+        } else {
+            lower <- 2L * the_mean - count
+            upper <- count
+        }
+        pval1 <- stats::phyper(
+            q = lower + tol, m = a,
+            n = n - a + 1L, k = b,
+            lower.tail = TRUE
+        )
+        pval2 <- stats::phyper(
+            q = upper - tol, m = a,
+            n = n - a + 1L, k = b,
+            lower.tail = FALSE
+        )
+        pvalue <- pval1 + pval2
+    }
+    c(
+        count = count,
+        pvalue = pvalue,
+        sign = sign
+    )
+}
+
+calculate_hyper_overlap <- function(list1, list2, n, stepsize, alternative, tol = 0.5) {
+    col_ids <- row_ids <- seq(1L, n, by = stepsize)
+    indexes <- expand.grid(
+        row_ids = row_ids,
+        col_ids = col_ids
+    )
+    indexes <- as.matrix(indexes)
+    overlaps <- apply(indexes, 1L, function(x) {
+        hyper_test(
+            names(list1)[seq_len(x[["row_ids"]])],
+            names(list2)[seq_len(x[["col_ids"]])],
+            alternative = alternative,
+            n = n, tol = tol
+        )
+    })
+    number_of_obj <- length(row_ids)
+    matrix_counts <- matrix(
+        overlaps["count", , drop = TRUE],
+        ncol = number_of_obj
+    )
+    matrix_pvals <- matrix(
+        overlaps["pvalue", , drop = TRUE],
+        ncol = number_of_obj
+    )
+    matrix_signs <- matrix(
+        overlaps["sign", , drop = TRUE],
+        ncol = number_of_obj
+    )
+    list(
+        counts = matrix_counts,
+        pvalue = matrix_pvals,
+        signs = matrix_signs
+    )
+}
+
 #' Rank-Rank Hypergeometric Overlap Test
 #'
 #' This function just extract the significant items based on RRHO analysis
@@ -143,8 +232,8 @@ run_rrho <- function(list1, list2, stepsize = NULL, alternative = NULL,
 #' @param rrho_obj a object returned by [run_rrho()]
 #' @param quadrant one of c("up-up", "down-down") or both, controls which kind
 #' of iterms should be extracted.
-#' @export
 #' @return a list
+#' @export
 rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     res <- vector("list", length(quadrant))
     hypermat_signed <- rrho_obj$hypermat * rrho_obj$hypermat_signs
@@ -180,17 +269,24 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         sig_coord[[2L]] <- quadrant_col_index[quadrant_sig_coord[1L, "col"]]
         row_index <- switch(quadrant_dir[[1L]],
             up = seq_len(hypermat_index[[sig_coord[[1L]]]]),
-            down = seq_len(sig_coord$nitems) >=
+            down = seq_len(rrho_obj$nitems) >=
                 hypermat_index[[sig_coord[[1L]]]]
         )
         col_index <- switch(quadrant_dir[[2L]],
             up = seq_len(hypermat_index[[sig_coord[[2L]]]]),
-            down = seq_len(sig_coord$nitems) >=
+            down = seq_len(rrho_obj$nitems) >=
                 hypermat_index[[sig_coord[[2L]]]]
         )
-        intersect(
-            names(rrho_obj$ranked_list$list1)[row_index],
-            names(rrho_obj$ranked_list$list2)[col_index]
+        list(
+            list1 = names(rrho_obj$ranked_list$list1)[row_index],
+            list2 = names(rrho_obj$ranked_list$list2)[col_index],
+            items = intersect(
+                names(rrho_obj$ranked_list$list1)[row_index],
+                names(rrho_obj$ranked_list$list2)[col_index]
+            ),
+            pvalue = rrho_obj$hypermat_pvalue[
+                sig_coord[[1L]], sig_coord[[2L]]
+            ]
         )
     })
     names(res) <- quadrant
@@ -245,14 +341,14 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         up = function(x, y, w, h) {
             grid::grid.text(
                 "up-regulated", x, y,
-                hjust = 1, rot = -90,
+                hjust = 1L, rot = -90L,
                 grid::gpar(fontface = "bold")
             )
         },
         down = function(x, y, w, h) {
             grid::grid.text(
                 "down-regulated", x, y,
-                hjust = 0, rot = -90,
+                hjust = 0L, rot = -90L,
                 grid::gpar(fontface = "bold")
             )
         }
@@ -271,13 +367,13 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         up = function(x, y, w, h) {
             grid::grid.text(
                 "up-regulated", x, y,
-                hjust = 0, grid::gpar(fontface = "bold")
+                hjust = 0L, grid::gpar(fontface = "bold")
             )
         },
         down = function(x, y, w, h) {
             grid::grid.text(
                 "down-regulated", x, y,
-                hjust = 1, grid::gpar(fontface = "bold")
+                hjust = 1L, grid::gpar(fontface = "bold")
             )
         }
     )
@@ -305,13 +401,14 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
             )
         )
     }
-    if (abs(rrho_obj$log_base - exp(1)) < sqrt(.Machine$double.eps)) {
+    if (abs(rrho_obj$log_base - exp(1L)) < sqrt(.Machine$double.eps)) {
         legend_name <- ""
     } else {
         legend_name <- rrho_obj$log_base
     }
     ComplexHeatmap::Heatmap(
         hypermat_signed,
+        col = col,
         name = paste0("-log", legend_name, "(P-value)"),
         column_title = "Rank Rank Hypergeometric Overlap Map",
         column_title_gp = grid::gpar(fontface = "bold"),
@@ -357,30 +454,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         column_split = column_split,
         cluster_columns = FALSE,
         cluster_column_slices = FALSE,
-        col = col,
         heatmap_legend_param = list(
             title_position = "leftcenter-rot"
         ),
         ...
     )
-}
-
-perm_items <- function(list) {
-    perm_index <- sample.int(length(list), replace = FALSE)
-    names(list) <- names(list)[perm_index]
-    list
-}
-perm_rrho <- function(rrho_obj) {
-    list1 <- perm_items(rrho_obj$ranked_list$list1)
-    list2 <- perm_items(rrho_obj$ranked_list$list2)
-    res <- run_rrho(
-        list1 = list1,
-        list2 = list2,
-        stepsize = rrho_obj$stepsize,
-        alternative = rrho_obj$alternative,
-        log_base = rrho_obj$log_base
-    )
-    max(res$hypermat, na.rm = TRUE)
 }
 
 #' Multiple hypothesis corrections for RRHO analysis
@@ -403,7 +481,7 @@ rrho_corrected_pval <- function(rrho_obj, method = NULL, perm = 200L) {
             rrho_obj$hypermat_pvalue,
             nrow = nrow(rrho_obj$hypermat_pvalue) *
                 ncol(rrho_obj$hypermat_pvalue),
-            ncol = 1
+            ncol = 1L
         )
         hypermat_byvec <- stats::p.adjust(hypermatvec, method = "BY")
         hyperby_mat <- matrix(
@@ -417,102 +495,37 @@ rrho_corrected_pval <- function(rrho_obj, method = NULL, perm = 200L) {
             log_pvalue = -log(pvalue, base = rrho_obj$log_base)
         )
     } else {
-        perm_pvalues <- future.apply::future_sapply(
+        perm_pvalues <- future.apply::future_vapply(
             seq_len(perm), function(i) {
-                suppressMessages(perm_rrho(rrho_obj))
+                perm_rrho(rrho_obj)
             },
-            simplify = TRUE,
+            FUN.VALUE = numeric(1L),
             USE.NAMES = FALSE,
-            future.seed = TRUE,
-            future.globals = "rrho_obj"
+            future.globals = list(rrho_obj = rrho_obj),
+            future.seed = TRUE
         )
         decdf <- function(x) {
-            min(stats::ecdf(perm_pvalues)(x) + 1 / perm, 1)
+            min(stats::ecdf(perm_pvalues)(x) + 1L / perm, 1L)
         }
-        1 - decdf(max(rrho_obj$hypermat, na.rm = TRUE))
+        1 - decdf(min(rrho_obj$hypermat_pvalue, na.rm = TRUE))
     }
 }
 
-## Suggest default step size
-set_stepsize <- function(list1, list2) {
-    n1 <- length(list1)
-    n2 <- length(list2)
-    ceiling(sqrt(min(c(n1, n2))))
+perm_items <- function(list) {
+    perm_index <- sample.int(length(list), replace = FALSE)
+    names(list) <- names(list)[perm_index]
+    list
 }
-
-## Compute the overlaps between two *numeric* lists:
-hyper_test <- function(sample1, sample2, alternative, n, tol) {
-    count <- length(intersect(sample1, sample2))
-    a <- length(sample1)
-    b <- length(sample2)
-    if (identical(alternative, "enrichment")) {
-        pvalue <- stats::phyper(
-            q = count - 1, m = a, n = n - a + 1L,
-            k = b, lower.tail = FALSE, log.p = FALSE
-        )
-        signs <- 1L
-    } else if (identical(alternative, "two.sided")) {
-        the_mean <- a * b / n
-        signs <- as.integer(sign(count - the_mean))
-        if (signs < 0L) {
-            lower <- count
-            upper <- 2L * the_mean - count
-        } else {
-            lower <- 2L * the_mean - count
-            upper <- count
-        }
-        pval1 <- stats::phyper(
-            q = lower + tol, m = a,
-            n = n - a + 1L, k = b,
-            lower.tail = TRUE
-        )
-        pval2 <- stats::phyper(
-            q = upper - tol, m = a,
-            n = n - a + 1L, k = b,
-            lower.tail = FALSE
-        )
-        pvalue <- pval1 + pval2
-    }
-    c(
-        counts = count,
-        pvalue = pvalue,
-        signs = signs
+perm_rrho <- function(rrho_obj) {
+    list1 <- perm_items(rrho_obj$ranked_list$list1)
+    list2 <- perm_items(rrho_obj$ranked_list$list2)
+    res <- calculate_hyper_overlap(
+        list1, list2,
+        n = length(list1),
+        stepsize = rrho_obj$stepsize,
+        alternative = rrho_obj$alternative
     )
-}
-
-calculate_hyper_overlap <- function(list1, list2, n, stepsize, alternative, tol = 0.5) {
-    col_ids <- row_ids <- seq(1L, n, by = stepsize)
-    indexes <- expand.grid(
-        row_ids = row_ids,
-        col_ids = col_ids
-    )
-    indexes <- as.matrix(indexes)
-    overlaps <- apply(indexes, 1L, function(x) {
-        hyper_test(
-            names(list1)[seq_len(x[["row_ids"]])],
-            names(list2)[seq_len(x[["col_ids"]])],
-            alternative = alternative,
-            n = n, tol = tol
-        )
-    })
-    number_of_obj <- length(row_ids)
-    matrix_counts <- matrix(
-        overlaps["counts", , drop = TRUE],
-        ncol = number_of_obj
-    )
-    matrix_pvals <- matrix(
-        overlaps["pvalue", , drop = TRUE],
-        ncol = number_of_obj
-    )
-    matrix_signs <- matrix(
-        overlaps["signs", , drop = TRUE],
-        ncol = number_of_obj
-    )
-    list(
-        counts = matrix_counts,
-        pvalue = matrix_pvals,
-        signs = matrix_signs
-    )
+    min(res$pvalue, na.rm = TRUE)
 }
 
 get_dir <- function(x) {
