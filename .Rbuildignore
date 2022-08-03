@@ -5,3 +5,5 @@
 ^Scratch\.RConsole$
 ^\.Rhistory$
 ^data-raw$
+^.*\.Rproj$
+^\.Rproj\.user$
