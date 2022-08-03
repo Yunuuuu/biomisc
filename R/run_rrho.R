@@ -245,11 +245,11 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         quadrant_dir <- strsplit(x, "-")[[1L]]
         # transform logical index to integer value and omit NA value
         quadrant_row_index <- which(
-            get_dir(rrho_obj$ranked_list$list1[hypermat_index]) ==
+            get_direction(rrho_obj$ranked_list$list1[hypermat_index]) ==
                 quadrant_dir[[1L]]
         )
         quadrant_col_index <- which(
-            get_dir(rrho_obj$ranked_list$list2[hypermat_index]) ==
+            get_direction(rrho_obj$ranked_list$list2[hypermat_index]) ==
                 quadrant_dir[[2L]]
         )
         quadrant_hypermat <- hypermat_signed[
@@ -380,11 +380,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 
     # split parameters
     row_split <- factor(
-        get_dir(row_ranked_list),
+        get_direction(row_ranked_list),
         levels = c("down", "up")
     )
     column_split <- factor(
-        get_dir(column_ranked_list),
+        get_direction(column_ranked_list),
         levels = c("up", "down")
     )
 
@@ -528,7 +528,7 @@ perm_rrho <- function(rrho_obj) {
     min(res$pvalue, na.rm = TRUE)
 }
 
-get_dir <- function(x) {
+get_direction <- function(x) {
     data.table::fcase(
         x < 0L, "down",
         x > 0L, "up"
