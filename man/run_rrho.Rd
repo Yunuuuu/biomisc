@@ -4,7 +4,7 @@
 \alias{run_rrho}
 \title{Rank-Rank Hypergeometric Overlap Test}
 \usage{
-run_rrho(list1, list2, stepsize = NULL, alternative = NULL, log_base = exp(1L))
+run_rrho(list1, list2, stepsize = NULL, log_base = 10L)
 }
 \arguments{
 \item{list1}{a named numeric vector, For differential gene expression, values
@@ -15,12 +15,13 @@ are often \code{-log10(P-value) * sign(effect)}.}
 \item{stepsize}{Controls the resolution of the test: how many items between
 any two overlap tests.}
 
-\item{alternative}{one of c("enrichment", "two.sided")}
-
-\item{log_base}{Normally, \code{hypermat} in the results are
+\item{log_base}{Normally, \code{hyper_metric} in the results are
 transformed by logarithm, this control the logarithm base. Just like the
-\code{base} parameter in \link[base:Log]{base::log} function.}
+\code{base} parameter in \link[base:Log]{base::log} function. Default: \code{10L}.}
 }
 \description{
 The function tests for significant overlap between two sorted lists using the method in the reference.
+}
+\references{
+\url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}
 }
