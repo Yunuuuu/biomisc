@@ -368,8 +368,8 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
             "circlize must be installed to use this function."
         )
     }
-    # heat_matrix <- t(rrho_obj$hyper_metric)
-    heat_matrix <- t(-log(rrho_obj$hyper_pvalue, base = rrho_obj$log_base))
+    heat_matrix <- t(rrho_obj$hyper_metric)
+    # heat_matrix <- t(-log(rrho_obj$hyper_pvalue, base = rrho_obj$log_base))
     heat_matrix <- heat_matrix[
         rev(seq_len(nrow(heat_matrix))), ,
         drop = FALSE
