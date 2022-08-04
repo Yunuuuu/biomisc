@@ -449,14 +449,12 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     )
 
     if (is.null(col)) {
-        break_bound <- max(
-            abs(heat_matrix[is.finite(heat_matrix)]),
-            na.rm = TRUE
-        )
-        col_break <- seq(0, break_bound, length.out = 5L)
-        col_break <- sort(unique(c(-1L * col_break, col_break)))
         col <- circlize::colorRamp2(
-            col_break,
+            seq(
+                min(heat_matrix[is.finite(heat_matrix)], na.rm = TRUE),
+                max(heat_matrix[is.finite(heat_matrix)], na.rm = TRUE),
+                length.out = 9L
+            ),
             c(
                 "#00007F", "blue", "#007FFF", "cyan",
                 "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"
