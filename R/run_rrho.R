@@ -688,7 +688,7 @@ perm_rrho <- function(rrho_obj) {
     list1 <- perm_items(rrho_obj$rrho_data$list1)
     list2 <- perm_items(rrho_obj$rrho_data$list2)
     hyper_res <- calculate_hyper_overlap(
-        list1, list2,
+        names(list1), names(list2),
         n = length(list1),
         stepsize = rrho_obj$stepsize
     )
