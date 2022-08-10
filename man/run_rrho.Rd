@@ -20,7 +20,8 @@ transformed by logarithm, this control the logarithm base. Just like the
 \code{base} parameter in \link[base:Log]{base::log} function. Default: \code{10L}.}
 }
 \description{
-The function tests for significant overlap between two sorted lists using the method in the reference.
+The function tests for significant overlap between two sorted lists using the
+method in the reference.
 }
 \references{
 \url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}

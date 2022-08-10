@@ -9,8 +9,7 @@ rrho_sig_terms(rrho_obj, quadrant = c("up-up", "down-down"))
 \arguments{
 \item{rrho_obj}{a object returned by \code{\link[=run_rrho]{run_rrho()}}}
 
-\item{quadrant}{one or more items in c("up-up", "down-down", "up-down",
-"down-up"), controls which kind of iterms should be extracted.}
+\item{quadrant}{one or more items in \code{c("up-up", "down-down", "up-down", "down-up")}, controls which quadrant of iterms should be extracted.}
 }
 \value{
 a list

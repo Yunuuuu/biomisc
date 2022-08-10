@@ -4,7 +4,12 @@
 \alias{rrho_correct_pval}
 \title{Multiple hypothesis corrections for RRHO analysis}
 \usage{
-rrho_correct_pval(rrho_obj, method = NULL, perm = 200L)
+rrho_correct_pval(
+  rrho_obj,
+  method = NULL,
+  perm = 200L,
+  quadrant = c("up-up", "down-down")
+)
 }
 \arguments{
 \item{rrho_obj}{a object returned by \code{\link[=run_rrho]{run_rrho()}}}
@@ -13,11 +18,41 @@ rrho_correct_pval(rrho_obj, method = NULL, perm = 200L)
 to correct multiple hypothesis}
 
 \item{perm}{if use "permutation", how many permutation times it uses.}
+
+\item{quadrant}{the "quadrant" to test significance, usually we want to test
+whether the overlapping goes in the same direction (over-enrichment), which
+means "up-up" quadrant and "down-down" quadrant. You can specify "all" to
+test the overall significance of RRHO map. Due to the sign convention for
+over- or under-enrichment in RRHO design, we can test the over-enrichment of
+"down-up" quadrant or/and "up-down" quatrant by testing the under-enrichment
+of hotspot significance in "down-up" quadrant or/and "up-down" quatrant,
+the Pvalue for which test whether the overlapping goes in the different
+direction.}
 }
 \description{
 Computes the significance of the agreements between lists as returned by RRHO
 using resampling or by Benjamini-Yekutieli correction.
 }
+\details{
+If the Benjamini-Yekutieli corrected hypergeometric map has most significant
+areas of absolute log10(P-value) intensity 15 or greater, then permutations
+are likely to be significant below a permutation frequency P-value of 0.01.
+When the corrected map maxima are less than 15, perform permutations. If the
+two maps for comparison are made from gene lists that are of considerably
+different lengths, one can either (a) scale the hypergeometric maps using the
+list length correction method to account for length differences before
+applying a Benjamini-Yekutieli correction or (b) remake the hypergeometric
+maps using only items common to all signatures in the set of comparisons
+making sure this restriction is not too limiting on the total gene number.
+
+Areas "up-up" quadrant and "down-down" quadrant correspond to overlapping
+items that go in the same direction in both experiments. We compare the
+maximum in these areas as a summary statistic to screen through permutation
+RRHO maps compared to the true RRHO map. The frequency at which permutation
+maps have a higher summary statistic than the true map is defined as the
+permutation P-value.
+}
 \seealso{
 \url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642617}
+\url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}
 }

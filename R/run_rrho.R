@@ -12,15 +12,15 @@
 ## stepsize indicates how many genes to increase by
 ##    in each algorithm iteration
 ### Testing:
-# n <- 112
-# sample1 <- sample(n)
-# sample2 <- sample(n)
+# n <- 200
+# sample1 <- rnorm(n)
+# sample2 <- rnorm(n)
 # names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
 # res1 <- calculate_hyper_overlap(
-#     sample1, sample2, n, 10
+#     names(sample1), names(sample2), length(sample1), 1
 # )
 # res2 <- RRHO:::numericListOverlap(
-#     names(sample1), names(sample2), 10,
+#     names(sample1), names(sample2), 1,
 #     alternative = "enrichment"
 # )
 # all(dplyr::near(
@@ -33,7 +33,7 @@
 #     res1$counts, res2$counts
 # ))
 # res3 <- run_rrho(sample1, sample2, 1)
-# # set.seed(1)
+# set.seed(1)
 # rrho_correct_pval(res3, "perm", 10)
 # rrho_correct_pval(res3, "perm", 10)
 # set.seed(1)
@@ -86,7 +86,8 @@
 # rrho_heatmap(temp_rrho_res)
 #' Rank-Rank Hypergeometric Overlap Test
 #'
-#' The function tests for significant overlap between two sorted lists using the method in the reference.
+#' The function tests for significant overlap between two sorted lists using the
+#' method in the reference.
 #'
 #' @param list1 a named numeric vector, For differential gene expression, values
 #' are often `-log10(P-value) * sign(effect)`.
@@ -106,16 +107,17 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     }
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- calculate_hyper_overlap(
-        rrho_data$list1, rrho_data$list2,
+        names(rrho_data$list1), names(rrho_data$list2),
         n = length(rrho_data$list1),
         stepsize = stepsize
     )
-    hyper_metric <- -log(hyper_res$pvalue, base = log_base) *
+    hyper_metric <- abs(log(hyper_res$pvalue, base = log_base)) *
         hyper_res$signs
 
     list(
         hyper_metric = hyper_metric,
         hyper_pvalue = hyper_res$pvalue,
+        hyper_signs = hyper_res$signs,
         hyper_counts = hyper_res$counts,
         rrho_data = rrho_data,
         stepsize = stepsize,
@@ -123,13 +125,9 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     )
 }
 set_rrho_list <- function(list1, list2) {
-    # remove NA value and zero value
-    list1 <- list1[
-        !is.na(list1) & !abs(list1 - 0L) < sqrt(.Machine$double.eps)
-    ]
-    list2 <- list2[
-        !is.na(list2) & !abs(list2 - 0L) < sqrt(.Machine$double.eps)
-    ]
+    # remove NA value
+    list1 <- list1[!is.na(list1)]
+    list2 <- list2[!is.na(list2)]
     # keep items in both lists
     common_names <- intersect(
         names(list1), names(list2)
@@ -162,11 +160,22 @@ hyper_test <- function(sample1, sample2, n) {
     count <- length(intersect(sample1, sample2))
     m <- length(sample1)
     k <- length(sample2)
-    pvalue <- stats::phyper(
-        q = count - 1L, m = m, n = n - m + 1L,
-        k = k, lower.tail = FALSE, log.p = FALSE
-    )
-    sign <- sign(count - m * k / n)
+    # under-enrichment
+    if (count <= m * k / n) {
+        sign <- -1L
+        pvalue <- stats::phyper(
+            q = count - 1L, m = m, n = n - m + 1L,
+            k = k, lower.tail = TRUE, log.p = FALSE
+        )
+    } else {
+        # over-enrichment
+        sign <- 1L
+        pvalue <- stats::phyper(
+            q = count - 1L, m = m, n = n - m + 1L,
+            k = k, lower.tail = FALSE, log.p = FALSE
+        )
+    }
+
     c(
         count = count,
         pvalue = pvalue,
@@ -174,9 +183,9 @@ hyper_test <- function(sample1, sample2, n) {
     )
 }
 
-calculate_hyper_overlap <- function(list1, list2, n, stepsize) {
-    row_ids <- seq(1L, length(list1), by = stepsize)
-    col_ids <- seq(1L, length(list2), by = stepsize)
+calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
+    row_ids <- seq(1L, length(sample1), by = stepsize)
+    col_ids <- seq(1L, length(sample2), by = stepsize)
     indexes <- expand.grid(
         row_ids = row_ids,
         col_ids = col_ids
@@ -184,8 +193,8 @@ calculate_hyper_overlap <- function(list1, list2, n, stepsize) {
     indexes <- as.matrix(indexes)
     overlaps <- apply(indexes, 1L, function(x) {
         hyper_test(
-            names(list1)[seq_len(x[["row_ids"]])],
-            names(list2)[seq_len(x[["col_ids"]])],
+            sample1[seq_len(x[["row_ids"]])],
+            sample2[seq_len(x[["col_ids"]])],
             n = n
         )
     })
@@ -214,8 +223,8 @@ calculate_hyper_overlap <- function(list1, list2, n, stepsize) {
 #' This function just extract the significant items based on RRHO analysis
 #' results.
 #' @param rrho_obj a object returned by [run_rrho()]
-#' @param quadrant one or more items in c("up-up", "down-down", "up-down",
-#' "down-up"), controls which kind of iterms should be extracted.
+#' @param quadrant one or more items in `c("up-up", "down-down", "up-down",
+#' "down-up")`, controls which quadrant of iterms should be extracted.
 #' @return a list
 #' @export
 rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
@@ -234,7 +243,8 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     res <- lapply(quadrant, function(x) {
         quadrant_dir <- strsplit(x, "-")[[1L]]
 
-        # integer index relative to rrho_obj$hyper_metric and rrho_obj$hyper_pvalue
+        # integer index relative to rrho_obj$hyper_metric and
+        # rrho_obj$hyper_pvalue
         # the row index is relative to `rrho_list1_index`
         # the column index is relative to `rrho_list2_index`
         quadrant_row_index <- which(
@@ -267,7 +277,7 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             if (is.infinite(quadrant_sig_value)) {
                 quadrant_sig_coord <- which(
                     is.infinite(quadrant_hyper_metric) &
-                        sign(quadrant_hyper_metric) > 0L,
+                        quadrant_hyper_metric > 0L,
                     arr.ind = TRUE
                 )
             } else {
@@ -278,6 +288,8 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
                 )
             }
         } else if (x %in% c("up-down", "down-up")) {
+            # for "up-down" and "down-up" quadrant, under-enrichment means
+            # over-enrichment, so we should find the minimal value.
             quadrant_sig_value <- min(quadrant_hyper_metric, na.rm = TRUE)
             if (quadrant_sig_value >= 0L) {
                 return(NULL)
@@ -285,7 +297,7 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             if (is.infinite(quadrant_sig_value)) {
                 quadrant_sig_coord <- which(
                     is.infinite(quadrant_hyper_metric) &
-                        sign(quadrant_hyper_metric) < 0L,
+                        quadrant_hyper_metric < 0L,
                     arr.ind = TRUE
                 )
             } else {
@@ -333,11 +345,11 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
                 names(rrho_obj$rrho_data$list1)[list1_index],
                 names(rrho_obj$rrho_data$list2)[list2_index]
             ),
-            pvalue = rrho_obj$hyper_pvalue[
+            hyper_metric = rrho_obj$hyper_metric[
                 quadrant_row_index[quadrant_sig_coord[[1L]]],
                 quadrant_col_index[quadrant_sig_coord[[2L]]]
             ],
-            hyper_metric = rrho_obj$hyper_metric[
+            pvalue = rrho_obj$hyper_pvalue[
                 quadrant_row_index[quadrant_sig_coord[[1L]]],
                 quadrant_col_index[quadrant_sig_coord[[2L]]]
             ]
@@ -441,11 +453,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     # split parameters
     row_split <- factor(
         get_direction(row_ranked_list),
-        levels = c("down", "up")
+        levels = c("down", "none", "up")
     )
     column_split <- factor(
         get_direction(column_ranked_list),
-        levels = c("up", "down")
+        levels = c("up", "none", "down")
     )
 
     if (is.null(col)) {
@@ -530,48 +542,148 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' @param method one of `c("BY", "permutation")` indicates which method to use
 #' to correct multiple hypothesis
 #' @param perm if use "permutation", how many permutation times it uses.
+#' @param quadrant the "quadrant" to test significance, usually we want to test
+#' whether the overlapping goes in the same direction (over-enrichment), which
+#' means "up-up" quadrant and "down-down" quadrant. You can specify "all" to
+#' test the overall significance of RRHO map. Due to the sign convention for
+#' over- or under-enrichment in RRHO design, we can test the over-enrichment of
+#' "down-up" quadrant or/and "up-down" quatrant by testing the under-enrichment
+#' of hotspot significance in "down-up" quadrant or/and "up-down" quatrant,
+#' the Pvalue for which test whether the overlapping goes in the different
+#' direction.
+#' @details
+#' If the Benjamini-Yekutieli corrected hypergeometric map has most significant
+#' areas of absolute log10(P-value) intensity 15 or greater, then permutations
+#' are likely to be significant below a permutation frequency P-value of 0.01.
+#' When the corrected map maxima are less than 15, perform permutations. If the
+#' two maps for comparison are made from gene lists that are of considerably
+#' different lengths, one can either (a) scale the hypergeometric maps using the
+#' list length correction method to account for length differences before
+#' applying a Benjamini-Yekutieli correction or (b) remake the hypergeometric
+#' maps using only items common to all signatures in the set of comparisons
+#' making sure this restriction is not too limiting on the total gene number.
+#'
+#' Areas "up-up" quadrant and "down-down" quadrant correspond to overlapping
+#' items that go in the same direction in both experiments. We compare the
+#' maximum in these areas as a summary statistic to screen through permutation
+#' RRHO maps compared to the true RRHO map. The frequency at which permutation
+#' maps have a higher summary statistic than the true map is defined as the
+#' permutation P-value.
 #' @seealso
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642617>
+#' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
-rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L) {
+rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c("up-up", "down-down")) {
     method <- match.arg(method, c("BY", "permutation"))
     if (identical(method, "BY")) {
         ## Convert hypermat to a vector and Benjamini Yekutieli FDR correct
-        hyper_pvalue_by <- stats::p.adjust(c(rrho_obj$hyper_pvalue), method = "BY")
+        hyper_pvalue_by <- stats::p.adjust(
+            c(rrho_obj$hyper_pvalue),
+            method = "BY"
+        )
         hyper_pvalue_by <- matrix(
             hyper_pvalue_by,
             nrow = nrow(rrho_obj$hyper_pvalue),
             ncol = ncol(rrho_obj$hyper_pvalue)
         )
         list(
-            hyper_metric_by = -log(hyper_pvalue_by, base = rrho_obj$log_base),
+            hyper_metric_by = abs(
+                log(hyper_pvalue_by, base = rrho_obj$log_base)
+            ) *
+                rrho_obj$hyper_signs,
             hyper_pvalue_by = hyper_pvalue_by
         )
     } else {
-        perm_hyper_metric <- future.apply::future_vapply(
+        quadrant <- unique(quadrant)
+        if (all(quadrant %in% c("up-up", "down-down"))) {
+            quadrant_sign <- 1L
+        } else if (all(quadrant %in% c("up-down", "down-up"))) {
+            quadrant_sign <- -1L
+        } else if (!identical(quadrant, "all")) {
+            rlang::abort(
+                c(
+                    "quadrant should be one of c(\"all\", \"up-up\", \"down-down\", \"up-down\", \"down-up\").",
+                    "you can also specify c(\"up-up\", \"down-down\") or c(\"up-down\", \"down-up\") as a whole."
+                )
+            )
+        }
+
+        # define quadrant for testing
+        if (!identical(quadrant, "all")) {
+            rrho_list1_index <- seq(
+                1L, length(rrho_obj$rrho_data$list1),
+                by = rrho_obj$stepsize
+            )
+            rrho_list2_index <- seq(
+                1L, length(rrho_obj$rrho_data$list2),
+                by = rrho_obj$stepsize
+            )
+            rrho_list1_quadrant <- get_direction(
+                rrho_obj$rrho_data$list1[rrho_list1_index]
+            )
+            rrho_list2_quadrant <- get_direction(
+                rrho_obj$rrho_data$list2[rrho_list2_index]
+            )
+            rrho_quadrant <- outer(
+                rrho_list1_quadrant, rrho_list2_quadrant,
+                paste,
+                sep = "-"
+            )
+            quadrant_idx_list <- lapply(quadrant, function(x) {
+                x == rrho_quadrant
+            })
+        }
+
+        # implement permutation
+        p <- progressr::progressor(steps = perm)
+        perm_hyper_metric <- future.apply::future_lapply(
             seq_len(perm), function(i) {
+                p(message = sprintf("Permuatating %d times", perm[i]))
                 perm_rrho(rrho_obj)
             },
-            FUN.VALUE = numeric(1L),
-            USE.NAMES = FALSE,
             future.globals = list(rrho_obj = rrho_obj),
             future.seed = TRUE
         )
-        pecdf <- stats::ecdf(perm_hyper_metric)
+
+        # derive permutation summary statistics for given quadrant
+        summary_stats <- vapply(perm_hyper_metric, function(hyper_metric_mat) {
+            if (!identical(quadrant, "all")) {
+                stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
+                    max(hyper_metric_mat[quadrant_idx] * quadrant_sign,
+                        na.rm = TRUE
+                    )
+                }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
+                sum(stats, na.rm = TRUE)
+            } else {
+                max(abs(hyper_metric_mat), na.rm = TRUE)
+            }
+        }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
+        pecdf <- stats::ecdf(summary_stats)
+
+        # actual summary statistic
+        if (!identical(quadrant, "all")) {
+            actual_stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
+                max(rrho_obj$hyper_metric[quadrant_idx] * quadrant_sign,
+                    na.rm = TRUE
+                )
+            }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
+            actual_stats <- sum(actual_stats, na.rm = TRUE)
+        } else {
+            actual_stats <- max(abs(rrho_obj$hyper_metric), na.rm = TRUE)
+        }
         list(
             ecdf = pecdf,
-            pvalue_perm = 1 - min(
-                pecdf(max(rrho_obj$hyper_metric, na.rm = TRUE)) + 1L / perm,
-                1L
-            )
+            pvalue_perm = 1L - min(pecdf(actual_stats), 1L)
         )
     }
 }
+
 perm_items <- function(list) {
     perm_index <- sample.int(length(list), replace = FALSE)
     names(list) <- names(list)[perm_index]
     list
 }
+
 perm_rrho <- function(rrho_obj) {
     list1 <- perm_items(rrho_obj$rrho_data$list1)
     list2 <- perm_items(rrho_obj$rrho_data$list2)
@@ -580,14 +692,13 @@ perm_rrho <- function(rrho_obj) {
         n = length(list1),
         stepsize = rrho_obj$stepsize
     )
-    hyper_metric <- -log(hyper_res$pvalue, base = rrho_obj$log_base) *
-        hyper_res$signs
-    max(hyper_metric, na.rm = TRUE)
+    abs(log(hyper_res$pvalue, base = rrho_obj$log_base)) * hyper_res$signs
 }
 
 get_direction <- function(x) {
     data.table::fcase(
         x < 0L, "down",
+        x == 0L, "none",
         x > 0L, "up"
     )
 }
