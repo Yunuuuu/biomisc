@@ -18,3 +18,11 @@ a list
 This function just extract the significant items based on RRHO analysis
 results.
 }
+\examples{
+  n <- 200
+  sample1 <- rnorm(n)
+  sample2 <- rnorm(n)
+  names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+  rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+  biomisc::rrho_sig_terms(rrho_res)
+}

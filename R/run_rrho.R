@@ -12,10 +12,6 @@
 ## stepsize indicates how many genes to increase by
 ##    in each algorithm iteration
 ### Testing:
-# n <- 200
-# sample1 <- rnorm(n)
-# sample2 <- rnorm(n)
-# names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
 # res1 <- calculate_hyper_overlap(
 #     names(sample1), names(sample2), length(sample1), 1
 # )
@@ -33,6 +29,7 @@
 #     res1$counts, res2$counts
 # ))
 # res3 <- run_rrho(sample1, sample2, 1)
+# rrho_heatmap(res3)
 # set.seed(1)
 # rrho_correct_pval(res3, "perm", 10)
 # rrho_correct_pval(res3, "perm", 10)
@@ -97,13 +94,22 @@
 #' @param log_base Normally, `hyper_metric` in the results are
 #' transformed by logarithm, this control the logarithm base. Just like the
 #' `base` parameter in [base::log] function. Default: `10L`.
+#' @examples 
+#'   n <- 200
+#'   sample1 <- rnorm(n)
+#'   sample2 <- rnorm(n)
+#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' @references
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     rrho_data <- set_rrho_list(list1, list2)
+    stopifnot(is.numeric(stepsize))
     if (is.null(stepsize)) {
-        stepsize <- ceiling(sqrt(min(lengths(rrho_data))))
+        stepsize <- as.integer(sqrt(min(lengths(rrho_data))))
+    } else {
+        stepsize <- max(1L, as.integer(stepsize))
     }
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- calculate_hyper_overlap(
@@ -223,6 +229,13 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
 #' @param quadrant one or more items in `c("up-up", "down-down", "up-down",
 #' "down-up")`, controls which quadrant of iterms should be extracted.
 #' @return a list
+#' @examples
+#'   n <- 200
+#'   sample1 <- rnorm(n)
+#'   sample2 <- rnorm(n)
+#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#'   biomisc::rrho_sig_terms(rrho_res)
 #' @export
 rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     stopifnot(
@@ -365,6 +378,13 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
 #' vector of colors so that colors can be interpolated. Pass to `ColorMapping`.
 #' For more details and examples, please refer to [ComplexHeatmap::Heatmap]
 #' @param ... other parameters passed to [ComplexHeatmap::Heatmap]
+#' @examples
+#'   n <- 200
+#'   sample1 <- rnorm(n)
+#'   sample2 <- rnorm(n)
+#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#'   biomisc::rrho_heatmap(rrho_res)
 #' @export
 rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
@@ -542,11 +562,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' @param quadrant the "quadrant" to test significance, usually we want to test
 #' whether the overlapping goes in the same direction (over-enrichment), which
 #' means "up-up" quadrant and "down-down" quadrant. You can specify "all" to
-#' test the overall significance of RRHO map. Due to the sign convention for
+#' test the overall significance of the RRHO map. Due to the sign convention for
 #' over- or under-enrichment in RRHO design, we can test the over-enrichment of
 #' "down-up" quadrant or/and "up-down" quatrant by testing the under-enrichment
-#' of hotspot significance in "down-up" quadrant or/and "up-down" quatrant,
-#' the Pvalue for which test whether the overlapping goes in the different
+#' of hotspot significance in "down-up" quadrant or/and "up-down" quatrant, the
+#' Pvalue for which test whether the overlapping goes in the different
 #' direction.
 #' @details
 #' If the Benjamini-Yekutieli corrected hypergeometric map has most significant
@@ -566,6 +586,15 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' RRHO maps compared to the true RRHO map. The frequency at which permutation
 #' maps have a higher summary statistic than the true map is defined as the
 #' permutation P-value.
+#' @examples
+#'   n <- 200
+#'   sample1 <- rnorm(n)
+#'   sample2 <- rnorm(n)
+#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#'   progressr::with_progress(
+#'       biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
+#'   )
 #' @seealso
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642617>
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
@@ -635,23 +664,17 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         p <- progressr::progressor(steps = perm)
         perm_hyper_metric <- future.apply::future_lapply(
             seq_len(perm), function(i) {
-                p(message = sprintf("Permuatating %d times", perm[i]))
+                p(message = sprintf("Permuatating %d times", i))
                 perm_rrho(
-                    list1 = list1,
-                    list2 = list2,
-                    stepsize = stepsize,
-                    log_base = log_base
+                    list1 = rrho_obj$rrho_data$list1,
+                    list2 = rrho_obj$rrho_data$list2,
+                    stepsize = rrho_obj$stepsize,
+                    log_base = rrho_obj$log_base
                 )
             },
-            future.globals = list(
-                list1 = rrho_obj$rrho_data$list1,
-                list2 = rrho_obj$rrho_data$list2,
-                stepsize = rrho_obj$stepsize,
-                log_base = rrho_obj$log_base
-            ),
+            future.globals = TRUE,
             future.seed = TRUE
         )
-
         # derive permutation summary statistics for given quadrant
         summary_stats <- vapply(perm_hyper_metric, function(hyper_metric_mat) {
             if (!identical(quadrant, "all")) {

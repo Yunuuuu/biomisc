@@ -22,3 +22,11 @@ For more details and examples, please refer to \link[ComplexHeatmap:Heatmap]{Com
 \description{
 Rank-Rank Hypergeometric Overlap Map heatmap
 }
+\examples{
+  n <- 200
+  sample1 <- rnorm(n)
+  sample2 <- rnorm(n)
+  names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+  rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+  biomisc::rrho_heatmap(rrho_res)
+}

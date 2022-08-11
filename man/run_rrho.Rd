@@ -23,6 +23,13 @@ transformed by logarithm, this control the logarithm base. Just like the
 The function tests for significant overlap between two sorted lists using the
 method in the reference.
 }
+\examples{
+  n <- 200
+  sample1 <- rnorm(n)
+  sample2 <- rnorm(n)
+  names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+  rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+}
 \references{
 \url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}
 }

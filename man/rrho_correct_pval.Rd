@@ -22,11 +22,11 @@ to correct multiple hypothesis}
 \item{quadrant}{the "quadrant" to test significance, usually we want to test
 whether the overlapping goes in the same direction (over-enrichment), which
 means "up-up" quadrant and "down-down" quadrant. You can specify "all" to
-test the overall significance of RRHO map. Due to the sign convention for
+test the overall significance of the RRHO map. Due to the sign convention for
 over- or under-enrichment in RRHO design, we can test the over-enrichment of
 "down-up" quadrant or/and "up-down" quatrant by testing the under-enrichment
-of hotspot significance in "down-up" quadrant or/and "up-down" quatrant,
-the Pvalue for which test whether the overlapping goes in the different
+of hotspot significance in "down-up" quadrant or/and "up-down" quatrant, the
+Pvalue for which test whether the overlapping goes in the different
 direction.}
 }
 \description{
@@ -51,6 +51,16 @@ maximum in these areas as a summary statistic to screen through permutation
 RRHO maps compared to the true RRHO map. The frequency at which permutation
 maps have a higher summary statistic than the true map is defined as the
 permutation P-value.
+}
+\examples{
+  n <- 200
+  sample1 <- rnorm(n)
+  sample2 <- rnorm(n)
+  names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+  rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+  progressr::with_progress(
+      biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
+  )
 }
 \seealso{
 \url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642617}
