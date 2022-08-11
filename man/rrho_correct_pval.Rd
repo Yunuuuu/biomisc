@@ -17,7 +17,7 @@ rrho_correct_pval(
 \item{method}{one of \code{c("BY", "permutation")} indicates which method to use
 to correct multiple hypothesis}
 
-\item{perm}{if use "permutation", how many permutation times it uses.}
+\item{perm}{if use "permutation", indicates how many times should be used.}
 
 \item{quadrant}{the "quadrant" to test significance, usually we want to test
 whether the overlapping goes in the same direction (over-enrichment), which

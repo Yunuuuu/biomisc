@@ -103,11 +103,12 @@
 run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     rrho_data <- set_rrho_list(list1, list2)
     if (is.null(stepsize)) {
-        stepsize <- ceiling(sqrt(length(rrho_data$list2)))
+        stepsize <- ceiling(sqrt(min(lengths(rrho_data))))
     }
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- calculate_hyper_overlap(
-        names(rrho_data$list1), names(rrho_data$list2),
+        names(rrho_data$list1),
+        names(rrho_data$list2),
         n = length(rrho_data$list1),
         stepsize = stepsize
     )
@@ -155,7 +156,7 @@ set_rrho_list <- function(list1, list2) {
 # n = N-M: non-target population
 # k = s: the current rank step pair of sample2 - sample size
 
-## Compute the overlaps between two *numeric* lists:
+## Compute the overlaps between two *character* atomic vector:
 hyper_test <- function(sample1, sample2, n) {
     count <- length(intersect(sample1, sample2))
     m <- length(sample1)
@@ -164,52 +165,48 @@ hyper_test <- function(sample1, sample2, n) {
     if (count <= m * k / n) {
         sign <- -1L
         pvalue <- stats::phyper(
-            q = count - 1L, m = m, n = n - m + 1L,
+            q = count, m = m, n = n - m,
             k = k, lower.tail = TRUE, log.p = FALSE
         )
     } else {
         # over-enrichment
         sign <- 1L
         pvalue <- stats::phyper(
-            q = count - 1L, m = m, n = n - m + 1L,
+            q = count, m = m, n = n - m,
             k = k, lower.tail = FALSE, log.p = FALSE
         )
     }
 
-    c(
-        count = count,
-        pvalue = pvalue,
-        sign = sign
-    )
+    c(count = count, pvalue = pvalue, sign = sign)
 }
 
 calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
-    row_ids <- seq(1L, length(sample1), by = stepsize)
-    col_ids <- seq(1L, length(sample2), by = stepsize)
+    row_ids <- seq.int(stepsize, length(sample1), by = stepsize)
+    col_ids <- seq.int(stepsize, length(sample2), by = stepsize)
     indexes <- expand.grid(
         row_ids = row_ids,
         col_ids = col_ids
     )
-    indexes <- as.matrix(indexes)
-    overlaps <- apply(indexes, 1L, function(x) {
+    overlaps <- apply(as.matrix(indexes), 1L, function(x) {
         hyper_test(
             sample1[seq_len(x[["row_ids"]])],
             sample2[seq_len(x[["col_ids"]])],
             n = n
         )
-    })
+    }, simplify = FALSE)
+    overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
     matrix_counts <- matrix(
-        overlaps["count", , drop = TRUE],
-        ncol = number_of_obj
+        overlaps[[1L]],
+        nrow = number_of_obj
     )
     matrix_pvals <- matrix(
-        overlaps["pvalue", , drop = TRUE],
-        ncol = number_of_obj
+        overlaps[[2L]],
+        nrow = number_of_obj
     )
     matrix_signs <- matrix(
-        overlaps["sign", , drop = TRUE],
-        ncol = number_of_obj
+        overlaps[[3L]],
+        nrow = number_of_obj
     )
     list(
         counts = matrix_counts,
@@ -232,12 +229,12 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         all(quadrant %in% c("up-up", "down-down", "up-down", "down-up"))
     )
     res <- vector("list", length(quadrant))
-    rrho_list1_index <- seq(
-        1L, length(rrho_obj$rrho_data$list1),
+    rrho_list1_index <- seq.int(
+        rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
         by = rrho_obj$stepsize
     )
-    rrho_list2_index <- seq(
-        1L, length(rrho_obj$rrho_data$list2),
+    rrho_list2_index <- seq.int(
+        rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
         by = rrho_obj$stepsize
     )
     res <- lapply(quadrant, function(x) {
@@ -387,12 +384,12 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         drop = FALSE
     ]
 
-    rrho_list1_index <- seq(
-        1L, length(rrho_obj$rrho_data$list1),
+    rrho_list1_index <- seq.int(
+        rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
         by = rrho_obj$stepsize
     )
-    rrho_list2_index <- seq(
-        1L, length(rrho_obj$rrho_data$list2),
+    rrho_list2_index <- seq.int(
+        rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
         by = rrho_obj$stepsize
     )
 
@@ -541,7 +538,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' @param rrho_obj a object returned by [run_rrho()]
 #' @param method one of `c("BY", "permutation")` indicates which method to use
 #' to correct multiple hypothesis
-#' @param perm if use "permutation", how many permutation times it uses.
+#' @param perm if use "permutation", indicates how many times should be used.
 #' @param quadrant the "quadrant" to test significance, usually we want to test
 #' whether the overlapping goes in the same direction (over-enrichment), which
 #' means "up-up" quadrant and "down-down" quadrant. You can specify "all" to
@@ -610,12 +607,12 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
 
         # define quadrant for testing
         if (!identical(quadrant, "all")) {
-            rrho_list1_index <- seq(
-                1L, length(rrho_obj$rrho_data$list1),
+            rrho_list1_index <- seq.int(
+                rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
                 by = rrho_obj$stepsize
             )
-            rrho_list2_index <- seq(
-                1L, length(rrho_obj$rrho_data$list2),
+            rrho_list2_index <- seq.int(
+                rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
                 by = rrho_obj$stepsize
             )
             rrho_list1_quadrant <- get_direction(
@@ -639,9 +636,19 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         perm_hyper_metric <- future.apply::future_lapply(
             seq_len(perm), function(i) {
                 p(message = sprintf("Permuatating %d times", perm[i]))
-                perm_rrho(rrho_obj)
+                perm_rrho(
+                    list1 = list1,
+                    list2 = list2,
+                    stepsize = stepsize,
+                    log_base = log_base
+                )
             },
-            future.globals = list(rrho_obj = rrho_obj),
+            future.globals = list(
+                list1 = rrho_obj$rrho_data$list1,
+                list2 = rrho_obj$rrho_data$list2,
+                stepsize = rrho_obj$stepsize,
+                log_base = rrho_obj$log_base
+            ),
             future.seed = TRUE
         )
 
@@ -673,26 +680,20 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         }
         list(
             ecdf = pecdf,
+            statistic = actual_stats,
             pvalue_perm = 1L - min(pecdf(actual_stats), 1L)
         )
     }
 }
 
-perm_items <- function(list) {
-    perm_index <- sample.int(length(list), replace = FALSE)
-    names(list) <- names(list)[perm_index]
-    list
-}
-
-perm_rrho <- function(rrho_obj) {
-    list1 <- perm_items(rrho_obj$rrho_data$list1)
-    list2 <- perm_items(rrho_obj$rrho_data$list2)
+perm_rrho <- function(list1, list2, stepsize, log_base) {
     hyper_res <- calculate_hyper_overlap(
-        names(list1), names(list2),
+        names(list1)[sample.int(length(list1), replace = FALSE)],
+        names(list2)[sample.int(length(list2), replace = FALSE)],
         n = length(list1),
-        stepsize = rrho_obj$stepsize
+        stepsize = stepsize
     )
-    abs(log(hyper_res$pvalue, base = rrho_obj$log_base)) * hyper_res$signs
+    abs(log(hyper_res$pvalue, base = log_base)) * hyper_res$signs
 }
 
 get_direction <- function(x) {
