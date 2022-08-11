@@ -704,7 +704,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         list(
             ecdf = pecdf,
             statistic = actual_stats,
-            pvalue_perm = 1L - min(pecdf(actual_stats), 1L)
+            pvalue_perm = 1L - min(pecdf(actual_stats) + 1L / perm, 1L)
         )
     }
 }
