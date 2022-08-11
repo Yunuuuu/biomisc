@@ -495,7 +495,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     } else {
         legend_name <- rrho_obj$log_base
     }
-    legend_name <- paste0("-log", legend_name, "(P-value)")
+    legend_name <- paste0("Signed |log", legend_name, "(P-value)|")
     ComplexHeatmap::Heatmap(
         heat_matrix,
         col = col, name = legend_name,
