@@ -180,10 +180,12 @@ hyper_test <- function(sample1, sample2, n) {
         pvalue <- stats::phyper(
             q = count, m = m, n = n - m,
             k = k, lower.tail = FALSE, log.p = FALSE
+        ) + stats::dhyper(
+            x = count, m = m, n = n - m, k = k, log = FALSE
         )
     }
 
-    c(count = count, pvalue = pvalue, sign = sign)
+    c(count, pvalue, sign)
 }
 
 calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
@@ -203,7 +205,7 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
     overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
     matrix_counts <- matrix(
-        overlaps[[1L]],
+        as.integer(overlaps[[1L]]),
         nrow = number_of_obj
     )
     matrix_pvals <- matrix(
@@ -211,7 +213,7 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
         nrow = number_of_obj
     )
     matrix_signs <- matrix(
-        overlaps[[3L]],
+        as.integer(overlaps[[3L]]),
         nrow = number_of_obj
     )
     list(
