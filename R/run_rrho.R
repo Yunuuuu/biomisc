@@ -208,6 +208,9 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
         as.integer(overlaps[[1L]]),
         nrow = number_of_obj
     )
+    if (any(overlaps[[2L]] > 1L | overlaps[[2L]] < 0L)) {
+        rlang::abort("Something wrong when calculate Hypergeometric Distribution")
+    }
     matrix_pvals <- matrix(
         overlaps[[2L]],
         nrow = number_of_obj
