@@ -176,12 +176,14 @@ hyper_test <- function(sample1, sample2, n) {
         )
     } else {
         # over-enrichment
+        # since lower.tail = FALSE won't include point estimation in `count`
+        # value, so we just subtract one to include the point estimation
+        # Also since count > m * k / n, `count` won't be able to equal to zero
+        # it's safe to just subtract one
         sign <- 1L
         pvalue <- stats::phyper(
-            q = count, m = m, n = n - m,
+            q = count - 1L, m = m, n = n - m,
             k = k, lower.tail = FALSE, log.p = FALSE
-        ) + stats::dhyper(
-            x = count, m = m, n = n - m, k = k, log = FALSE
         )
     }
 
