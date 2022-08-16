@@ -56,7 +56,7 @@
 #     sign(res3$hyper_metric),
 #     res4$hypermat.signs
 # ))
-# upgenes1 <- rrho_sig_terms(res3)
+# upgenes1 <- rrho_sig_items(res3)
 # jet.colors <- colorRampPalette(
 #     c(
 #         "#00007F", "blue", "#007FFF", "cyan",
@@ -91,16 +91,31 @@
 #' @param list2 Same as list1
 #' @param stepsize Controls the resolution of the test: how many items between
 #' any two overlap tests.
-#' @param log_base Normally, `hyper_metric` in the results are
-#' transformed by logarithm, this control the logarithm base. Just like the
-#' `base` parameter in [base::log] function. Default: `10L`.
-#' @examples 
-#'   n <- 200
-#'   sample1 <- rnorm(n)
-#'   sample2 <- rnorm(n)
-#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
-#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#' @param log_base Normally, `hyper_metric` in the results are transformed by
+#' logarithm, this control the logarithm base. Just like the `base` parameter in
+#' [base::log] function. Default: `10L`.
+#' @return a list of class “roc” with the following fields:
+#' \describe{
+#'  \item{hyper_metric}{the metric of Rank-Rank Hypergeometric Overlap analysis,
+#'  which is the basis of the RRHO heatmap and permutation test, usually equals
+#'  to `abs(log(hyper_pvalue)) * hyper_signs`.}
+#'  \item{hyper_pvalue}{The Hypergeometric test cumulative pvalue.}
+#'  \item{hyper_signs}{the signs of `hyper_metric`, negative values indicate
+#'  under-enrichment, and positive values indicate over-enrichment.}
+#'  \item{hyper_counts}{the overlapping counts number in each test.}
+#'  \item{rrho_data}{the data used in RRHO analysis: keep the same items in
+#'  both `list1` and `list2` and sort them based on their value.}
+#'  \item{stepsize}{the provided `stepsize` parameter.}
+#'  \item{log_base}{the provided `log_base` parameter.}
+#' }
+#' @examples
+#' n <- 200
+#' sample1 <- rnorm(n)
+#' sample2 <- rnorm(n)
+#' names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' @references
+#' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
@@ -121,14 +136,17 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     hyper_metric <- abs(log(hyper_res$pvalue, base = log_base)) *
         hyper_res$signs
 
-    list(
-        hyper_metric = hyper_metric,
-        hyper_pvalue = hyper_res$pvalue,
-        hyper_signs = hyper_res$signs,
-        hyper_counts = hyper_res$counts,
-        rrho_data = rrho_data,
-        stepsize = stepsize,
-        log_base = log_base
+    structure(
+        list(
+            hyper_metric = hyper_metric,
+            hyper_pvalue = hyper_res$pvalue,
+            hyper_signs = hyper_res$signs,
+            hyper_counts = hyper_res$counts,
+            rrho_data = rrho_data,
+            stepsize = stepsize,
+            log_base = log_base
+        ),
+        class = "rrho"
     )
 }
 set_rrho_list <- function(list1, list2) {
@@ -136,9 +154,7 @@ set_rrho_list <- function(list1, list2) {
     list1 <- list1[!is.na(list1)]
     list2 <- list2[!is.na(list2)]
     # keep items in both lists
-    common_names <- intersect(
-        names(list1), names(list2)
-    )
+    common_names <- intersect(names(list1), names(list2))
     list1 <- list1[common_names]
     list2 <- list2[common_names]
     rlang::inform(
@@ -211,7 +227,7 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
         nrow = number_of_obj
     )
     if (any(overlaps[[2L]] > 1L | overlaps[[2L]] < 0L)) {
-        rlang::abort("Something wrong when calculate Hypergeometric Distribution")
+        rlang::abort("Something wrong when calculate Hypergeometric Distribution pvalue")
     }
     matrix_pvals <- matrix(
         overlaps[[2L]],
@@ -228,23 +244,38 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
     )
 }
 
-#' Rank-Rank Hypergeometric Overlap Test
+#' Rank-Rank Hypergeometric Overlap significant items
 #'
 #' This function just extract the significant items based on RRHO analysis
 #' results.
 #' @param rrho_obj a object returned by [run_rrho()]
 #' @param quadrant one or more items in `c("up-up", "down-down", "up-down",
-#' "down-up")`, controls which quadrant of iterms should be extracted.
-#' @return a list
+#' "down-up")`, controls which quadrant of items should be extracted.
+#' @return a list of significant items (usually genes) in each quadrant.
+#' @details The highest intensity point on the resulting Rank-Rank
+#' Hypergeometric Overlap map corresponds to the pair of rank thresholds where
+#' the observed statistical overlap between the two gene-expression profiles is
+#' the strongest statistically. In other words, the highest intensity point
+#' represents the optimal overlap between the profiles in that this is the
+#' overlap that is least likely to occur by chance. The coordinates of the
+#' highest intensity point are the rank in each experiment above which are the
+#' most statistically significant set of overlapping genes.
+#' @references 
+#' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>
 #' @examples
-#'   n <- 200
-#'   sample1 <- rnorm(n)
-#'   sample2 <- rnorm(n)
-#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
-#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
-#'   biomisc::rrho_sig_terms(rrho_res)
+#' n <- 200
+#' sample1 <- rnorm(n)
+#' sample2 <- rnorm(n)
+#' names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#' biomisc::rrho_sig_items(rrho_res)
 #' @export
-rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
+rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
+    if (!inherits(rrho_obj, "rrho")) {
+        rlang::abort(
+            "rrho_obj should be a `rrho` class object returned by `run_rrho` function."
+        )
+    }
     stopifnot(
         all(quadrant %in% c("up-up", "down-down", "up-down", "down-up"))
     )
@@ -261,7 +292,7 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         quadrant_dir <- strsplit(x, "-")[[1L]]
 
         # integer index relative to rrho_obj$hyper_metric and
-        # rrho_obj$hyper_pvalue
+        # rrho_obj$hyper_pvalue, namely the same length with corresponding dim.
         # the row index is relative to `rrho_list1_index`
         # the column index is relative to `rrho_list2_index`
         quadrant_row_index <- which(
@@ -306,7 +337,8 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             }
         } else if (x %in% c("up-down", "down-up")) {
             # for "up-down" and "down-up" quadrant, under-enrichment means
-            # over-enrichment, so we should find the minimal value.
+            # over-enrichment, so we should find the minimal value and ensue it
+            # is negative
             quadrant_sig_value <- min(quadrant_hyper_metric, na.rm = TRUE)
             if (quadrant_sig_value >= 0L) {
                 return(NULL)
@@ -325,20 +357,17 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
                 )
             }
         }
+        # if there exists more than one significant values
+        # Just keep the one with the largest number of items.
+        # `quadrant_sig_coord` is a matrix with every row correspond to
+        # every significant values
+        # Here we find the row with the maximal counts: returns a integer atomic
+        # vector, the first value is the sinificant value index of
+        # quadrant_row_index, the second quadrant_col_index
         quadrant_sig_coord <- quadrant_sig_coord[
             which.max(quadrant_hyper_counts[quadrant_sig_coord]), ,
             drop = TRUE
         ]
-        quadrant_sig_coord <- c(
-            switch(quadrant_dir[[1L]],
-                up = max(quadrant_sig_coord[[1L]]),
-                down = min(quadrant_sig_coord[[1L]])
-            ),
-            switch(quadrant_dir[[2L]],
-                up = max(quadrant_sig_coord[[2L]]),
-                down = min(quadrant_sig_coord[[2L]])
-            )
-        )
         sig_coord <- c(
             rrho_list1_index[quadrant_row_index[
                 quadrant_sig_coord[[1L]]
@@ -386,14 +415,19 @@ rrho_sig_terms <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
 #' For more details and examples, please refer to [ComplexHeatmap::Heatmap]
 #' @param ... other parameters passed to [ComplexHeatmap::Heatmap]
 #' @examples
-#'   n <- 200
-#'   sample1 <- rnorm(n)
-#'   sample2 <- rnorm(n)
-#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
-#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
-#'   biomisc::rrho_heatmap(rrho_res)
+#' n <- 200
+#' sample1 <- rnorm(n)
+#' sample2 <- rnorm(n)
+#' names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#' biomisc::rrho_heatmap(rrho_res)
 #' @export
 rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
+    if (!inherits(rrho_obj, "rrho")) {
+        rlang::abort(
+            "rrho_obj should be a `rrho` class object returned by `run_rrho` function."
+        )
+    }
     if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
         rlang::abort(
             "ComplexHeatmap must be installed to use this function."
@@ -594,19 +628,24 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' maps have a higher summary statistic than the true map is defined as the
 #' permutation P-value.
 #' @examples
-#'   n <- 200
-#'   sample1 <- rnorm(n)
-#'   sample2 <- rnorm(n)
-#'   names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
-#'   rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
-#'   progressr::with_progress(
-#'       biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
-#'   )
+#' n <- 200
+#' sample1 <- rnorm(n)
+#' sample2 <- rnorm(n)
+#' names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+#' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+#' progressr::with_progress(
+#'     biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
+#' )
 #' @seealso
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642617>
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c("up-up", "down-down")) {
+    if (!inherits(rrho_obj, "rrho")) {
+        rlang::abort(
+            "rrho_obj should be a `rrho` class object returned by `run_rrho` function."
+        )
+    }
     method <- match.arg(method, c("BY", "permutation"))
     if (identical(method, "BY")) {
         ## Convert hypermat to a vector and Benjamini Yekutieli FDR correct

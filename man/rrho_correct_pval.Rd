@@ -53,14 +53,14 @@ maps have a higher summary statistic than the true map is defined as the
 permutation P-value.
 }
 \examples{
-  n <- 200
-  sample1 <- rnorm(n)
-  sample2 <- rnorm(n)
-  names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
-  rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
-  progressr::with_progress(
-      biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
-  )
+n <- 200
+sample1 <- rnorm(n)
+sample2 <- rnorm(n)
+names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+progressr::with_progress(
+    biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
+)
 }
 \seealso{
 \url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642617}

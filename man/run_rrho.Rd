@@ -15,21 +15,38 @@ are often \code{-log10(P-value) * sign(effect)}.}
 \item{stepsize}{Controls the resolution of the test: how many items between
 any two overlap tests.}
 
-\item{log_base}{Normally, \code{hyper_metric} in the results are
-transformed by logarithm, this control the logarithm base. Just like the
-\code{base} parameter in \link[base:Log]{base::log} function. Default: \code{10L}.}
+\item{log_base}{Normally, \code{hyper_metric} in the results are transformed by
+logarithm, this control the logarithm base. Just like the \code{base} parameter in
+\link[base:Log]{base::log} function. Default: \code{10L}.}
+}
+\value{
+a list of class “roc” with the following fields:
+\describe{
+\item{hyper_metric}{the metric of Rank-Rank Hypergeometric Overlap analysis,
+which is the basis of the RRHO heatmap and permutation test, usually equals
+to \code{abs(log(hyper_pvalue)) * hyper_signs}.}
+\item{hyper_pvalue}{The Hypergeometric test cumulative pvalue.}
+\item{hyper_signs}{the signs of \code{hyper_metric}, negative values indicate
+under-enrichment, and positive values indicate over-enrichment.}
+\item{hyper_counts}{the overlapping counts number in each test.}
+\item{rrho_data}{the data used in RRHO analysis: keep the same items in
+both \code{list1} and \code{list2} and sort them based on their value.}
+\item{stepsize}{the provided \code{stepsize} parameter.}
+\item{log_base}{the provided \code{log_base} parameter.}
+}
 }
 \description{
 The function tests for significant overlap between two sorted lists using the
 method in the reference.
 }
 \examples{
-  n <- 200
-  sample1 <- rnorm(n)
-  sample2 <- rnorm(n)
-  names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
-  rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
+n <- 200
+sample1 <- rnorm(n)
+sample2 <- rnorm(n)
+names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
+rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 }
 \references{
+\url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642652}
 \url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}
 }
