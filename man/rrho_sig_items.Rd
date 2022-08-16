@@ -2,9 +2,12 @@
 % Please edit documentation in R/run_rrho.R
 \name{rrho_sig_items}
 \alias{rrho_sig_items}
+\alias{print.rrho_sig}
 \title{Rank-Rank Hypergeometric Overlap significant items}
 \usage{
 rrho_sig_items(rrho_obj, quadrant = c("up-up", "down-down"))
+
+\method{print}{rrho_sig}(rrho_sig)
 }
 \arguments{
 \item{rrho_obj}{a object returned by \code{\link[=run_rrho]{run_rrho()}}}
@@ -13,6 +16,19 @@ rrho_sig_items(rrho_obj, quadrant = c("up-up", "down-down"))
 }
 \value{
 a list of significant items (usually genes) in each quadrant.
+
+a list of object with class "rrho_sig" which contains the following
+fields:
+\describe{
+\item{sig_item1}{the sinificant items in list1.}
+\item{sig_item2}{the sinificant items in list2.}
+\item{common_items}{the intersected items between \code{sig_item1} and
+\code{sig_item2}.}
+\item{hyper_metric}{the corresponding RRHO metric in the significant
+coordinate.}
+\item{hyper_pvalue}{the corresponding RRHO pvalue in in the significant
+coordinate.}
+}
 }
 \description{
 This function just extract the significant items based on RRHO analysis

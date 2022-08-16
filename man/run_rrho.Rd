@@ -2,9 +2,12 @@
 % Please edit documentation in R/run_rrho.R
 \name{run_rrho}
 \alias{run_rrho}
+\alias{print.rrho}
 \title{Rank-Rank Hypergeometric Overlap Test}
 \usage{
 run_rrho(list1, list2, stepsize = NULL, log_base = 10L)
+
+\method{print}{rrho}(rrho_obj)
 }
 \arguments{
 \item{list1}{a named numeric vector, For differential gene expression, values
@@ -20,7 +23,7 @@ logarithm, this control the logarithm base. Just like the \code{base} parameter 
 \link[base:Log]{base::log} function. Default: \code{10L}.}
 }
 \value{
-a list of class “roc” with the following fields:
+a list of class "rrho" with the following fields:
 \describe{
 \item{hyper_metric}{the metric of Rank-Rank Hypergeometric Overlap analysis,
 which is the basis of the RRHO heatmap and permutation test, usually equals
@@ -47,6 +50,8 @@ names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
 rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 }
 \references{
-\url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642652}
-\url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}
+\itemize{
+\item \url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642652}
+\item \url{https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf}
+}
 }

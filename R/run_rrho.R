@@ -94,7 +94,7 @@
 #' @param log_base Normally, `hyper_metric` in the results are transformed by
 #' logarithm, this control the logarithm base. Just like the `base` parameter in
 #' [base::log] function. Default: `10L`.
-#' @return a list of class “roc” with the following fields:
+#' @return a list of class "rrho" with the following fields:
 #' \describe{
 #'  \item{hyper_metric}{the metric of Rank-Rank Hypergeometric Overlap analysis,
 #'  which is the basis of the RRHO heatmap and permutation test, usually equals
@@ -115,9 +115,10 @@
 #' names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
 #' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' @references
-#' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>
-#' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
+#' * <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>
+#' * <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
+#' @rdname run_rrho
 run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     rrho_data <- set_rrho_list(list1, list2)
     stopifnot(is.numeric(stepsize))
@@ -149,6 +150,25 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
         class = "rrho"
     )
 }
+
+
+#' @export
+#' @rdname run_rrho
+print.rrho <- function(rrho_obj) {
+    cat(strwrap(
+        "Rank-Rank Hypergeometric Overlap analysis",
+        indent = 0, exdent = 2
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf("The maximal RRHO metrix: %.2g", max(rrho_obj$hyper_metric)),
+        indent = 2, exdent = 2
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf("Analysis with stepsize: %d", rrho_obj$stepsize),
+        indent = 2, exdent = 2
+    ), sep = "\n")
+}
+
 set_rrho_list <- function(list1, list2) {
     # remove NA value
     list1 <- list1[!is.na(list1)]
@@ -260,7 +280,19 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
 #' overlap that is least likely to occur by chance. The coordinates of the
 #' highest intensity point are the rank in each experiment above which are the
 #' most statistically significant set of overlapping genes.
-#' @references 
+#' @return a list of object with class "rrho_sig" which contains the following
+#' fields:
+#' \describe{
+#'  \item{sig_item1}{the sinificant items in list1.}
+#'  \item{sig_item2}{the sinificant items in list2.}
+#'  \item{common_items}{the intersected items between `sig_item1` and
+#'  `sig_item2`.}
+#'  \item{hyper_metric}{the corresponding RRHO metric in the significant
+#'  coordinate.}
+#'  \item{hyper_pvalue}{the corresponding RRHO pvalue in in the significant
+#'  coordinate.}
+#' }
+#' @references
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>
 #' @examples
 #' n <- 200
@@ -270,6 +302,7 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
 #' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' biomisc::rrho_sig_items(rrho_res)
 #' @export
+#' @rdname rrho_sig_items
 rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     if (!inherits(rrho_obj, "rrho")) {
         rlang::abort(
@@ -364,6 +397,10 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # Here we find the row with the maximal counts: returns a integer atomic
         # vector, the first value is the sinificant value index of
         # quadrant_row_index, the second quadrant_col_index
+        #
+        # notes: if there are more than one significant values with the same
+        # number of counts number, this will just keep the first one. But it's
+        # not harmful for us since we usually only need the overlapping items
         quadrant_sig_coord <- quadrant_sig_coord[
             which.max(quadrant_hyper_counts[quadrant_sig_coord]), ,
             drop = TRUE
@@ -384,26 +421,64 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             up = seq_len(sig_coord[[2L]]),
             down = seq_along(rrho_obj$rrho_data$list2) >= sig_coord[[2L]]
         )
-        list(
-            sig_item1 = names(rrho_obj$rrho_data$list1)[list1_index],
-            sig_item2 = names(rrho_obj$rrho_data$list2)[list2_index],
-            common_items = intersect(
-                names(rrho_obj$rrho_data$list1)[list1_index],
-                names(rrho_obj$rrho_data$list2)[list2_index]
+        structure(
+            list(
+                sig_item1 = names(rrho_obj$rrho_data$list1)[list1_index],
+                sig_item2 = names(rrho_obj$rrho_data$list2)[list2_index],
+                common_items = intersect(
+                    names(rrho_obj$rrho_data$list1)[list1_index],
+                    names(rrho_obj$rrho_data$list2)[list2_index]
+                ),
+                hyper_metric = rrho_obj$hyper_metric[
+                    quadrant_row_index[quadrant_sig_coord[[1L]]],
+                    quadrant_col_index[quadrant_sig_coord[[2L]]]
+                ],
+                hyper_pvalue = rrho_obj$hyper_pvalue[
+                    quadrant_row_index[quadrant_sig_coord[[1L]]],
+                    quadrant_col_index[quadrant_sig_coord[[2L]]]
+                ]
             ),
-            hyper_metric = rrho_obj$hyper_metric[
-                quadrant_row_index[quadrant_sig_coord[[1L]]],
-                quadrant_col_index[quadrant_sig_coord[[2L]]]
-            ],
-            pvalue = rrho_obj$hyper_pvalue[
-                quadrant_row_index[quadrant_sig_coord[[1L]]],
-                quadrant_col_index[quadrant_sig_coord[[2L]]]
-            ]
+            class = "rrho_sig"
         )
     })
     names(res) <- quadrant
     res
 }
+
+#' @export
+#' @rdname rrho_sig_items
+print.rrho_sig <- function(rrho_sig) {
+    cat(strwrap(
+        sprintf(
+            "Finding %d significant overlapping items by list1 and list2 in RRHO analysis",
+            length(rrho_sig$common_items)
+        ),
+        indent = 0, exdent = 2
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf(
+            "Significant items in list1: %d",
+            length(rrho_sig$sig_item1)
+        ),
+        indent = 2, exdent = 2
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf(
+            "Significant items in list2: %d",
+            length(rrho_sig$sig_item2)
+        ),
+        indent = 2, exdent = 2
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf("The significant RRHO metrix: %.2g", rrho_sig$hyper_metric),
+        indent = 0, exdent = 2
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf("The significant RRHO pvalue: %.2g", rrho_sig$hyper_pvalue),
+        indent = 0, exdent = 2
+    ), sep = "\n")
+}
+
 #' Rank-Rank Hypergeometric Overlap Map heatmap
 #'
 #' @param rrho_obj a object returned by [run_rrho()]
