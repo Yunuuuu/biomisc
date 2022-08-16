@@ -14,6 +14,7 @@ Imports:
     data.table,
     future.apply,
     progressr,
+    Rcpp,
     rlang (>= 0.4.11)
 Suggests: 
     circlize,
@@ -28,3 +29,5 @@ Depends:
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 ByteCompile: true
+LinkingTo: 
+    Rcpp
