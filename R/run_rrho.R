@@ -271,7 +271,6 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
 #' @param rrho_obj a object returned by [run_rrho()]
 #' @param quadrant one or more items in `c("up-up", "down-down", "up-down",
 #' "down-up")`, controls which quadrant of items should be extracted.
-#' @return a list of significant items (usually genes) in each quadrant.
 #' @details The highest intensity point on the resulting Rank-Rank
 #' Hypergeometric Overlap map corresponds to the pair of rank thresholds where
 #' the observed statistical overlap between the two gene-expression profiles is
@@ -280,8 +279,8 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
 #' overlap that is least likely to occur by chance. The coordinates of the
 #' highest intensity point are the rank in each experiment above which are the
 #' most statistically significant set of overlapping genes.
-#' @return a list of object with class "rrho_sig" which contains the following
-#' fields:
+#' @return a list of object for each quadrant with class "rrho_sig" which
+#' contains the following fields:
 #' \describe{
 #'  \item{sig_item1}{the sinificant items in list1.}
 #'  \item{sig_item2}{the sinificant items in list2.}

@@ -15,10 +15,8 @@ rrho_sig_items(rrho_obj, quadrant = c("up-up", "down-down"))
 \item{quadrant}{one or more items in \code{c("up-up", "down-down", "up-down", "down-up")}, controls which quadrant of items should be extracted.}
 }
 \value{
-a list of significant items (usually genes) in each quadrant.
-
-a list of object with class "rrho_sig" which contains the following
-fields:
+a list of object for each quadrant with class "rrho_sig" which
+contains the following fields:
 \describe{
 \item{sig_item1}{the sinificant items in list1.}
 \item{sig_item2}{the sinificant items in list2.}
