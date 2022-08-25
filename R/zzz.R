@@ -3,7 +3,7 @@
 
     packageStartupMessage(
         "Package: ", pkgname, " (version: ", version, ")\n",
-        "Miscellaneous functions for Bioinformatics!!"
+        "Miscellaneous functions for Bioinformatics!"
     )
     invisible()
 }
