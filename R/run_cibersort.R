@@ -98,14 +98,10 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
     # store original mixtures median value
     mixture_data_median <- max(stats::median(mixture_data), 1L)
 
-    # intersect genes
+    # intersect genes and keep them in the same order
     common_genes <- intersect(row.names(sig_data), row.names(mixture_data))
     sig_data <- sig_data[common_genes, ]
     mixture_data <- mixture_data[common_genes, ]
-
-    # order
-    sig_data <- sig_data[order(rownames(sig_data)), , drop = FALSE]
-    mixture_data <- mixture_data[order(rownames(mixture_data)), , drop = FALSE]
 
     # standardize sig matrix
     sig_data <- (sig_data - mean(sig_data)) / stats::sd(sig_data)
@@ -140,7 +136,7 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
 
         # calculate p-value
         if (perm > 0L) {
-            pval <- 1 - nulldist_ecdf(result$mix_r)
+            pval <- 1L - nulldist_ecdf(result$mix_r)
         } else {
             pval <- 1L
         }
@@ -187,7 +183,7 @@ cibersort_core_algorithm <- function(sig_data, y, absolute, abs_method) {
     # do cibersort
     for (i in seq_along(out)) {
         weights <- t(out[[i]]$coefs) %*% out[[i]]$SV
-        weights[which(weights < 0L)] <- 0
+        weights[which(weights < 0L)] <- 0L
         w <- weights / sum(weights)
         u <- sweep(sig_data, MARGIN = 2L, w, "*")
         k <- apply(u, 1L, sum)
@@ -201,7 +197,7 @@ cibersort_core_algorithm <- function(sig_data, y, absolute, abs_method) {
 
     # get and normalize coefficients
     q <- t(model$coefs) %*% model$SV
-    q[which(q < 0L)] <- 0
+    q[which(q < 0L)] <- 0L
     # relative space (returns fractions)
     if (!absolute || identical(abs_method, "sig_score")) w <- (q / sum(q))
     # absolute space (returns scores)
