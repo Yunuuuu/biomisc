@@ -4,9 +4,9 @@
 \name{biomisc-package}
 \alias{biomisc}
 \alias{biomisc-package}
-\title{biomisc: What the Package Does (One Line, Title Case)}
+\title{biomisc: Miscellaneous functions for Bioinformatics}
 \description{
-What the package does (one paragraph).
+Miscellaneous functions for Bioinformatics.
 }
 \author{
 \strong{Maintainer}: First Last \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})

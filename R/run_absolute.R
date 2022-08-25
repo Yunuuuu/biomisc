@@ -15,12 +15,16 @@
 #'   documentation} and provides an uniform interface to input data easily and
 #'   run \code{\link[ABSOLUTE]{RunAbsolute}} parallelly.
 #'
-#'   If calling for a sample failed, the error message will be written to
-#'   \code{error.log} under subdirectory \code{RunAbsolute} of
-#'   \code{results_dir} directory.
-#'
 #'   More detail about how to analyze ABSOLUTE results please see
 #'   \href{https://www.genepattern.org/analyzing-absolute-data}{analyzing-absolute-data}.
+#' 
+#' @section Warnings:
+#'   As from R 4.2.0, a length of 2 or more won't be allowed in a `if`
+#'   condition, You can fix these by installing a modified `ABSOLUTE` package by
+#'   `pak::pkg_install("Yunuuuu/ABSOLUTE")`. The offical version can also be
+#'   installed by
+#'   `install.packages("https://software.broadinstitute.org/cancer/cga/sites/default/files/data/tools/absolute/ABSOLUTE_1.0.6.tar.gz",
+#'   repos = NULL, type = "source")`
 #'
 #' @param seg a \code{data.frame} containing columns "Chromosome", "Start",
 #'   "End", "Num_Probes", "Segment_Mean". If providing multiple samples, seg
@@ -88,7 +92,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!requireNamespace("ABSOLUTE", quietly = TRUE)) {
         cli::cli_abort(c(
             "ABSOLUTE must be installed to use this function.",
-            i = "you can install it by {.code install.packages(\"https://software.broadinstitute.org/cancer/cga/sites/default/files/data/tools/absolute/ABSOLUTE_1.0.6.tar.gz\", repos = NULL, type = \"source\")}" # nolint
+            i = "you can install it by {.code pak::pkg_install(\"Yunuuuu/ABSOLUTE\")}" # nolint
         ))
     }
 
@@ -284,8 +288,8 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
     if (!is.null(maf)) {
         if (!inherits(maf, "data.frame")) {
             cli::cli_abort(c(
-                "The class of {.arg maf} must inherited from data.frame including data.frame, data.table, or tibble",
-                i = "{.arg maf} is a {class(maf)}"
+                "{.arg maf} should inherit from data.frame including data.frame, data.table, or tibble",
+                "x" = "{.arg maf} is a {class(maf)}"
             ))
         }
         maf <- data.table::as.data.table(maf)
@@ -315,7 +319,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
         if (any(lack_cols)) {
             cli::cli_abort(c(
                 "Mising {.field columns} in {.arg maf}",
-                i = "Cannot find {.field {names(maf_cols)[lack_cols]}}"
+                "x" = "Cannot find {.field {names(maf_cols)[lack_cols]}}"
             ))
         }
         maf <- maf[, .SD, .SDcols = idx]
