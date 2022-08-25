@@ -7,7 +7,7 @@
 rrho_heatmap(rrho_obj, labels, col = NULL, ...)
 }
 \arguments{
-\item{rrho_obj}{a object returned by \code{\link[=run_rrho]{run_rrho()}}}
+\item{rrho_obj}{an object returned by \code{\link[=run_rrho]{run_rrho()}}}
 
 \item{labels}{Not used currently.}
 

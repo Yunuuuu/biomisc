@@ -7,12 +7,16 @@
 \usage{
 rrho_sig_items(rrho_obj, quadrant = c("up-up", "down-down"))
 
-\method{print}{rrho_sig}(rrho_sig)
+\method{print}{rrho_sig}(x, ...)
 }
 \arguments{
-\item{rrho_obj}{a object returned by \code{\link[=run_rrho]{run_rrho()}}}
+\item{rrho_obj}{an object returned by \code{\link[=run_rrho]{run_rrho()}}}
 
 \item{quadrant}{one or more items in \code{c("up-up", "down-down", "up-down", "down-up")}, controls which quadrant of items should be extracted.}
+
+\item{x}{an object returned by \code{\link[=rrho_sig_items]{rrho_sig_items()}}}
+
+\item{...}{Not used currently}
 }
 \value{
 a list of object for each quadrant with class "rrho_sig" which

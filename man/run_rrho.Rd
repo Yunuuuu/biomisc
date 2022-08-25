@@ -7,7 +7,7 @@
 \usage{
 run_rrho(list1, list2, stepsize = NULL, log_base = 10L)
 
-\method{print}{rrho}(rrho_obj)
+\method{print}{rrho}(x, ...)
 }
 \arguments{
 \item{list1}{a named numeric vector, For differential gene expression, values
@@ -21,6 +21,10 @@ any two overlap tests.}
 \item{log_base}{Normally, \code{hyper_metric} in the results are transformed by
 logarithm, this control the logarithm base. Just like the \code{base} parameter in
 \link[base:Log]{base::log} function. Default: \code{10L}.}
+
+\item{x}{an object returned by \code{\link[=run_rrho]{run_rrho()}}}
+
+\item{...}{Not used currently}
 }
 \value{
 a list of class "rrho" with the following fields:

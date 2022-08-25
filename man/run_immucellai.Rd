@@ -22,7 +22,7 @@ and microarray data
 }
 \examples{
 sample_exp <- readRDS(system.file(
-    "extdata", "immucellai", "immucellai_sample_exp.rds",
+    "extdata", "immucellai", "sample_exp.rds",
     package = "biomisc"
 ))
 run_immucellai(sample_exp, "microarray")

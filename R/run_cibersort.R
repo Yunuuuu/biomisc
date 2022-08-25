@@ -59,13 +59,13 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
                           perm = 200L, quantile_norm = TRUE, absolute = FALSE,
                           abs_method = "sig_score") {
     if (!requireNamespace("e1071", quietly = TRUE)) {
-        rlang::abort(
-            "e1071 must be installed to use this function."
+        cli::cli_abort(
+            "{.pkg e1071} must be installed to use this function."
         )
     }
     if (!requireNamespace("preprocessCore", quietly = TRUE)) {
-        rlang::abort(
-            "preprocessCore must be installed to use this function."
+        cli::cli_abort(
+            "{.pkg preprocessCore} must be installed to use this function."
         )
     }
 
@@ -80,7 +80,7 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
     }
 
     if (max(mixture_data) < 50L) {
-        rlang::warn(
+        cli::cli_warn(
             "find mixture_data is logged, we'll anti-log by `2^mixture_data`!"
         )
         mixture_data <- 2^mixture_data
@@ -108,7 +108,7 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
 
     # empirical null distribution of correlation coefficients
     if (perm > 0L) {
-        rlang::inform("Calculating null distribution by permutation...")
+        cli::cli_inform("Calculating null distribution by permutation...")
         nulldist_ecdf <- stats::ecdf(
             cibersort_do_perm(
                 perm, sig_data, mixture_data,
@@ -116,7 +116,7 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
             )
         )
     }
-    rlang::inform("Running CIBERSORT analysis...")
+    cli::cli_inform("Running CIBERSORT analysis...")
     p <- progressr::progressor(steps = ncol(mixture_data))
     results <- future.apply::future_apply(mixture_data, 2L, function(sample_col) {
         p()

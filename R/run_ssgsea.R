@@ -48,7 +48,7 @@ run_ssgsea <- function(data_expr, gene_set_list, NES = TRUE, perm = 1000L,
     #############################################
 
     if (identical(sample_norm_type, "none")) {
-        rlang::inform("No normalization would be made")
+        cli::cli_inform("No normalization would be made")
     } else if (identical(sample_norm_type, "rank")) {
         data_expr <- apply(data_expr, 2L, function(x) {
             as.integer(rank(x, ties.method = "average"))
@@ -97,7 +97,7 @@ run_ssgsea <- function(data_expr, gene_set_list, NES = TRUE, perm = 1000L,
 
 project_to_geneset <- function(data_matrix, gene_set_list, weight, NES, perm) {
     gene_name <- rownames(data_matrix)
-    rlang::inform("Running ssGSEA.............")
+    cli::cli_inform("Running ssGSEA.............")
     p <- progressr::progressor(steps = ncol(data_matrix))
     es_res <- future.apply::future_lapply(
         seq_len(ncol(data_matrix)), function(j) {
