@@ -313,7 +313,6 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     stopifnot(
         all(quadrant %in% c("up-up", "down-down", "up-down", "down-up"))
     )
-    res <- vector("list", length(quadrant))
     rrho_list1_index <- seq.int(
         rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
         by = rrho_obj$stepsize
