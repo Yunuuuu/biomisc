@@ -307,7 +307,7 @@ calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
 rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
-            "{.arg rrho_obj} should be a {cls rrho} class object returned by {.code run_rrho} function."
+            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.code run_rrho} function."
         )
     }
     stopifnot(
