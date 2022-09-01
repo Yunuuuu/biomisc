@@ -1,9 +1,8 @@
 Package: biomisc
 Title: Miscellaneous functions for Bioinformatics
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+Author: person("Yun", "Peng", email = yunyunpp96@outlook.com,
+               role = c("aut", "cre"))
 Description: Miscellaneous functions for Bioinformatics.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
