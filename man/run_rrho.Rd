@@ -5,18 +5,21 @@
 \alias{print.rrho}
 \title{Rank-Rank Hypergeometric Overlap Test}
 \usage{
-run_rrho(list1, list2, stepsize = NULL, log_base = 10L)
+run_rrho(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L)
 
 \method{print}{rrho}(x, ...)
 }
 \arguments{
-\item{list1}{a named numeric vector, For differential gene expression, values
-are often \code{-log10(P-value) * sign(effect)}.}
-
-\item{list2}{Same as list1}
+\item{list1, list2}{a named numeric vector, For differential gene expression,
+values are often \code{-log10(P-value) * sign(effect)}. \code{list1} will be regarded
+as the reference populations.}
 
 \item{stepsize}{Controls the resolution of the test: how many items between
 any two overlap tests.}
+
+\item{correction}{A string indicates the correction methods when \code{list1} and
+\code{list2} have different length. One of \code{c("common", "length")}, if "common",
+the \code{scale_size} will be equal to 1L.}
 
 \item{log_base}{Normally, \code{hyper_metric} in the results are transformed by
 logarithm, this control the logarithm base. Just like the \code{base} parameter in

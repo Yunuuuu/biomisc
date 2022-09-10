@@ -86,11 +86,14 @@
 #' The function tests for significant overlap between two sorted lists using the
 #' method in the reference.
 #'
-#' @param list1 a named numeric vector, For differential gene expression, values
-#' are often `-log10(P-value) * sign(effect)`.
-#' @param list2 Same as list1
+#' @param list1,list2 a named numeric vector, For differential gene expression,
+#' values are often `-log10(P-value) * sign(effect)`. `list1` will be regarded
+#' as the reference populations.
 #' @param stepsize Controls the resolution of the test: how many items between
 #' any two overlap tests.
+#' @param correction A string indicates the correction methods when `list1` and
+#' `list2` have different length. One of `c("common", "length")`, if "common",
+#' the `scale_size` will be equal to 1L.
 #' @param log_base Normally, `hyper_metric` in the results are transformed by
 #' logarithm, this control the logarithm base. Just like the `base` parameter in
 #' [base::log] function. Default: `10L`.
@@ -119,8 +122,9 @@
 #' * <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 #' @rdname run_rrho
-run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
-    rrho_data <- set_rrho_list(list1, list2)
+run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L) {
+    correction <- match.arg(correction, c("common", "length"))
+    rrho_data <- set_rrho_list(list1, list2, correction = correction)
     stopifnot(is.numeric(stepsize))
     if (is.null(stepsize)) {
         stepsize <- as.integer(sqrt(min(lengths(rrho_data))))
@@ -131,11 +135,10 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     hyper_res <- calculate_hyper_overlap(
         names(rrho_data$list1),
         names(rrho_data$list2),
-        n = length(rrho_data$list1),
         stepsize = stepsize
     )
     hyper_metric <- abs(log(hyper_res$pvalue, base = log_base)) *
-        hyper_res$signs
+        hyper_res$signs * rrho_data$scale_size
 
     structure(
         list(
@@ -164,26 +167,49 @@ print.rrho <- function(x, ...) {
         sprintf("The maximal RRHO metrix: %.2g", max(x$hyper_metric)),
         indent = 2, exdent = 2
     ), sep = "\n")
+    if (is.integer(x$rrho_data$scale_size)) {
+        sprintf_term <- "%d"
+    } else {
+        sprintf_term <- "%.2f"
+    }
+    cat(strwrap(
+        sprintf(
+            paste0("RRHO metrix scale_size: ", sprintf_term),
+            x$rrho_data$scale_size
+        ),
+        indent = 2, exdent = 2
+    ), sep = "\n")
     cat(strwrap(
         sprintf("Analysis with stepsize: %d", x$stepsize),
         indent = 2, exdent = 2
     ), sep = "\n")
 }
 
-set_rrho_list <- function(list1, list2) {
+set_rrho_list <- function(list1, list2, correction) {
     # remove NA value
     list1 <- list1[!is.na(list1)]
     list2 <- list2[!is.na(list2)]
+
     # keep items in both lists
     common_names <- intersect(names(list1), names(list2))
-    list1 <- list1[common_names]
-    list2 <- list2[common_names]
-    cli::cli_inform(
-        sprintf("Found %d genes shared by both list.", length(common_names))
-    )
+    list2_filtered <- list2[common_names]
+    if (identical(correction, "common")) {
+        list1 <- list1[common_names]
+        scale_size <- 1L
+        cli::cli_inform(
+            "Finding {length(common_names)} genes shared by {.field list1} and {.field list2}"
+        )
+    } else if (identical(correction, "length")) {
+        scale_size <- length(list2_filtered) / length(list1)
+        cli::cli_inform(
+            "Removing {length(list2) - length(list2_filtered)} genes from {.field list2} not in {.field list1}"
+        )
+    }
+
     list(
         list1 = sort(list1, decreasing = TRUE),
-        list2 = sort(list2, decreasing = TRUE)
+        list2 = sort(list2_filtered, decreasing = TRUE),
+        scale_size = scale_size
     )
 }
 
@@ -227,7 +253,8 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, pvalue, sign)
 }
 
-calculate_hyper_overlap <- function(sample1, sample2, n, stepsize) {
+calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
+    n <- length(sample1)
     row_ids <- seq.int(stepsize, length(sample1), by = stepsize)
     col_ids <- seq.int(stepsize, length(sample2), by = stepsize)
     indexes <- expand.grid(
@@ -789,12 +816,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         perm_hyper_metric <- future.apply::future_lapply(
             seq_len(perm), function(i) {
                 p(message = sprintf("Permuatating %d times", i))
-                perm_rrho(
-                    list1 = rrho_obj$rrho_data$list1,
-                    list2 = rrho_obj$rrho_data$list2,
-                    stepsize = rrho_obj$stepsize,
-                    log_base = rrho_obj$log_base
-                )
+                perm_rrho(rrho_obj)
             },
             future.globals = TRUE,
             future.seed = TRUE
@@ -833,14 +855,19 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
     }
 }
 
-perm_rrho <- function(list1, list2, stepsize, log_base) {
+perm_rrho <- function(rrho_obj) {
     hyper_res <- calculate_hyper_overlap(
-        names(list1)[sample.int(length(list1), replace = FALSE)],
-        names(list2)[sample.int(length(list2), replace = FALSE)],
-        n = length(list1),
-        stepsize = stepsize
+        names(rrho_obj$rrho_data$list1)[
+            sample.int(length(rrho_obj$rrho_data$list1), replace = FALSE)
+        ],
+        names(rrho_obj$rrho_data$list2)[
+            sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
+        ],
+        stepsize = rrho_obj$stepsize,
+        log_base = rrho_obj$log_base
     )
-    abs(log(hyper_res$pvalue, base = log_base)) * hyper_res$signs
+    abs(log(hyper_res$pvalue, base = rrho_obj$log_base)) *
+        hyper_res$signs * rrho_obj$rrho_data$scale_size
 }
 
 get_direction <- function(x) {
