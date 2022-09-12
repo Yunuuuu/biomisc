@@ -752,7 +752,8 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
     }
     method <- match.arg(method, c("BY", "permutation"))
     if (identical(method, "BY")) {
-        ## Convert hypermat to a vector and Benjamini Yekutieli FDR correct
+        # Convert hypermat to a vector and apply Benjamini Yekutieli Pvalue
+        # correction 
         hyper_pvalue_by <- stats::p.adjust(
             c(rrho_obj$hyper_pvalue),
             method = "BY"
@@ -766,7 +767,8 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
             hyper_metric_by = abs(
                 log(hyper_pvalue_by, base = rrho_obj$log_base)
             ) *
-                rrho_obj$hyper_signs,
+                rrho_obj$hyper_signs * 
+                rrho_obj$rrho_data$scale_size,
             hyper_pvalue_by = hyper_pvalue_by
         )
     } else {
