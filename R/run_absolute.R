@@ -261,7 +261,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
     if (!inherits(seg, "data.frame")) {
         cli::cli_abort(c(
             "The class of {.arg seg} must inherited from data.frame including data.frame, data.table, or tibble",
-            i = "{.arg seg} is a {class(seg)}"
+            i = "{.arg seg} is a {.cls {class(seg)}}"
         ))
     }
     seg <- data.table::as.data.table(seg)
@@ -270,10 +270,10 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
 
     # check seg data ----------------------------------------------
     seg_cols <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Segment_Mean")
-    if (!all(seg_cols %in% colnames(seg))) {
+    if (!all(seg_cols %in% names(seg))) {
         cli::cli_abort(c(
             "Mising {.field columns} in {.arg maf}",
-            i = "Cannot find {.field {seg_cols}}"
+            i = "Cannot find {.field {setdiff(seg_cols, names(seg))}}"
         ))
     }
     if (any(is.na(seg[, Sample]))) {
