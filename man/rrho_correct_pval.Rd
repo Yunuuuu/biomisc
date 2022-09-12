@@ -59,7 +59,7 @@ sample2 <- rnorm(n)
 names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
 rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 progressr::with_progress(
-    biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
+    biomisc::rrho_correct_pval(rrho_res, "permutation", 10L)
 )
 }
 \seealso{

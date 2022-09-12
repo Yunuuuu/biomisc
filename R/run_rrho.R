@@ -127,9 +127,9 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
     rrho_data <- set_rrho_list(list1, list2, correction = correction)
     stopifnot(is.numeric(stepsize))
     if (is.null(stepsize)) {
-        stepsize <- as.integer(sqrt(min(lengths(rrho_data))))
+        stepsize <- as.integer(sqrt(min(lengths(rrho_data)[1:2])))
     } else {
-        stepsize <- max(1L, as.integer(stepsize))
+        stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     }
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- calculate_hyper_overlap(
@@ -738,7 +738,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' names(sample1) <- names(sample2) <- paste0("gene", seq_len(n))
 #' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' progressr::with_progress(
-#'     biomisc::rrho_correct_pval(rrho_res, "perm", 10L)
+#'     biomisc::rrho_correct_pval(rrho_res, "permutation", 10L)
 #' )
 #' @seealso
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642617>
@@ -823,35 +823,63 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         )
         # derive permutation summary statistics for given quadrant
         summary_stats <- vapply(perm_hyper_metric, function(hyper_metric_mat) {
-            if (!identical(quadrant, "all")) {
-                stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
-                    max(hyper_metric_mat[quadrant_idx] * quadrant_sign,
-                        na.rm = TRUE
-                    )
-                }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
-                sum(stats, na.rm = TRUE)
-            } else {
-                max(abs(hyper_metric_mat), na.rm = TRUE)
-            }
+            # if (!identical(quadrant, "all")) {
+            #     stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
+            #         max(hyper_metric_mat[quadrant_idx] * quadrant_sign,
+            #             na.rm = TRUE
+            #         )
+            #     }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
+            #     sum(stats, na.rm = TRUE)
+            # } else {
+            #     max(abs(hyper_metric_mat), na.rm = TRUE)
+            # }
+            rrho_summary_stats(
+                quadrant = quadrant,
+                quadrant_idx_list = quadrant_idx_list,
+                quadrant_sign = quadrant_sign,
+                hyper_metric_mat = hyper_metric_mat
+            )
         }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
         pecdf <- stats::ecdf(summary_stats)
 
         # actual summary statistic
-        if (!identical(quadrant, "all")) {
-            actual_stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
-                max(rrho_obj$hyper_metric[quadrant_idx] * quadrant_sign,
-                    na.rm = TRUE
-                )
-            }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
-            actual_stats <- sum(actual_stats, na.rm = TRUE)
-        } else {
-            actual_stats <- max(abs(rrho_obj$hyper_metric), na.rm = TRUE)
-        }
+        # if (!identical(quadrant, "all")) {
+        #     actual_stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
+        #         max(rrho_obj$hyper_metric[quadrant_idx] * quadrant_sign,
+        #             na.rm = TRUE
+        #         )
+        #     }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
+        #     actual_stats <- sum(actual_stats, na.rm = TRUE)
+        # } else {
+        #     actual_stats <- max(abs(rrho_obj$hyper_metric), na.rm = TRUE)
+        # }
+        actual_stats <- rrho_summary_stats(
+            quadrant = quadrant,
+            quadrant_idx_list = quadrant_idx_list,
+            quadrant_sign = quadrant_sign,
+            hyper_metric_mat = rrho_obj$hyper_metric
+        )
         list(
             ecdf = pecdf,
             statistic = actual_stats,
             pvalue_perm = 1L - min(pecdf(actual_stats) + 1L / perm, 1L)
         )
+    }
+}
+
+# Since we only use `quadrant_idx_list` and `quadrant_sign` when quadrant isn't
+# "all", it's not harmful to assign a non-existent value to them when using
+# quadrant "all".
+rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper_metric_mat) {
+    if (!identical(quadrant, "all")) {
+        stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
+            max(hyper_metric_mat[quadrant_idx] * quadrant_sign,
+                na.rm = TRUE
+            )
+        }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
+        sum(stats, na.rm = TRUE)
+    } else {
+        max(abs(hyper_metric_mat), na.rm = TRUE)
     }
 }
 
@@ -863,8 +891,7 @@ perm_rrho <- function(rrho_obj) {
         names(rrho_obj$rrho_data$list2)[
             sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
         ],
-        stepsize = rrho_obj$stepsize,
-        log_base = rrho_obj$log_base
+        stepsize = rrho_obj$stepsize
     )
     abs(log(hyper_res$pvalue, base = rrho_obj$log_base)) *
         hyper_res$signs * rrho_obj$rrho_data$scale_size
