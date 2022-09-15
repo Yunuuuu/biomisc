@@ -126,7 +126,8 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, NES, perm) {
             # Otherwise, a list of one element: ES
             data.table::transpose(enrich_score)
         },
-        future.globals = TRUE
+        future.globals = TRUE,
+        future.seed = TRUE
     )
     ES <- lapply(es_res, "[[", 1L)
     ES <- do.call("cbind", ES)
