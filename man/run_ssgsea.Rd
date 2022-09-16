@@ -7,7 +7,6 @@
 run_ssgsea(
   data_expr,
   gene_set_list,
-  NES = TRUE,
   perm = 1000L,
   sample_norm_type = c("rank", "log", "log.rank", "none"),
   weight = 0.75,
@@ -21,9 +20,8 @@ with gene length adjusted were needed.}
 
 \item{gene_set_list}{gene sets can be provided as \code{list} object}
 
-\item{NES}{whether to calculate normalized enrichment scores}
-
-\item{perm}{the number of permutations to calculate NES}
+\item{perm}{the number of permutations to calculate NES, if smaller than
+\code{1L}, normalized enrichment scores won't be calculated.}
 
 \item{sample_norm_type}{Normalization method applied to expression data.
 Supported methods are rank, log.rank, and log.  (Default: rank)}

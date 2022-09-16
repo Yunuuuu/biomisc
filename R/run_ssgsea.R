@@ -7,8 +7,8 @@
 #' @param data_expr gene expression data. For ssGSEA, normalizd exression values
 #'   with gene length adjusted were needed.
 #' @param gene_set_list gene sets can be provided as `list` object
-#' @param NES whether to calculate normalized enrichment scores
-#' @param perm the number of permutations to calculate NES
+#' @param perm the number of permutations to calculate NES, if smaller than
+#' `1L`, normalized enrichment scores won't be calculated.
 #' @param sample_norm_type Normalization method applied to expression data.
 #'   Supported methods are rank, log.rank, and log.  (Default: rank)
 #' @param weight Exponential weight employed in calculation of enrichment
@@ -27,7 +27,7 @@
 #'   reveals that oncogenic KRAS-driven cancers require TBK1. Nature 462,
 #'   108–112 (2009). \url{https://doi.org/10.1038/nature08460}}
 #' @export 
-run_ssgsea <- function(data_expr, gene_set_list, NES = TRUE, perm = 1000L,
+run_ssgsea <- function(data_expr, gene_set_list, perm = 1000L,
                        # normalization method applied to input feature data:
                        # "none", "rank", "log" or "log.rank"
                        sample_norm_type = c("rank", "log", "log.rank", "none"),
@@ -89,13 +89,13 @@ run_ssgsea <- function(data_expr, gene_set_list, NES = TRUE, perm = 1000L,
     project_to_geneset(
         data_matrix = data_expr,
         gene_set_list = gene_set_list,
-        weight = weight, NES = NES, perm = perm
+        weight = weight, perm = perm
     )
 }
 
 # utility functions -------------------------------------------------------
 
-project_to_geneset <- function(data_matrix, gene_set_list, weight, NES, perm) {
+project_to_geneset <- function(data_matrix, gene_set_list, weight, perm) {
     gene_name <- rownames(data_matrix)
     cli::cli_inform("Running ssGSEA.............")
     p <- progressr::progressor(steps = ncol(data_matrix))
@@ -107,29 +107,21 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, NES, perm) {
             gene_list <- sort(gene_list, decreasing = TRUE)
 
             enrich_score <- lapply(gene_set_list, function(gene_set) {
-                if (NES) {
-                    ssgsea_nes(
-                        gene_list = gene_list,
-                        gene_set = gene_set,
-                        weight = weight,
-                        perm = perm
-                    )
-                } else {
-                    c(ES = ssgsea(
-                        gene_list = gene_list,
-                        gene_set = gene_set,
-                        weight = weight
-                    ))
-                }
+                ssgsea(
+                    gene_list = gene_list,
+                    gene_set = gene_set,
+                    weight = weight,
+                    perm = perm
+                )
             })
-            # when NES is TRUE, a list of three elements: ES, NES, pvalue
+            # when perm > 0L, a list of three elements: ES, NES, pvalue
             # Otherwise, a list of one element: ES
             data.table::transpose(enrich_score)
         },
         future.globals = TRUE,
         future.seed = TRUE
     )
-    if (NES) {
+    if (perm >= 1L) {
         idx <- 1
         res_names <- "ES"
     } else {
@@ -146,26 +138,13 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, NES, perm) {
     res
 }
 
-## optimized version of the function .rndWalk by Alexey Sergushichev
-## https://github.com/rcastelo/GSVA/pull/15
-## based on his paper https://doi.org/10.1101/060012
-ssgsea <- function(gene_list, gene_set, weight) {
-    n <- length(gene_list)
-    k <- length(gene_set)
-    idx <- match(gene_set, names(gene_list))
-    gene_list <- abs(gene_list)^weight
-    stepCDFinGeneSet <- sum(gene_list[idx] * (n - idx + 1)) /
-        sum(gene_list[idx])
-    stepCDFoutGeneSet <- (n * (n + 1) / 2 - sum(n - idx + 1)) / (n - k)
-    stepCDFinGeneSet - stepCDFoutGeneSet
-}
-
-ssgsea_nes <- function(gene_list, gene_set, weight, perm) {
-    es <- ssgsea(
+ssgsea <- function(gene_list, gene_set, weight, perm) {
+    es <- ssgsea_core(
         gene_list = gene_list,
         gene_set = gene_set,
         weight = weight
     )
+    if (perm <= 0L) return(es)
     perm_scores <- vapply(seq_len(perm), function(i) {
         perm_ssgsea_es(
             gene_list = gene_list,
@@ -188,19 +167,34 @@ ssgsea_nes <- function(gene_list, gene_set, weight, perm) {
     } else {
         pvalue <- (sum(perm_scores <= NES) + 1L) / (sum(perm_scores < 0L) + 1L)
     }
-    c(ES = es, NES = NES, pvalue = pvalue)
+    c(es, NES, pvalue)
 }
 
 perm_ssgsea_es <- function(gene_list, gene_set, weight) {
     names(gene_list) <- names(gene_list)[
         sample.int(length(gene_list), replace = FALSE)
     ]
-    ssgsea(
+    ssgsea_core(
         gene_list = gene_list,
         gene_set = gene_set,
         weight = weight
     )
 }
+
+## optimized version of the function .rndWalk by Alexey Sergushichev
+## https://github.com/rcastelo/GSVA/pull/15
+## based on his paper https://doi.org/10.1101/060012
+ssgsea_core <- function(gene_list, gene_set, weight) {
+    n <- length(gene_list)
+    k <- length(gene_set)
+    idx <- match(gene_set, names(gene_list))
+    gene_list <- abs(gene_list)^weight
+    stepCDFinGeneSet <- sum(gene_list[idx] * (n - idx + 1)) /
+        sum(gene_list[idx])
+    stepCDFoutGeneSet <- (n * (n + 1) / 2 - sum(n - idx + 1)) / (n - k)
+    stepCDFinGeneSet - stepCDFoutGeneSet
+}
+
 filter_genesets <- function(genesets, min_sz, max_sz) {
     genesets_sz <- lengths(genesets)
     genesets[
