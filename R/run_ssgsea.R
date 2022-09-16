@@ -144,7 +144,7 @@ ssgsea <- function(gene_list, gene_set, weight, perm) {
         gene_set = gene_set,
         weight = weight
     )
-    if (perm <= 0L) return(es)
+    if (perm < 1L) return(es)
     perm_scores <- vapply(seq_len(perm), function(i) {
         perm_ssgsea_es(
             gene_list = gene_list,
