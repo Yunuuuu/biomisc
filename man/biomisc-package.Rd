@@ -8,4 +8,8 @@
 \description{
 Miscellaneous functions for Bioinformatics.
 }
+\author{
+\strong{Maintainer}: Yun Peng \email{yunyunpp96@outlook.com}
+
+}
 \keyword{internal}
