@@ -129,26 +129,21 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, NES, perm) {
         future.globals = TRUE,
         future.seed = TRUE
     )
-    ES <- lapply(es_res, "[[", 1L)
-    ES <- do.call("cbind", ES)
-    rownames(ES) <- names(gene_set_list)
-    colnames(ES) <- colnames(data_matrix)
-    res <- list(ES = ES)
-
     if (NES) {
-        NES <- lapply(es_res, "[[", 2L)
-        NES <- do.call("cbind", NES)
-        rownames(NES) <- names(gene_set_list)
-        colnames(NES) <- colnames(data_matrix)
-
-        pvalue <- lapply(es_res, "[[", 3L)
-        pvalue <- do.call("cbind", pvalue)
-        rownames(pvalue) <- names(gene_set_list)
-        colnames(pvalue) <- colnames(data_matrix)
-
-        res <- c(res, list(NES = NES, pvalue = pvalue))
+        idx <- 1
+        res_names <- "ES"
+    } else {
+        idx <- 1:3
+        res_names <- c("ES", "NES", "pvalue")
     }
-    return(res)
+    res <- lapply(idx, function(i) {
+        x <- lapply(es_res, "[[", i)
+        x <- do.call("cbind", x)
+        rownames(x) <- names(gene_set_list)
+        colnames(x) <- colnames(data_matrix)
+    })
+    names(res) <- res_names
+    res
 }
 
 ## optimized version of the function .rndWalk by Alexey Sergushichev
@@ -193,7 +188,7 @@ ssgsea_nes <- function(gene_list, gene_set, weight, perm) {
     } else {
         pvalue <- (sum(perm_scores <= NES) + 1L) / (sum(perm_scores < 0L) + 1L)
     }
-    return(c(ES = es, NES = NES, pvalue = pvalue))
+    c(ES = es, NES = NES, pvalue = pvalue)
 }
 
 perm_ssgsea_es <- function(gene_list, gene_set, weight) {
