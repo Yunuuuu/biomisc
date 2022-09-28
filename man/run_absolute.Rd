@@ -40,7 +40,9 @@ ploidy values will be discarded. Default: \code{0.95}}
 \item{max_ploidy}{Maximum ploidy value to consider. Solutions implying
 greater ploidy values will be discarded. Default: \code{10}}
 
-\item{primary_disease}{Primary disease of the sample. Default: \code{NA}}
+\item{primary_disease}{Primary disease of the sample. These shoud be in the
+values returned by absolute_disease_map() and can be one or more. Default:
+\code{NA}}
 
 \item{platform}{one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}}
@@ -59,9 +61,9 @@ Solutions implying greater values will be discarded. Default: \code{0.005}}
 non-clonal (subclonal SCNA). Solutions implying greater values will be
 discarded. Default: \code{0.05}}
 
-\item{copy_num_type}{The type of copy number to be handled. Either \strong{total}
-or \strong{allelic}. Currently \strong{allelic} must be used for HAPSEG based inputs
-and \strong{total} for segmentation file based inputs. Default: \code{"total"}}
+\item{copy_num_type}{The type of copy number to be handled. Either \code{total} or
+\code{allelic}. Currently \code{allelic} must be used for HAPSEG based inputs and
+\code{total} for segmentation file based inputs. Default: \code{"total"}}
 
 \item{min_mut_af}{Minimum mutation allelic fraction. Mutations with lower
 allelic fractions will be filtered out before analysis. Default: \code{0.1}}
@@ -77,7 +79,7 @@ results (see \code{\link[ABSOLUTE]{ExtractReviewedResults}}) were kept in
 \code{ file.path(results_dir, "reviewed")}
 }
 \description{
-This function is based on package
+This function is modified based on package
 \href{https://github.com/ShixiangWang/DoAbsolute}{DoAbsolute} by adding
 parallel evaluation and adjusting personal convention
 }
@@ -90,8 +92,9 @@ repos = NULL, type = "source") to install it. However, the
 each time and sets no default values. \code{\link{run_absolute}} helps
 users set default parameters based on
 \href{https://www.genepattern.org/modules/docs/ABSOLUTE}{ABSOLUTE
-documentation} and provides an uniform interface to input data easily and
-run \code{\link[ABSOLUTE]{RunAbsolute}} parallelly.
+documentation} (genepattern don't provide \code{ABSOLUTE} module anymore) and
+provides an uniform interface to input data easily and run
+\code{\link[ABSOLUTE]{RunAbsolute}} parallelly.
 
 More detail about how to analyze ABSOLUTE results please see
 \href{https://www.genepattern.org/analyzing-absolute-data}{analyzing-absolute-data}.
@@ -108,9 +111,13 @@ installed by
 \examples{
 \donttest{
 seg <- readRDS(system.file("extdata", "absolute",
-    "run_absolute_example_seg.rds", package = "biomisc" ))
+    "run_absolute_example_seg.rds",
+    package = "biomisc"
+))
 maf <- readRDS(system.file("extdata", "absolute",
-    "run_absolute_example_maf.rds", package = "biomisc" ))
+    "run_absolute_example_maf.rds",
+    package = "biomisc"
+))
 run_absolute(
     seg = seg, maf = maf,
     results_dir = file.path(tempdir(), "ABSOLUTE")

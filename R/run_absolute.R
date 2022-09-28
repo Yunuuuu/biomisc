@@ -1,6 +1,6 @@
 #' Automate ABSOLUTE calling for multiple samples in parallel ways
 #'
-#' @description This function is based on package
+#' @description This function is modified based on package
 #'   \href{https://github.com/ShixiangWang/DoAbsolute}{DoAbsolute} by adding
 #'   parallel evaluation and adjusting personal convention
 #'
@@ -12,12 +12,13 @@
 #'   each time and sets no default values. \code{\link{run_absolute}} helps
 #'   users set default parameters based on
 #'   \href{https://www.genepattern.org/modules/docs/ABSOLUTE}{ABSOLUTE
-#'   documentation} and provides an uniform interface to input data easily and
-#'   run \code{\link[ABSOLUTE]{RunAbsolute}} parallelly.
+#'   documentation} (genepattern don't provide `ABSOLUTE` module anymore) and
+#'   provides an uniform interface to input data easily and run
+#'   \code{\link[ABSOLUTE]{RunAbsolute}} parallelly.
 #'
 #'   More detail about how to analyze ABSOLUTE results please see
 #'   \href{https://www.genepattern.org/analyzing-absolute-data}{analyzing-absolute-data}.
-#' 
+#'
 #' @section Warnings:
 #'   As from R 4.2.0, a length of 2 or more won't be allowed in a `if`
 #'   condition, You can fix these by installing a modified `ABSOLUTE` package by
@@ -38,7 +39,9 @@
 #'   ploidy values will be discarded. Default: \code{0.95}
 #' @param max_ploidy Maximum ploidy value to consider. Solutions implying
 #'   greater ploidy values will be discarded. Default: \code{10}
-#' @param primary_disease Primary disease of the sample. Default: \code{NA}
+#' @param primary_disease Primary disease of the sample. These shoud be in the
+#' values returned by absolute_disease_map() and can be one or more. Default:
+#' \code{NA}
 #' @param platform one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 #'   \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}
 #' @param results_dir directory path used to store result files. Default:
@@ -51,9 +54,9 @@
 #' @param max_neg_genome Maximum genome fraction that may be modeled as
 #'   non-clonal with copy-ratio below that of clonal homozygous deletion.
 #'   Solutions implying greater values will be discarded. Default: \code{0.005}
-#' @param copy_num_type The type of copy number to be handled. Either **total**
-#'   or **allelic**. Currently **allelic** must be used for HAPSEG based inputs
-#'   and **total** for segmentation file based inputs. Default: \code{"total"}
+#' @param copy_num_type The type of copy number to be handled. Either `total` or
+#'   `allelic`. Currently `allelic` must be used for HAPSEG based inputs and
+#'   `total` for segmentation file based inputs. Default: \code{"total"}
 #' @param min_mut_af Minimum mutation allelic fraction. Mutations with lower
 #'   allelic fractions will be filtered out before analysis. Default: \code{0.1}
 #' @author Yun \email{yunyunpp96@@outlook.com}
@@ -68,15 +71,19 @@
 #' @examples
 #' \donttest{
 #' seg <- readRDS(system.file("extdata", "absolute",
-#'     "run_absolute_example_seg.rds", package = "biomisc" ))
+#'     "run_absolute_example_seg.rds",
+#'     package = "biomisc"
+#' ))
 #' maf <- readRDS(system.file("extdata", "absolute",
-#'     "run_absolute_example_maf.rds", package = "biomisc" ))
+#'     "run_absolute_example_maf.rds",
+#'     package = "biomisc"
+#' ))
 #' run_absolute(
 #'     seg = seg, maf = maf,
 #'     results_dir = file.path(tempdir(), "ABSOLUTE")
 #' )
 #' }
-#' @references 
+#' @references
 #' - Carter, S., Cibulskis, K., Helman, E. et al. Absolute
 #'   quantification of somatic DNA alterations in human cancer. Nat Biotechnol
 #'   30, 413–421 (2012). \url{https://doi.org/10.1038/nbt.2203}
@@ -87,7 +94,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                          primary_disease = NA,
                          platform = NULL,
                          results_dir = "ABSOLUTE",
-                         max_as_seg_count = 1500, 
+                         max_as_seg_count = 1500,
                          max_neg_genome = 0.005,
                          max_non_clonal = 0.05,
                          copy_num_type = NULL,
@@ -108,7 +115,12 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
-
+    if (!all(is.na(primary_disease)) && !all(primary_disease %in% absolute_disease_map)) { # nolint
+        cli::cli_warn(
+            "Cannot find all {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
+            i = "you can check out {.fn absolute_disease_map()}"
+        )
+    }
     absolute_data <- absolute_validate_seg_and_maf_data(seg = seg, maf = maf)
     absolute_filepath <- absolute_prepare_seg_and_maf_data(
         seg = absolute_data[["seg"]],
@@ -197,6 +209,13 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     }
 }
 
+#' ABSOLUTE Disease Map
+#' @description A helper function, which just return the disease map for
+#' ABSOLUTE algorithm.
+#' @export 
+absolute_disease_map <- function() {
+    absolute_disease_map
+}
 
 # run_absolute utility functions --------------------------------------
 

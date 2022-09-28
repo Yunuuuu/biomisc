@@ -2,6 +2,7 @@
 
 S3method(print,rrho)
 S3method(print,rrho_sig)
+export(absolute_disease_map)
 export(rrho_correct_pval)
 export(rrho_heatmap)
 export(rrho_sig_items)
