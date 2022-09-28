@@ -59,8 +59,9 @@ Solutions implying greater values will be discarded. Default: \code{0.005}}
 non-clonal (subclonal SCNA). Solutions implying greater values will be
 discarded. Default: \code{0.05}}
 
-\item{copy_num_type}{The type of copy number to be handled. Either total or
-allelic. total is what this code for. Default: \code{"total"}}
+\item{copy_num_type}{The type of copy number to be handled. Either \strong{total}
+or \strong{allelic}. Currently \strong{allelic} must be used for HAPSEG based inputs
+and \strong{total} for segmentation file based inputs. Default: \code{"total"}}
 
 \item{min_mut_af}{Minimum mutation allelic fraction. Mutations with lower
 allelic fractions will be filtered out before analysis. Default: \code{0.1}}
@@ -117,9 +118,12 @@ run_absolute(
 }
 }
 \references{
-Carter, S., Cibulskis, K., Helman, E. et al. Absolute
+\itemize{
+\item Carter, S., Cibulskis, K., Helman, E. et al. Absolute
 quantification of somatic DNA alterations in human cancer. Nat Biotechnol
 30, 413–421 (2012). \url{https://doi.org/10.1038/nbt.2203}
+\item https://software.broadinstitute.org/cancer/cga/absolute_run
+}
 }
 \author{
 Yun \email{yunyunpp96@outlook.com}

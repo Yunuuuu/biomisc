@@ -51,8 +51,9 @@
 #' @param max_neg_genome Maximum genome fraction that may be modeled as
 #'   non-clonal with copy-ratio below that of clonal homozygous deletion.
 #'   Solutions implying greater values will be discarded. Default: \code{0.005}
-#' @param copy_num_type The type of copy number to be handled. Either total or
-#'   allelic. total is what this code for. Default: \code{"total"}
+#' @param copy_num_type The type of copy number to be handled. Either **total**
+#'   or **allelic**. Currently **allelic** must be used for HAPSEG based inputs
+#'   and **total** for segmentation file based inputs. Default: \code{"total"}
 #' @param min_mut_af Minimum mutation allelic fraction. Mutations with lower
 #'   allelic fractions will be filtered out before analysis. Default: \code{0.1}
 #' @author Yun \email{yunyunpp96@@outlook.com}
@@ -75,9 +76,11 @@
 #'     results_dir = file.path(tempdir(), "ABSOLUTE")
 #' )
 #' }
-#' @references Carter, S., Cibulskis, K., Helman, E. et al. Absolute
+#' @references 
+#' - Carter, S., Cibulskis, K., Helman, E. et al. Absolute
 #'   quantification of somatic DNA alterations in human cancer. Nat Biotechnol
 #'   30, 413–421 (2012). \url{https://doi.org/10.1038/nbt.2203}
+#' - https://software.broadinstitute.org/cancer/cga/absolute_run
 #' @export
 run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                          min_ploidy = 0.95, max_ploidy = 10,
