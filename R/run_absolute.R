@@ -132,9 +132,11 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         cli::cli_inform("Running ABSOLUTE algorithm...")
 
         run_absolute_dir <- file.path(results_dir, "RunAbsolute")
+        p <- progressr::progressor(along = absolute_filepath[["sample_id"]])
         future.apply::future_lapply(
             absolute_filepath[["sample_id"]],
             function(sample_id) {
+                p()
                 maf_fn <- absolute_filepath[["maf"]][sample_id]
                 if (is.null(maf_fn) || is.na(maf_fn)) {
                     maf_fn <- NULL
