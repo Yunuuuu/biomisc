@@ -40,7 +40,7 @@
 #' @param max_ploidy Maximum ploidy value to consider. Solutions implying
 #'   greater ploidy values will be discarded. Default: \code{10}
 #' @param primary_disease Primary disease of the sample. These shoud be in the
-#' values returned by absolute_disease_map() and can be one or more. Default:
+#' values returned by `absolute_disease_map()` and can be one or more. Default:
 #' \code{NA}
 #' @param platform one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 #'   \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}
@@ -115,7 +115,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
-    if (!all(is.na(primary_disease)) && !all(primary_disease %in% absolute_disease_map)) { # nolint
+    if (!all(is.na(primary_disease)) && !all(primary_disease %in% absolute_disease_map())) { # nolint
         cli::cli_warn(
             "Cannot find all {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
             i = "you can check out {.fn absolute_disease_map()}"
@@ -214,7 +214,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
 #' ABSOLUTE algorithm.
 #' @export 
 absolute_disease_map <- function() {
-    absolute_disease_map
+    absolute_disease_map_data
 }
 
 # run_absolute utility functions --------------------------------------
