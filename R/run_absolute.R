@@ -239,15 +239,16 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
         results.dir = results_dir, max.as.seg.count = max_as_seg_count,
         max.non.clonal = max_non_clonal,
         max.neg.genome = max_neg_genome,
-        copy_num_type = copy_num_type,
-        min.mut.af = min_mut_af
+        copy_num_type = copy_num_type
     )
 
     rlang::try_fetch(
         {
             suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
-                seg.dat.fn = seg_dat_fn, maf.fn = maf_fn,
-                !!!absolute_args
+                seg.dat.fn = seg_dat_fn,
+                !!!absolute_args,
+                maf.fn = maf_fn,
+                min.mut.af = min_mut_af
             )))
         },
         error = function(cnd) {
@@ -260,10 +261,14 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
                 rlang::try_fetch(
                     {
                         suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
-                            seg.dat.fn = seg_dat_fn, maf.fn = NULL,
-                            !!!absolute_args
+                            seg.dat.fn = seg_dat_fn,
+                            !!!absolute_args,
+                            maf.fn = NULL,
+                            min.mut.af = NULL
                         )))
-                        cli::cli_inform("v" = "Fixing {.filed {sample_name}} successfully")
+                        cli::cli_inform(c(
+                            "v" = "Fixing {.filed {sample_name}} successfully"
+                        ))
                     },
                     error = function(cnd2) {
                         cli::cli_warn(c(
