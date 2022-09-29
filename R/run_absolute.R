@@ -160,7 +160,8 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                     min_mut_af = min_mut_af
                 )
             },
-            future.globals = TRUE
+            future.globals = TRUE,
+            future.conditions = character(0L)
         )
         p(type = "done")
         run_absolute_files <- file.path(
