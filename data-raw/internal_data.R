@@ -17,7 +17,9 @@ absolute_disease_map_env <- get(
     "disease_map",
     envir = environment()
 )
-absolute_disease_map_data <- ls(envir = absolute_disease_map_env, all.names = TRUE)
+absolute_disease_map_data <- ls(
+    envir = absolute_disease_map_env, all.names = TRUE
+)
 
 usethis::use_data(
     cibersort_lm22,
