@@ -115,7 +115,8 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
-    if (!all(is.na(primary_disease)) && !all(primary_disease %in% absolute_disease_map())) { # nolint
+    if (!all(is.na(primary_disease)) && !all(primary_disease %in% absolute_disease_map())) {
+        # nolint
         cli::cli_warn(
             "Cannot find all {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
             i = "you can check out {.fn absolute_disease_map()}"
@@ -132,17 +133,20 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         cli::cli_inform("Running ABSOLUTE algorithm...")
 
         run_absolute_dir <- file.path(results_dir, "RunAbsolute")
-        p <- progressr::progressor(along = absolute_filepath[["sample_id"]])
+        p <- progressr::progressor(
+            along = absolute_filepath[["sample_id"]],
+            auto_finish = FALSE
+        )
         future.apply::future_lapply(
             absolute_filepath[["sample_id"]],
             function(sample_id) {
-                p()
-                maf_fn <- absolute_filepath[["maf"]][sample_id]
-                if (is.null(maf_fn) || is.na(maf_fn)) {
+                p(type = "update")
+                maf_fn <- absolute_filepath[["maf"]][[sample_id]]
+                if (is.na(maf_fn)) {
                     maf_fn <- NULL
                 }
                 absolute_safe(
-                    seg_dat_fn = absolute_filepath[["seg"]][sample_id],
+                    seg_dat_fn = absolute_filepath[["seg"]][[sample_id]],
                     maf_fn = maf_fn,
                     sample_name = sample_id,
                     sigma_p = sigma_p, max_sigma_h = max_sigma_h,
@@ -158,6 +162,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             },
             future.globals = TRUE
         )
+        p(type = "done")
         run_absolute_files <- file.path(
             run_absolute_dir,
             paste0(absolute_filepath[["sample_id"]], ".ABSOLUTE.RData")
@@ -214,7 +219,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
 #' ABSOLUTE Disease Map
 #' @description A helper function, which just return the disease map for
 #' ABSOLUTE algorithm.
-#' @export 
+#' @export
 absolute_disease_map <- function() {
     absolute_disease_map_data
 }
