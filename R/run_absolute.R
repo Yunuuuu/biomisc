@@ -242,7 +242,7 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
         copy_num_type = copy_num_type
     )
 
-    rlang::try_fetch(
+    tryCatch(
         {
             suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
                 seg.dat.fn = seg_dat_fn,
@@ -258,7 +258,7 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
                     "x" = conditionMessage(cnd),
                     "i" = "Try to fix error by removing maf ({.file maf_fn}) file"
                 ))
-                rlang::try_fetch(
+                tryCatch(
                     {
                         suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
                             seg.dat.fn = seg_dat_fn,
