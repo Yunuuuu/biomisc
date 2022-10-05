@@ -134,15 +134,16 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         cli::cli_inform("Running ABSOLUTE algorithm...")
         # check future plan and give information
         # Since multicore cannot give a well support for ABSOLUTE
-        if (inherits(future::plan(NULL), "multicore")) {
-            cli::cli_warn(c(
-                "{.field multicore} future plan cannot work well in {.field ABSOLUTE} algorithm",
-                "i" = "{.field multisession} future plan may be better."
-            ))
-        }
+        # ** multisession also will induce error for ABSOLUTE
+        # if (inherits(future::plan(NULL), "multicore")) {
+        #     cli::cli_warn(c(
+        #         "{.field multicore} future plan cannot work well in {.field ABSOLUTE} algorithm",
+        #         "i" = "{.field multisession} future plan may be better."
+        #     ))
+        # }
         run_absolute_dir <- file.path(results_dir, "RunAbsolute")
         p <- progressr::progressor(along = absolute_filepath[["sample_id"]])
-        future.apply::future_lapply(
+        lapply(
             absolute_filepath[["sample_id"]],
             function(sample_id) {
                 p()
@@ -165,8 +166,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                     copy_num_type = copy_num_type,
                     min_mut_af = min_mut_af
                 )
-            },
-            future.globals = TRUE
+            }
         )
         run_absolute_files <- file.path(
             run_absolute_dir,
@@ -389,7 +389,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
 
 absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
     sample_id <- unique(seg[["Sample"]])
-    seg[, group_id := Sample]
+    # seg[, group_id := Sample]
     if (!dir.exists(file.path(results_dir, "seg"))) {
         dir.create(file.path(results_dir, "seg"))
     }
@@ -400,7 +400,7 @@ absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
         x = .SD,
         file = seg_filepath[[unlist(.BY)]],
         sep = "\t"
-    ), by = group_id]
+    ), by = Sample]
 
     # prepare maf data
 
