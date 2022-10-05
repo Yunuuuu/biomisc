@@ -147,8 +147,9 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             function(sample_id) {
                 p()
                 maf_fn <- absolute_filepath[["maf"]][[sample_id]]
-                if (is.na(maf_fn)) {
+                if (is.na(maf_fn) || is.null(maf_fn)) {
                     maf_fn <- NULL
+                    min_mut_af <- NULL
                 }
                 absolute_safe(
                     seg_dat_fn = absolute_filepath[["seg"]][[sample_id]],
@@ -311,11 +312,11 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
     seg_cols <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Segment_Mean")
     if (!all(seg_cols %in% names(seg))) {
         cli::cli_abort(c(
-            "Mising {.field columns} in {.arg maf}",
+            "Mising {.field columns} in {.arg seg}",
             i = "Cannot find {.field {setdiff(seg_cols, names(seg))}}"
         ))
     }
-    if (any(is.na(seg[, Sample]))) {
+    if (any(is.na(seg[["Sample"]]))) {
         cli::cli_warn(c(
             "Find NA values in {.field Sample} column of {.arg seg}",
             i = "Removing it..."
@@ -387,7 +388,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
 }
 
 absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
-    sample_id <- unique(seg[, Sample])
+    sample_id <- unique(seg[["Sample"]])
     if (!dir.exists(file.path(results_dir, "seg"))) {
         dir.create(file.path(results_dir, "seg"))
     }
@@ -411,7 +412,7 @@ absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
             dir.create(file.path(results_dir, "maf"))
         }
         maf_filepath <- data.table::fifelse(
-            sample_id %in% maf[, Tumor_Sample_Barcode],
+            sample_id %in% unique(maf[["Tumor_Sample_Barcode"]]),
             file.path(results_dir, "maf", paste0(sample_id, ".maf")),
             NA_character_
         )
