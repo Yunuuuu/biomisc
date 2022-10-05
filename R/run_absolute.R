@@ -5,9 +5,7 @@
 #'   parallel evaluation and adjusting personal convention
 #'
 #' @details \href{https://www.nature.com/articles/nbt.2203}{ABSOLUTE} is a
-#'   famous software developed by Broad Institute, Using
-#'   install.packages("https://software.broadinstitute.org/cancer/cga/sites/default/files/data/tools/absolute/ABSOLUTE_1.0.6.tar.gz",
-#'   repos = NULL, type = "source") to install it. However, the
+#'   famous software developed by Broad Institute. However, the
 #'   \code{\link[ABSOLUTE]{RunAbsolute}} function points to estimate one sample
 #'   each time and sets no default values. \code{\link{run_absolute}} helps
 #'   users set default parameters based on
@@ -28,7 +26,7 @@
 #'   repos = NULL, type = "source")`
 #'
 #' @param seg a \code{data.frame} containing columns "Chromosome", "Start",
-#'   "End", "Num_Probes", "Segment_Mean". If providing multiple samples, seg
+#'   "End", "Num_Probes", "Segment_Mean". If providing multiple samples, `seg`
 #'   should contain a column "Sample" to identify different samples
 #' @param maf MAF, default is \code{NULL}, can provided as \code{data.frame}.
 #' @param sigma_p Provisional value of excess sample level variance used for
@@ -83,11 +81,14 @@
 #'     results_dir = file.path(tempdir(), "ABSOLUTE")
 #' )
 #' }
+#' @seealso
+#' - <https://software.broadinstitute.org/cancer/cga/absolute_run>
+#' - <https://www.genepattern.org/analyzing-absolute-data>
+#' - <https://software.broadinstitute.org/cancer/cga/absolute_download>
 #' @references
-#' - Carter, S., Cibulskis, K., Helman, E. et al. Absolute
-#'   quantification of somatic DNA alterations in human cancer. Nat Biotechnol
-#'   30, 413–421 (2012). \url{https://doi.org/10.1038/nbt.2203}
-#' - https://software.broadinstitute.org/cancer/cga/absolute_run
+#' Carter, S., Cibulskis, K., Helman, E. et al. Absolute quantification of
+#'   somatic DNA alterations in human cancer. Nat Biotechnol 30, 413–421 (2012).
+#'   \url{https://doi.org/10.1038/nbt.2203}
 #' @export
 run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                          min_ploidy = 0.95, max_ploidy = 10,
@@ -131,16 +132,20 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
 
     if (length(absolute_filepath[["sample_id"]]) > 0L) {
         cli::cli_inform("Running ABSOLUTE algorithm...")
-
+        # check future plan and give information
+        # Since multicore cannot give a well support for ABSOLUTE
+        if (inherits(future::plan(NULL), "multicore")) {
+            cli::cli_warn(c(
+                "{.field multicore} future plan cannot work well in {.field ABSOLUTE} algorithm",
+                "i" = "{.field multisession} future plan may be better."
+            ))
+        }
         run_absolute_dir <- file.path(results_dir, "RunAbsolute")
-        p <- progressr::progressor(
-            along = absolute_filepath[["sample_id"]],
-            auto_finish = FALSE
-        )
+        p <- progressr::progressor(along = absolute_filepath[["sample_id"]])
         future.apply::future_lapply(
             absolute_filepath[["sample_id"]],
             function(sample_id) {
-                p(type = "update")
+                p()
                 maf_fn <- absolute_filepath[["maf"]][[sample_id]]
                 if (is.na(maf_fn)) {
                     maf_fn <- NULL
@@ -160,10 +165,8 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                     min_mut_af = min_mut_af
                 )
             },
-            future.globals = TRUE,
-            future.conditions = character(0L)
+            future.globals = TRUE
         )
-        p(type = "done")
         run_absolute_files <- file.path(
             run_absolute_dir,
             paste0(absolute_filepath[["sample_id"]], ".ABSOLUTE.RData")
@@ -190,7 +193,8 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             absolute.files = run_absolute_files,
             indv.results.dir = summarize_dir,
             copy_num_type = copy_num_type,
-            plot.modes = TRUE
+            plot.modes = TRUE,
+            verbose = TRUE
         ))
 
         cli::cli_inform("Absolute auto-reviewing...")
@@ -243,7 +247,7 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
         copy_num_type = copy_num_type
     )
 
-    tryCatch(
+    rlang::try_fetch(
         {
             suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
                 seg.dat.fn = seg_dat_fn,
@@ -259,7 +263,7 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
                     "x" = conditionMessage(cnd),
                     "i" = "Try to fix error by removing maf ({.file maf_fn}) file"
                 ))
-                tryCatch(
+                rlang::try_fetch(
                     {
                         suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
                             seg.dat.fn = seg_dat_fn,

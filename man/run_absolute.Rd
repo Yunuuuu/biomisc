@@ -23,7 +23,7 @@ run_absolute(
 }
 \arguments{
 \item{seg}{a \code{data.frame} containing columns "Chromosome", "Start",
-"End", "Num_Probes", "Segment_Mean". If providing multiple samples, seg
+"End", "Num_Probes", "Segment_Mean". If providing multiple samples, \code{seg}
 should contain a column "Sample" to identify different samples}
 
 \item{maf}{MAF, default is \code{NULL}, can provided as \code{data.frame}.}
@@ -85,9 +85,7 @@ parallel evaluation and adjusting personal convention
 }
 \details{
 \href{https://www.nature.com/articles/nbt.2203}{ABSOLUTE} is a
-famous software developed by Broad Institute, Using
-install.packages("https://software.broadinstitute.org/cancer/cga/sites/default/files/data/tools/absolute/ABSOLUTE_1.0.6.tar.gz",
-repos = NULL, type = "source") to install it. However, the
+famous software developed by Broad Institute. However, the
 \code{\link[ABSOLUTE]{RunAbsolute}} function points to estimate one sample
 each time and sets no default values. \code{\link{run_absolute}} helps
 users set default parameters based on
@@ -125,11 +123,15 @@ run_absolute(
 }
 }
 \references{
+Carter, S., Cibulskis, K., Helman, E. et al. Absolute quantification of
+somatic DNA alterations in human cancer. Nat Biotechnol 30, 413–421 (2012).
+\url{https://doi.org/10.1038/nbt.2203}
+}
+\seealso{
 \itemize{
-\item Carter, S., Cibulskis, K., Helman, E. et al. Absolute
-quantification of somatic DNA alterations in human cancer. Nat Biotechnol
-30, 413–421 (2012). \url{https://doi.org/10.1038/nbt.2203}
-\item https://software.broadinstitute.org/cancer/cga/absolute_run
+\item \url{https://software.broadinstitute.org/cancer/cga/absolute_run}
+\item \url{https://www.genepattern.org/analyzing-absolute-data}
+\item \url{https://software.broadinstitute.org/cancer/cga/absolute_download}
 }
 }
 \author{
