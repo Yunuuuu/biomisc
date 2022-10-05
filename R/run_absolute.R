@@ -389,6 +389,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
 
 absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
     sample_id <- unique(seg[["Sample"]])
+    seg[, group_id := Sample]
     if (!dir.exists(file.path(results_dir, "seg"))) {
         dir.create(file.path(results_dir, "seg"))
     }
@@ -399,7 +400,7 @@ absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
         x = .SD,
         file = seg_filepath[[unlist(.BY)]],
         sep = "\t"
-    ), by = Sample]
+    ), by = group_id]
 
     # prepare maf data
 
