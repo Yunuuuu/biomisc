@@ -131,7 +131,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     )
 
     if (length(absolute_filepath[["sample_id"]]) > 0L) {
-        cli::cli_inform("Running ABSOLUTE algorithm...")
+        # cli::cli_inform("Running ABSOLUTE algorithm...")
         # check future plan and give information
         # Since multicore cannot give a well support for ABSOLUTE
         # ** multisession also will induce error for ABSOLUTE
@@ -142,11 +142,16 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         #     ))
         # }
         run_absolute_dir <- file.path(results_dir, "RunAbsolute")
-        p <- progressr::progressor(along = absolute_filepath[["sample_id"]])
+        cli::cli_progress_bar(
+            "RunAbsolute",
+            total = length(absolute_filepath[["sample_id"]]),
+            format = "{cli::pb_name} {cli::pb_bar} {cli::pb_current}/{cli::pb_total} {cli::pb_percent} [{cli::pb_elapsed}]", # nolint
+            format_done = "RunAbsolute finished {cli::pb_total} runs"
+        )
         lapply(
             absolute_filepath[["sample_id"]],
             function(sample_id) {
-                p()
+                cli::cli_progress_update()
                 maf_fn <- absolute_filepath[["maf"]][[sample_id]]
                 if (is.na(maf_fn) || is.null(maf_fn)) {
                     maf_fn <- NULL
