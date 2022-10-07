@@ -117,12 +117,9 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
         )
     }
     cli::cli_inform("Running CIBERSORT analysis...")
-    p <- progressr::progressor(
-        steps = ncol(mixture_data),
-        auto_finish = FALSE
-    )
+    p <- progressr::progressor(steps = ncol(mixture_data))
     results <- future.apply::future_apply(mixture_data, 2L, function(sample_col) {
-        p(type = "update")
+        p()
         # standardize mixture
         scale_sample_col <- scale(sample_col, center = TRUE, scale = TRUE)
 
@@ -151,7 +148,6 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
             c(result$w, pval, result$mix_r, result$mix_rmse)
         }
     }, simplify = FALSE, future.globals = TRUE)
-    p(type = "done")
 
     # return matrix object containing all results
     results <- do.call("rbind", results)
