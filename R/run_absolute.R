@@ -1,8 +1,8 @@
-#' Automate ABSOLUTE calling for multiple samples in parallel ways
+#' Automate ABSOLUTE calling for multiple samples 
 #'
 #' @description This function is modified based on package
-#'   \href{https://github.com/ShixiangWang/DoAbsolute}{DoAbsolute} by adding
-#'   parallel evaluation and adjusting personal convention
+#'   \href{https://github.com/ShixiangWang/DoAbsolute}{DoAbsolute} by  adjusting
+#'   personal convention
 #'
 #' @details \href{https://www.nature.com/articles/nbt.2203}{ABSOLUTE} is a
 #'   famous software developed by Broad Institute. However, the
@@ -11,8 +11,7 @@
 #'   users set default parameters based on
 #'   \href{https://www.genepattern.org/modules/docs/ABSOLUTE}{ABSOLUTE
 #'   documentation} (genepattern don't provide `ABSOLUTE` module anymore) and
-#'   provides an uniform interface to input data easily and run
-#'   \code{\link[ABSOLUTE]{RunAbsolute}} parallelly.
+#'   provides an uniform interface to input data easily.
 #'
 #'   More detail about how to analyze ABSOLUTE results please see
 #'   \href{https://www.genepattern.org/analyzing-absolute-data}{analyzing-absolute-data}.
