@@ -98,8 +98,8 @@ More detail about how to analyze ABSOLUTE results please see
 }
 \section{Warnings}{
 
-As from R 4.2.0, a length of 2 or more won't be allowed in a \code{if}
-condition, You can fix these by installing a modified \code{ABSOLUTE} package by
+As from R 4.2.0, a length of 2 or more won't be allowed in a \code{if} condition,
+You can fix these by installing a modified \code{ABSOLUTE} package with
 \code{pak::pkg_install("Yunuuuu/ABSOLUTE")}. The offical version can also be
 installed by
 \code{install.packages("https://software.broadinstitute.org/cancer/cga/sites/default/files/data/tools/absolute/ABSOLUTE_1.0.6.tar.gz", repos = NULL, type = "source")}

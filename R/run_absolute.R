@@ -1,4 +1,4 @@
-#' Automate ABSOLUTE calling for multiple samples 
+#' Automate ABSOLUTE calling for multiple samples
 #'
 #' @description This function is modified based on package
 #'   \href{https://github.com/ShixiangWang/DoAbsolute}{DoAbsolute} by  adjusting
@@ -16,9 +16,9 @@
 #'   More detail about how to analyze ABSOLUTE results please see
 #'   \href{https://www.genepattern.org/analyzing-absolute-data}{analyzing-absolute-data}.
 #'
-#' @section Warnings:
-#'   As from R 4.2.0, a length of 2 or more won't be allowed in a `if`
-#'   condition, You can fix these by installing a modified `ABSOLUTE` package by
+#' @section Warnings: 
+#'  As from R 4.2.0, a length of 2 or more won't be allowed in a `if` condition,
+#'   You can fix these by installing a modified `ABSOLUTE` package with
 #'   `pak::pkg_install("Yunuuuu/ABSOLUTE")`. The offical version can also be
 #'   installed by
 #'   `install.packages("https://software.broadinstitute.org/cancer/cga/sites/default/files/data/tools/absolute/ABSOLUTE_1.0.6.tar.gz",
@@ -119,9 +119,12 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         # nolint
         cli::cli_warn(
             "Cannot find all {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
-            i = "you can check out {.fn absolute_disease_map()}"
+            i = "you can check out {.fun absolute_disease_map()}"
         )
+        primary_disease <- NA_character_
     }
+
+    # preprocessing data ---------------------------------------------------
     absolute_data <- absolute_validate_seg_and_maf_data(seg = seg, maf = maf)
     absolute_filepath <- absolute_prepare_seg_and_maf_data(
         seg = absolute_data[["seg"]],
@@ -129,8 +132,10 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         results_dir = results_dir
     )
 
+    # Run ABSOLUTE ---------------------------------------------------------
     if (length(absolute_filepath[["sample_id"]]) > 0L) {
-        # cli::cli_inform("Running ABSOLUTE algorithm...")
+        run_absolute_dir <- file.path(results_dir, "RunAbsolute")
+        cli::cli_inform("Running ABSOLUTE algorithm...")
         # check future plan and give information
         # Since multicore cannot give a well support for ABSOLUTE
         # ** multisession also will induce error for ABSOLUTE
@@ -140,17 +145,16 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         #         "i" = "{.field multisession} future plan may be better."
         #     ))
         # }
-        run_absolute_dir <- file.path(results_dir, "RunAbsolute")
-        cli::cli_progress_bar(
-            "RunAbsolute",
-            total = length(absolute_filepath[["sample_id"]]),
-            format = "{cli::pb_name} {cli::pb_bar} {cli::pb_current}/{cli::pb_total} {cli::pb_percent} [{cli::pb_elapsed}]", # nolint
-            format_done = "RunAbsolute finished {cli::pb_total} runs"
-        )
         lapply(
-            absolute_filepath[["sample_id"]],
-            function(sample_id) {
-                cli::cli_progress_update()
+            cli::cli_progress_along(
+                absolute_filepath[["sample_id"]],
+                name = "RunAbsolute",
+                format = "{cli::pb_bar} {cli::pb_percent} / {cli::pb_current} in {cli::pb_total}", # nolint
+                format_done = "{.field RunAbsolute} finished {cli::pb_total} run{?s} in {cli::pb_elapsed}",
+                clear = FALSE
+            ),
+            function(idx) {
+                sample_id <- absolute_filepath[["sample_id"]][[idx]]
                 maf_fn <- absolute_filepath[["maf"]][[sample_id]]
                 if (is.na(maf_fn) || is.null(maf_fn)) {
                     maf_fn <- NULL
@@ -172,6 +176,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                 )
             }
         )
+
         run_absolute_files <- file.path(
             run_absolute_dir,
             paste0(absolute_filepath[["sample_id"]], ".ABSOLUTE.RData")
@@ -185,14 +190,12 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             cli::cli_abort("No RunAbsolute results file to proceed.")
         }
 
+        cli::cli_inform("Summarizing multiple ABSOLUTE results...")
         summarize_dir <- file.path(results_dir, "CreateReviewObject")
-
         if (dir.exists(summarize_dir)) {
-            cli::cli_inform("Removing previous summarize results directory.")
+            cli::cli_inform("Removing previous summary results directory.")
             unlink(summarize_dir, recursive = TRUE)
         }
-        cli::cli_inform("Summarizing multiple ABSOLUTE...")
-
         suppressWarnings(ABSOLUTE::CreateReviewObject(
             obj.name = "SummarizeAbsolute",
             absolute.files = run_absolute_files,
@@ -201,9 +204,13 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             plot.modes = TRUE,
             verbose = TRUE
         ))
+        # in case the next message is in the same line with the above message
+        cat("\n") 
+        cli::cli_inform(c(
+            "v" = "Summarizing ABSOLUTE results done"
+        ))
 
-        cli::cli_inform("Absolute auto-reviewing...")
-
+        cli::cli_inform("Auto-reviewing ABSOLUTE summary files...")
         pp_call_fn <- file.path(
             summarize_dir,
             "SummarizeAbsolute.PP-calls_tab.txt"
@@ -212,7 +219,10 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             summarize_dir,
             "SummarizeAbsolute.PP-modes.data.RData"
         )
-
+        if (dir.exists(file.path(results_dir, "reviewed"))) {
+            cli::cli_inform("Removing previous reviewed results directory.")
+            unlink(file.path(results_dir, "reviewed"), recursive = TRUE)
+        }
         suppressWarnings(ABSOLUTE::ExtractReviewedResults(
             reviewed.pp.calls.fn = pp_call_fn,
             analyst.id = "YJ",
@@ -222,7 +232,11 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             copy_num_type = copy_num_type,
             verbose = TRUE
         ))
-        cli::cli_inform("Reviewing ABSOLUTE summary done.")
+        cli::cli_inform(c(
+            "v" = "Reviewing ABSOLUTE summary results done."
+        ))
+    } else {
+        cli::cli_inform("No samples to run ABSOLUTE algorithm")
     }
 }
 
@@ -342,7 +356,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
             Chromosome = "Chromosome",
             Hugo_Symbol = "Hugo_Symbol",
             dbSNP_Val_Status = "dbSNP_Val_Status",
-            Start_position = c("Start_position", "Start_Position"),
+            Start_position = c("Start_Position", "Start_position"),
             t_ref_count = c("t_ref_count", "i_t_ref_count"),
             t_alt_count = c("t_alt_count", "i_t_alt_count")
         )
@@ -392,7 +406,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
 }
 
 absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
-    sample_id <- unique(seg[["Sample"]])
+    sample_id <- as.character(unique(seg[["Sample"]]))
     # seg[, group_id := Sample]
     if (!dir.exists(file.path(results_dir, "seg"))) {
         dir.create(file.path(results_dir, "seg"))
