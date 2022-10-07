@@ -248,7 +248,7 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
         copy_num_type = copy_num_type
     )
 
-    rlang::try_fetch(
+    tryCatch(
         {
             suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
                 seg.dat.fn = seg_dat_fn,
@@ -260,11 +260,11 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
         error = function(cnd) {
             if (any(grepl("mutations left", conditionMessage(cnd)))) {
                 cli::cli_warn(c(
-                    "Detecting error in sample: {.filed {sample_name}}",
+                    "Detecting error in sample: {.field {sample_name}}",
                     "x" = conditionMessage(cnd),
-                    "i" = "Try to fix error by removing maf ({.file maf_fn}) file"
+                    "i" = "Try to fix error by removing ({.file {basename(maf_fn)}}) file"
                 ))
-                rlang::try_fetch(
+                tryCatch(
                     {
                         suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
                             seg.dat.fn = seg_dat_fn,
@@ -273,20 +273,20 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
                             min.mut.af = NULL
                         )))
                         cli::cli_inform(c(
-                            "v" = "Fixing {.filed {sample_name}} successfully"
+                            "v" = "Fixing {.field {sample_name}} successfully"
                         ))
                     },
                     error = function(cnd2) {
                         cli::cli_warn(c(
-                            "Fixing {.filed {sample_name}} failed",
+                            "Fixing {.field {sample_name}} failed",
                             "x" = conditionMessage(cnd2),
-                            "i" = "Skipping this sample."
+                            "i" = "Skipping this sample"
                         ))
                     }
                 )
             } else {
                 cli::cli_warn(c(
-                    "Detecting error in sample: {.filed {sample_name}}",
+                    "Detecting error in sample: {.field {sample_name}}",
                     "x" = conditionMessage(cnd),
                     "i" = "Skipping this sample"
                 ))
