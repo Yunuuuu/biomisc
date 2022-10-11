@@ -16,7 +16,7 @@
 #'   More detail about how to analyze ABSOLUTE results please see
 #'   \href{https://www.genepattern.org/analyzing-absolute-data}{analyzing-absolute-data}.
 #'
-#' @section Warnings: 
+#' @section Warnings:
 #'  As from R 4.2.0, a length of 2 or more won't be allowed in a `if` condition,
 #'   You can fix these by installing a modified `ABSOLUTE` package with
 #'   `pak::pkg_install("Yunuuuu/ABSOLUTE")`. The offical version can also be
@@ -205,7 +205,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             verbose = TRUE
         ))
         # in case the next message is in the same line with the above message
-        cat("\n") 
+        cat("\n")
         cli::cli_inform(c(
             "v" = "Summarizing ABSOLUTE results done"
         ))
@@ -277,11 +277,15 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
         },
         error = function(cnd) {
             if (any(grepl("mutations left", conditionMessage(cnd)))) {
-                cli::cli_warn(c(
-                    "Detecting error in sample: {.field {sample_name}}",
-                    "x" = conditionMessage(cnd),
-                    "i" = "Try to fix error by removing ({.file {basename(maf_fn)}}) file"
-                ))
+                cli::cli_alert_warning(
+                    "Detecting error in sample: {.field {sample_name}}"
+                )
+                cli::cli_alert_danger(
+                    "Error message: {conditionMessage(cnd)}"
+                )
+                cli::cli_alert_info(
+                    "Try to fix error by removing ({.file {basename(maf_fn)}}) file"
+                )
                 tryCatch(
                     {
                         suppressWarnings(rlang::inject(ABSOLUTE::RunAbsolute(
@@ -290,24 +294,28 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
                             maf.fn = NULL,
                             min.mut.af = NULL
                         )))
-                        cli::cli_inform(c(
-                            "v" = "Fixing {.field {sample_name}} successfully"
-                        ))
+                        cli::cli_alert_success(
+                            "Fixing {.field {sample_name}} successfully"
+                        )
                     },
                     error = function(cnd2) {
-                        cli::cli_warn(c(
-                            "Fixing {.field {sample_name}} failed",
-                            "x" = conditionMessage(cnd2),
-                            "i" = "Skipping this sample"
-                        ))
+                        cli::cli_alert_warning(
+                            "Fixing {.field {sample_name}} failed"
+                        )
+                        cli::cli_alert_danger(
+                            "Error message: {conditionMessage(cnd2)}"
+                        )
+                        cli::cli_alert_info("Skipping this sample")
                     }
                 )
             } else {
-                cli::cli_warn(c(
-                    "Detecting error in sample: {.field {sample_name}}",
-                    "x" = conditionMessage(cnd),
-                    "i" = "Skipping this sample"
-                ))
+                cli::cli_alert_warning(
+                    "Detecting error in sample: {.field {sample_name}}"
+                )
+                cli::cli_alert_danger(
+                    "Error message: {conditionMessage(cnd)}"
+                )
+                cli::cli_alert_info("Skipping this sample")
             }
         }
     )
