@@ -356,11 +356,11 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # the row index is relative to `rrho_list1_index`
         # the column index is relative to `rrho_list2_index`
         quadrant_row_index <- which(
-            get_direction(rrho_obj$rrho_data$list1[rrho_list1_index]) ==
+            rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index]) ==
                 quadrant_dir[[1L]]
         )
         quadrant_col_index <- which(
-            get_direction(rrho_obj$rrho_data$list2[rrho_list2_index]) ==
+            rrho_get_direction(rrho_obj$rrho_data$list2[rrho_list2_index]) ==
                 quadrant_dir[[2L]]
         )
         quadrant_hyper_metric <- rrho_obj$hyper_metric[
@@ -614,11 +614,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 
     # split parameters
     row_split <- factor(
-        get_direction(row_ranked_list),
+        rrho_get_direction(row_ranked_list),
         levels = c("down", "none", "up")
     )
     column_split <- factor(
-        get_direction(column_ranked_list),
+        rrho_get_direction(column_ranked_list),
         levels = c("up", "none", "down")
     )
 
@@ -797,10 +797,10 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
                 rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
                 by = rrho_obj$stepsize
             )
-            rrho_list1_quadrant <- get_direction(
+            rrho_list1_quadrant <- rrho_get_direction(
                 rrho_obj$rrho_data$list1[rrho_list1_index]
             )
-            rrho_list2_quadrant <- get_direction(
+            rrho_list2_quadrant <- rrho_get_direction(
                 rrho_obj$rrho_data$list2[rrho_list2_index]
             )
             rrho_quadrant <- outer(
@@ -899,7 +899,7 @@ perm_rrho <- function(rrho_obj) {
         hyper_res$signs * rrho_obj$rrho_data$scale_size
 }
 
-get_direction <- function(x) {
+rrho_get_direction <- function(x) {
     data.table::fcase(
         x < 0L, "down",
         x == 0L, "none",
