@@ -122,7 +122,7 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, perm) {
         future.seed = TRUE
     )
     if (perm < 1L) {
-        idx <- 1
+        idx <- 1L
         res_names <- "ES"
     } else {
         idx <- 1:3
