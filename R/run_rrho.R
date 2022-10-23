@@ -125,11 +125,13 @@
 run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L) {
     correction <- match.arg(correction, c("common", "length"))
     rrho_data <- set_rrho_list(list1, list2, correction = correction)
-    stopifnot(is.numeric(stepsize))
     if (is.null(stepsize)) {
         stepsize <- as.integer(sqrt(min(lengths(rrho_data)[1:2])))
-    } else {
+    } else if (rlang::is_scalar_double(stepsize) ||
+        rlang::is_scalar_integer(stepsize)) {
         stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
+    } else {
+        cli::cli_abort("{.arg stepsize} should be a scalar numeric")
     }
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- calculate_hyper_overlap(
@@ -753,7 +755,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
     method <- match.arg(method, c("BY", "permutation"))
     if (identical(method, "BY")) {
         # Convert hypermat to a vector and apply Benjamini Yekutieli Pvalue
-        # correction 
+        # correction
         hyper_pvalue_by <- stats::p.adjust(
             c(rrho_obj$hyper_pvalue),
             method = "BY"
@@ -767,7 +769,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
             hyper_metric_by = abs(
                 log(hyper_pvalue_by, base = rrho_obj$log_base)
             ) *
-                rrho_obj$hyper_signs * 
+                rrho_obj$hyper_signs *
                 rrho_obj$rrho_data$scale_size,
             hyper_pvalue_by = hyper_pvalue_by
         )
