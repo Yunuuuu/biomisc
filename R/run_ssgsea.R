@@ -133,6 +133,7 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, perm) {
         x <- do.call("cbind", x)
         rownames(x) <- names(gene_set_list)
         colnames(x) <- colnames(data_matrix)
+        x
     })
     names(res) <- res_names
     res
