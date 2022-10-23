@@ -115,13 +115,27 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
-    if (!all(is.na(primary_disease)) && !all(primary_disease %in% absolute_disease_map())) {
-        # nolint
-        cli::cli_warn(
-            "Cannot find all {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
-            i = "you can check out {.fun absolute_disease_map()}"
-        )
+    if (identical(length(primary_disease), 0L)) {
         primary_disease <- NA_character_
+    } else if (!(rlang::is_scalar_character(primary_disease) || rlang::is_na(primary_disease))) {
+        cli::cli_abort(
+            "{.arg primary_disease} should be a scalar string, {.field NA} or {.field NULL}"
+        )
+    }
+
+    if (!rlang::is_na(primary_disease)) {
+        # nolint
+        primary_disease <- intersect(
+            primary_disease,
+            absolute_disease_map()
+        )
+        if (identical(length(primary_disease), 0L)) {
+            cli::cli_warn(
+                "Cannot find {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
+                i = "you can check out {.fun absolute_disease_map()}"
+            )
+            primary_disease <- NA_character_
+        }
     }
 
     # preprocessing data ---------------------------------------------------
@@ -156,7 +170,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             function(idx) {
                 sample_id <- absolute_filepath[["sample_id"]][[idx]]
                 maf_fn <- absolute_filepath[["maf"]][[sample_id]]
-                if (is.na(maf_fn) || is.null(maf_fn)) {
+                if (is.null(maf_fn) || is.na(maf_fn)) {
                     maf_fn <- NULL
                     min_mut_af <- NULL
                 }
@@ -276,13 +290,13 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
             )))
         },
         error = function(cnd) {
+            cli::cli_alert_warning(
+                "Detecting error in sample: {.field {sample_name}}"
+            )
+            cli::cli_alert_danger(
+                "Error message: {conditionMessage(cnd)}"
+            )
             if (any(grepl("mutations left", conditionMessage(cnd)))) {
-                cli::cli_alert_warning(
-                    "Detecting error in sample: {.field {sample_name}}"
-                )
-                cli::cli_alert_danger(
-                    "Error message: {conditionMessage(cnd)}"
-                )
                 cli::cli_alert_info(
                     "Try to fix error by removing ({.file {basename(maf_fn)}}) file"
                 )
@@ -309,12 +323,6 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
                     }
                 )
             } else {
-                cli::cli_alert_warning(
-                    "Detecting error in sample: {.field {sample_name}}"
-                )
-                cli::cli_alert_danger(
-                    "Error message: {conditionMessage(cnd)}"
-                )
                 cli::cli_alert_info("Skipping this sample")
             }
         }
