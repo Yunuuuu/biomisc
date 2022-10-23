@@ -336,7 +336,7 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
 rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
-            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.code run_rrho} function."
+            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
         )
     }
     stopifnot(
@@ -531,7 +531,7 @@ print.rrho_sig <- function(x, ...) {
 rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
-            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.code run_rrho} function."
+            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
         )
     }
     if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
@@ -749,7 +749,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c("up-up", "down-down")) {
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
-            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.code run_rrho} function."
+            "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
         )
     }
     method <- match.arg(method, c("BY", "permutation"))
