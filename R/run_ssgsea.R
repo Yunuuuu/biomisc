@@ -4,8 +4,8 @@
 #' scores using the ssGSEA projection methodology. According to GenePattern
 #' (modified) and GSVA
 #'
-#' @param data_expr gene expression data. For ssGSEA, normalizd exression values
-#'   with gene length adjusted were needed.
+#' @param data_expr a matrix of gene expression data. For ssGSEA, normalizd
+#'   exression values with gene length adjusted were needed.
 #' @param gene_set_list gene sets can be provided as `list` object
 #' @param perm the number of permutations to calculate NES, if smaller than
 #' `1L`, normalized enrichment scores won't be calculated.

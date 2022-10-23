@@ -15,8 +15,8 @@ run_ssgsea(
 )
 }
 \arguments{
-\item{data_expr}{gene expression data. For ssGSEA, normalizd exression values
-with gene length adjusted were needed.}
+\item{data_expr}{a matrix of gene expression data. For ssGSEA, normalizd
+exression values with gene length adjusted were needed.}
 
 \item{gene_set_list}{gene sets can be provided as \code{list} object}
 
