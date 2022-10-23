@@ -114,14 +114,14 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, perm) {
                     perm = perm
                 )
             })
-            # when perm > 0L, a list of three elements: ES, NES, pvalue
+            # when perm >= 1L, a list of three elements: ES, NES, pvalue
             # Otherwise, a list of one element: ES
             data.table::transpose(enrich_score)
         },
         future.globals = TRUE,
         future.seed = TRUE
     )
-    if (perm >= 1L) {
+    if (perm < 1L) {
         idx <- 1
         res_names <- "ES"
     } else {
