@@ -5,6 +5,7 @@
 #' arm
 #' @return a [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
+#' @export 
 arm_ranges <- function(ref_ranges, arm_col = NULL) {
     if (!requireNamespace("GenomicRanges", quietly = TRUE)) {
         cli::cli_abort("GenomicRanges must be installed to use this function.",
@@ -72,7 +73,7 @@ arm_ranges <- function(ref_ranges, arm_col = NULL) {
     arm_ranges <- S4Vectors::endoapply(ref_ranges, function(chr_cytoband) {
         GenomicRanges::reduce(chr_cytoband)
     })
-    if (any(lengths(ref_ranges) > 1L)) {
+    if (any(lengths(arm_ranges) > 1L)) {
         cli::cli_warn(
             "Cannot combine all ranges into one arm-level ranges",
             "i" = "Please check if {.arg ref_ranges} has intervals"
