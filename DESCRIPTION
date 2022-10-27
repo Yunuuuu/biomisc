@@ -21,10 +21,13 @@ Suggests:
     circlize,
     ComplexHeatmap,
     e1071,
+    GenomeInfoDb,
+    GenomicRanges,
     GSVA,
     pracma,
     preprocessCore,
     roxygen2,
+    S4Vectors,
     stats,
     testthat (>= 3.0.0)
 Remotes:

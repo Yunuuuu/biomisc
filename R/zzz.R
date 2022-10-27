@@ -12,7 +12,9 @@ if (getRversion() >= "2.15.1") {
     utils::globalVariables(
         c( # run_absolute
             "Chromosome", "Sample", "Tumor_Sample_Barcode",
-            "group_id"
+            "group_id",
+            # arm_cytoband
+            "chr", "seq_chr", "seq_int", "arm", "chr_arm_order"
         )
     )
 }
