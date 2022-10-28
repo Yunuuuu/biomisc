@@ -40,9 +40,8 @@ ploidy values will be discarded. Default: \code{0.95}}
 \item{max_ploidy}{Maximum ploidy value to consider. Solutions implying
 greater ploidy values will be discarded. Default: \code{10}}
 
-\item{primary_disease}{Primary disease of the sample. These shoud be in the
-values returned by \code{absolute_disease_map()} and can be one or more. Default:
-\code{NA}}
+\item{primary_disease}{Primary disease of the sample. A scalar string in the
+values returned by \code{absolute_disease_map()} or NA. Default: \code{NA}}
 
 \item{platform}{one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}}

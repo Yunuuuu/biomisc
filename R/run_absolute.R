@@ -36,9 +36,8 @@
 #'   ploidy values will be discarded. Default: \code{0.95}
 #' @param max_ploidy Maximum ploidy value to consider. Solutions implying
 #'   greater ploidy values will be discarded. Default: \code{10}
-#' @param primary_disease Primary disease of the sample. These shoud be in the
-#' values returned by `absolute_disease_map()` and can be one or more. Default:
-#' \code{NA}
+#' @param primary_disease Primary disease of the sample. A scalar string in the
+#' values returned by `absolute_disease_map()` or NA. Default: \code{NA}
 #' @param platform one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 #'   \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}
 #' @param results_dir directory path used to store result files. Default:
