@@ -19,9 +19,9 @@ prepare_pyclone(
 containing "chromosome", "pos", "ref_counts" and "var_counts", other columns
 will be omited. Column names don't matter.}
 
-\item{cnv_data}{a data.frame of allelic CNV data with the top five columns
-containing "chromosome", "start_pos", "end_pos", "major_cn", and "minor_cn",
-other columns will be omited. Column names don't matter.}
+\item{cnv_data}{a data.frame of allele-specific CNV data with the top five
+columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
+"minor_cn", other columns will be omited. Column names don't matter.}
 
 \item{normal_cn}{The copy number of the locus in non-malignant cells. This
 should generally be 2 except for sex chromosomes in males.}
