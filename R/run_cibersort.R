@@ -81,7 +81,7 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
 
     if (max(mixture_data) < 50L) {
         cli::cli_warn(
-            "find mixture_data is logged, we'll anti-log by `2^mixture_data`!"
+            "find {.arg mixture_data} is logged, we'll anti-log by {.code 2^mixture_data}!"
         )
         mixture_data <- 2^mixture_data
     }
