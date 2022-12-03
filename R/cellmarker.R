@@ -44,7 +44,7 @@ cellmarker_prepare <- function(data) {
     data[, gene_list := .mapply( # nolint
         union, unname(lapply(.SD, function(markers) {
             markers_list <- strsplit(
-                gsub("[\\[\\]]", "", markers, perl = TRUE),
+                gsub("\\s*\\[\\s*|\\s*\\]\\s*", "", markers, perl = TRUE),
                 "\\s*,\\s*",
                 perl = TRUE
             )
