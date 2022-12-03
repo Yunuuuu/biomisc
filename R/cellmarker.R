@@ -13,7 +13,7 @@
 #' cellMarker or geneSymbol column in CellMarker data.
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
-    data <- cellmarker_get(species, internal)
+    data <- data.table::copy(cellmarker_get(species, internal))
     data[, targeted := lapply(gene_list, intersect, markers)] # nolint
     data.table::setcolorder(data, "targeted", before = "cellMarker")
     data.table::setcolorder(
