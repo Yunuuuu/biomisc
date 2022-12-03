@@ -3,6 +3,7 @@
 S3method(print,rrho)
 S3method(print,rrho_sig)
 export(absolute_disease_map)
+export(cellmarker_search)
 export(get_arm_ranges)
 export(prepare_pyclone)
 export(rrho_correct_pval)
