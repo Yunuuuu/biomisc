@@ -8,6 +8,9 @@
 #' been downloaded once, if we have used this function once with a `internal`
 #' FALSE, the value `NULL` will indicate `TRUE`. The internal data is downloaded
 #' from CellMarker (2022-12-04).
+#' @return a data.frame containing all search results, a column named `targeted`
+#' including the intersection between `markers` (provided by the user) and the
+#' cellMarker or geneSymbol column in CellMarker data.
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
     data <- cellmarker_get(species, internal)
@@ -17,7 +20,8 @@ cellmarker_search <- function(markers, species = "human", internal = NULL) {
         data, c("cellMarker", "geneSymbol"),
         after = "gene_list"
     )
-    data[vapply(targeted, function(x) length(x) > 0L, logical(1L))] # nolint
+    data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))] # nolint
+    data.table::setDF(data)[]
 }
 
 cellmarker_get <- function(species = "human", internal = NULL) {
