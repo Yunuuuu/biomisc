@@ -11,7 +11,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
 Imports: 
     cli,
-    data.table,
+    data.table (>= 1.14.7),
     future.apply,
     progressr,
     Rcpp,
@@ -31,7 +31,8 @@ Suggests:
     stats,
     testthat (>= 3.0.0)
 Remotes:
-    Yunuuuu/ABSOLUTE
+    Yunuuuu/ABSOLUTE,
+    Rdatatable/data.table
 Depends: 
     R (>= 3.5.0)
 Config/testthat/edition: 3
