@@ -16,8 +16,12 @@ cellmarker_search <- function(markers, species = "human", internal = NULL) {
     data <- data.table::copy(cellmarker_get(species, internal))
     data[, targeted := lapply(gene_list, intersect, markers)] # nolint
     data.table::setcolorder(data, "targeted", before = "cellMarker")
+    geneid_cols <- intersect(
+        c("cellMarker", "geneSymbol", "geneID", "proteinName", "proteinID"),
+        names(data)
+    )
     data.table::setcolorder(
-        data, c("cellMarker", "geneSymbol"),
+        data, geneid_cols,
         after = "gene_list"
     )
     data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))] # nolint
