@@ -31,7 +31,7 @@ cellmarker_search <- function(markers, species = "human", internal = NULL) {
         data, intersect(cellmarker_gene_cols, names(data)),
         after = "gene_list"
     )
-    data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))][
+    data <- data[targeted_size > 0L][
         order(-targeted_size, na.last = TRUE)
     ]
     # nolint end
