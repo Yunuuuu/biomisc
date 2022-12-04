@@ -54,6 +54,7 @@ cellmarker_prepare <- function(data) {
                 perl = TRUE
             )
             lapply(markers_list, function(markers_trim) {
+                markers_trim <- trimws(markers_trim, "both", "[\\h\\v]")
                 markers_trim[!is.na(markers_trim) & markers_trim != "NA"]
             })
         })),
