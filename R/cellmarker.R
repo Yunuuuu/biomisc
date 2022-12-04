@@ -15,7 +15,9 @@
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
     data <- data.table::copy(cellmarker_get(species, internal))
-    data[, targeted := lapply(gene_list, intersect, markers)] # nolint
+    data[, targeted := lapply(gene_list, function(.genes, .markers) { # nolint
+        .genes[tolower(.genes) %in% tolower(.markers)]
+    }, .markers = markers)] 
     data.table::setcolorder(data, "targeted", before = "cellMarker")
     geneid_cols <- intersect(
         c("cellMarker", "geneSymbol", "geneID", "proteinName", "proteinID"),
@@ -55,7 +57,7 @@ cellmarker_prepare <- function(data) {
                     !is.na(markers_trim) & markers_trim != "NA"
                 ]
             })
-        })), # nolint
+        })),
         MoreArgs = NULL
     ), .SDcols = c("cellMarker", "geneSymbol")]
 }
