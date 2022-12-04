@@ -16,16 +16,25 @@
 #' descendingly by the number of matched markers
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
+    # nolint start
     data <- data.table::copy(cellmarker_get(species, internal))
-    data[, targeted := lapply(gene_list, function(.genes, .markers) { # nolint # styler: off
-        .genes[tolower(.genes) %in% tolower(.markers)]
-    }, .markers = markers)]
-    data.table::setcolorder(data, "targeted", before = "cellMarker")
-    geneid_cols <- intersect(cellmarker_gene_cols, names(data))
-    data.table::setcolorder(data, geneid_cols, after = "gene_list")
+    data[, targeted := lapply(gene_list, function(.genes, .markers) {
+        .genes[tolower(.genes) %in% .markers]
+    }, .markers = tolower(markers))]
+    data[, targeted_size := lengths(targeted)]
+    data[, targeted_prop := targeted_size / length(markers)]
+    data.table::setcolorder(
+        data, c("targeted", "targeted_size", "targeted_prop"),
+        after = "CellOntologyID"
+    )
+    data.table::setcolorder(
+        data, intersect(cellmarker_gene_cols, names(data)),
+        after = "gene_list"
+    )
     data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))][
-        order(-lengths(targeted), na.last = TRUE)
+        order(-targeted_size, na.last = TRUE)
     ]
+    # nolint end
     data.table::setDF(data)[]
 }
 
