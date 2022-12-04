@@ -8,8 +8,9 @@ Details see http://xteam.xbio.top/CellMarker/index.jsp}
 cellmarker_search(markers, species = "human", internal = NULL)
 }
 \arguments{
-\item{markers}{the markers to search in the CellMarker database, should be
-the gene symbol.}
+\item{markers}{an atomic character, the markers to search in the CellMarker
+database, can be the Gene Symbol, Gene ID, Protein Symbol or Protein ID
+(usually starts with "P", "Q" or "O").}
 
 \item{species}{a scalar string, "human" or "mouse".}
 
@@ -17,13 +18,12 @@ the gene symbol.}
 data. If \code{NULL}, this will be determined automatically; if the CellMarker
 data has been downloaded once, namyly we have already used this function once
 with a \code{internal} value \code{FALSE}, then the \code{NULL} will indicate \code{FALSE}.
-Otherwise, \code{TRUE}. The internal data is downloaded from CellMarker
-(2022-12-04).}
+Otherwise \code{TRUE}. The internal data was downloaded from CellMarker on
+2022-12-04.}
 }
 \value{
 a data.frame of the searching results, a column named \code{targeted}
-containing the intersection between \code{markers} (provided by the user) and the
-cellMarker or geneSymbol column in the CellMarker data.
+containing the matched markers from CellMarker data.
 }
 \description{
 Seach CellMarker database
