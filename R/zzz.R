@@ -20,7 +20,9 @@ if (getRversion() >= "2.15.1") {
             "x.major_cn", "i.chromosome", "i.pos",
             "x.start_pos", "x.end_pos",
             "mutation_id", "position", "chromosome", "tumour_content",
-            "major_cn"
+            "major_cn",
+            # cellmarker 
+            "targeted", "gene_list"
         )
     )
 }

@@ -21,10 +21,7 @@ cellmarker_search <- function(markers, species = "human", internal = NULL) {
         c("cellMarker", "geneSymbol", "geneID", "proteinName", "proteinID"),
         names(data)
     )
-    data.table::setcolorder(
-        data, geneid_cols,
-        after = "gene_list"
-    )
+    data.table::setcolorder(data, geneid_cols, after = "gene_list")
     data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))] # nolint
     data.table::setDF(data)[]
 }
@@ -75,7 +72,7 @@ cellmarker_download <- function(species) {
         )
         envir <- topenv(environment(NULL))
         unlockBinding("cellmarker_database_external", envir)
-        assignInMyNamespace(
+        utils::assignInMyNamespace(
             "cellmarker_database_external",
             cellmarker_database_external
         )

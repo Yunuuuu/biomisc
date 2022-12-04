@@ -29,6 +29,7 @@ Suggests:
     roxygen2,
     S4Vectors,
     stats,
+    utils,
     testthat (>= 3.0.0)
 Remotes:
     Yunuuuu/ABSOLUTE,
