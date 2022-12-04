@@ -12,13 +12,12 @@
 #' Otherwise `TRUE`. The internal data was downloaded from CellMarker on
 #' 2022-12-04.
 #' @return a data.frame of the searching results. A column named `targeted`
-#' containing the matched markers from CellMarker data, the row will be sorted 
-#' descendingly by the number of matched markers 
+#' containing the matched markers from CellMarker data, the row will be sorted
+#' descendingly by the number of matched markers
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
     data <- data.table::copy(cellmarker_get(species, internal))
-    data[, targeted := lapply(gene_list, function(.genes, .markers) {
-        # nolint
+    data[, targeted := lapply(gene_list, function(.genes, .markers) { # nolint # styler: off
         .genes[tolower(.genes) %in% tolower(.markers)]
     }, .markers = markers)]
     data.table::setcolorder(data, "targeted", before = "cellMarker")
