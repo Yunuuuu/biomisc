@@ -18,9 +18,14 @@
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
     # nolint start
     data <- data.table::copy(cellmarker_get(species, internal))
+    # Since gene_list may contain duplicated values with different case
+    # it's better to use the input markers as the reference
     data[, targeted := lapply(gene_list, function(.genes, .markers) {
-        .genes[tolower(.genes) %in% .markers]
-    }, .markers = tolower(markers))]
+        .markers[match(
+            tolower(.markers), tolower(.genes),
+            nomatch = 0L, incomparables = NA_character_
+        ) > 0L]
+    }, .markers = markers)]
     data[, targeted_size := lengths(targeted)]
     data[, targeted_prop := targeted_size / length(markers)]
     data.table::setcolorder(
