@@ -14,15 +14,16 @@ the gene symbol.}
 \item{species}{a scalar string, "human" or "mouse".}
 
 \item{internal}{logical value, indicates whether to use internal CellMarker
-data or not. \code{NULL} indicates this will be determined by the CellMarker has
-been downloaded once, if we have used this function once with a \code{internal}
-FALSE, the value \code{NULL} will indicate \code{TRUE}. The internal data is downloaded
-from CellMarker (2022-12-04).}
+data. If \code{NULL}, this will be determined automatically; if the CellMarker
+data has been downloaded once, namyly we have already used this function once
+with a \code{internal} value \code{FALSE}, then the \code{NULL} will indicate \code{FALSE}.
+Otherwise, \code{TRUE}. The internal data is downloaded from CellMarker
+(2022-12-04).}
 }
 \value{
-a data.frame containing all search results, a column named \code{targeted}
-including the intersection between \code{markers} (provided by the user) and the
-cellMarker or geneSymbol column in CellMarker data.
+a data.frame of the searching results, a column named \code{targeted}
+containing the intersection between \code{markers} (provided by the user) and the
+cellMarker or geneSymbol column in the CellMarker data.
 }
 \description{
 Seach CellMarker database

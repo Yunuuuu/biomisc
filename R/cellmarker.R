@@ -4,13 +4,14 @@
 #' the gene symbol.
 #' @param species a scalar string, "human" or "mouse".
 #' @param internal logical value, indicates whether to use internal CellMarker
-#' data or not. `NULL` indicates this will be determined by the CellMarker has
-#' been downloaded once, if we have used this function once with a `internal`
-#' FALSE, the value `NULL` will indicate `TRUE`. The internal data is downloaded
-#' from CellMarker (2022-12-04).
-#' @return a data.frame containing all search results, a column named `targeted`
-#' including the intersection between `markers` (provided by the user) and the
-#' cellMarker or geneSymbol column in CellMarker data.
+#' data. If `NULL`, this will be determined automatically; if the CellMarker
+#' data has been downloaded once, namyly we have already used this function once
+#' with a `internal` value `FALSE`, then the `NULL` will indicate `FALSE`.
+#' Otherwise, `TRUE`. The internal data is downloaded from CellMarker
+#' (2022-12-04).
+#' @return a data.frame of the searching results, a column named `targeted`
+#' containing the intersection between `markers` (provided by the user) and the
+#' cellMarker or geneSymbol column in the CellMarker data.
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
     data <- data.table::copy(cellmarker_get(species, internal))
