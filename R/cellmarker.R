@@ -1,5 +1,5 @@
 #' Seach CellMarker database
-#' 
+#'
 #' Search http://xteam.xbio.top/CellMarker
 #' @param markers an atomic character, the markers to search in the CellMarker
 #' database, can be the Gene Symbol, Gene ID, Protein Symbol or Protein ID
@@ -11,18 +11,22 @@
 #' once with a `internal` value `FALSE`, then the `NULL` will indicate `FALSE`.
 #' Otherwise `TRUE`. The internal data was downloaded from CellMarker on
 #' 2022-12-04.
-#' @return a data.frame of the searching results, a column named `targeted`
-#' containing the matched markers from CellMarker data.
+#' @return a data.frame of the searching results. A column named `targeted`
+#' containing the matched markers from CellMarker data, the row will be sorted 
+#' descendingly by the number of matched markers 
 #' @export
 cellmarker_search <- function(markers, species = "human", internal = NULL) {
     data <- data.table::copy(cellmarker_get(species, internal))
-    data[, targeted := lapply(gene_list, function(.genes, .markers) { # nolint
+    data[, targeted := lapply(gene_list, function(.genes, .markers) {
+        # nolint
         .genes[tolower(.genes) %in% tolower(.markers)]
     }, .markers = markers)]
     data.table::setcolorder(data, "targeted", before = "cellMarker")
     geneid_cols <- intersect(cellmarker_gene_cols, names(data))
     data.table::setcolorder(data, geneid_cols, after = "gene_list")
-    data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))] # nolint
+    data <- data[vapply(targeted, function(x) length(x) > 0L, logical(1L))][
+        order(-lengths(targeted), na.last = TRUE)
+    ]
     data.table::setDF(data)[]
 }
 
@@ -46,7 +50,7 @@ cellmarker_prepare <- function(data) {
     data[, gene_list := .mapply( # nolint
         function(...) {
             Reduce(union, list(...))
-        }, 
+        },
         unname(lapply(.SD, function(markers) {
             markers_list <- strsplit(
                 gsub("\\s*\\[\\s*|\\s*\\]\\s*", "", markers, perl = TRUE),

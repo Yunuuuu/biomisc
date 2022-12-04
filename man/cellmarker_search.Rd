@@ -21,8 +21,9 @@ Otherwise \code{TRUE}. The internal data was downloaded from CellMarker on
 2022-12-04.}
 }
 \value{
-a data.frame of the searching results, a column named \code{targeted}
-containing the matched markers from CellMarker data.
+a data.frame of the searching results. A column named \code{targeted}
+containing the matched markers from CellMarker data, the row will be sorted
+descendingly by the number of matched markers
 }
 \description{
 Search http://xteam.xbio.top/CellMarker
