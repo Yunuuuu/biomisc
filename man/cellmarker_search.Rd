@@ -2,8 +2,7 @@
 % Please edit documentation in R/cellmarker.R
 \name{cellmarker_search}
 \alias{cellmarker_search}
-\title{Seach CellMarker database
-Details see http://xteam.xbio.top/CellMarker/index.jsp}
+\title{Seach CellMarker database}
 \usage{
 cellmarker_search(markers, species = "human", internal = NULL)
 }
@@ -16,8 +15,8 @@ database, can be the Gene Symbol, Gene ID, Protein Symbol or Protein ID
 
 \item{internal}{logical value, indicates whether to use internal CellMarker
 data. If \code{NULL}, this will be determined automatically; if the CellMarker
-data has been downloaded once, namyly we have already used this function once
-with a \code{internal} value \code{FALSE}, then the \code{NULL} will indicate \code{FALSE}.
+data has been downloaded once, namely, we have already used this function
+once with a \code{internal} value \code{FALSE}, then the \code{NULL} will indicate \code{FALSE}.
 Otherwise \code{TRUE}. The internal data was downloaded from CellMarker on
 2022-12-04.}
 }
@@ -26,6 +25,5 @@ a data.frame of the searching results, a column named \code{targeted}
 containing the matched markers from CellMarker data.
 }
 \description{
-Seach CellMarker database
-Details see http://xteam.xbio.top/CellMarker/index.jsp
+Search http://xteam.xbio.top/CellMarker
 }

@@ -1,13 +1,14 @@
 #' Seach CellMarker database
-#' Details see http://xteam.xbio.top/CellMarker/index.jsp
+#' 
+#' Search http://xteam.xbio.top/CellMarker
 #' @param markers an atomic character, the markers to search in the CellMarker
 #' database, can be the Gene Symbol, Gene ID, Protein Symbol or Protein ID
 #' (usually starts with "P", "Q" or "O").
 #' @param species a scalar string, "human" or "mouse".
 #' @param internal logical value, indicates whether to use internal CellMarker
 #' data. If `NULL`, this will be determined automatically; if the CellMarker
-#' data has been downloaded once, namyly we have already used this function once
-#' with a `internal` value `FALSE`, then the `NULL` will indicate `FALSE`.
+#' data has been downloaded once, namely, we have already used this function
+#' once with a `internal` value `FALSE`, then the `NULL` will indicate `FALSE`.
 #' Otherwise `TRUE`. The internal data was downloaded from CellMarker on
 #' 2022-12-04.
 #' @return a data.frame of the searching results, a column named `targeted`
