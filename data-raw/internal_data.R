@@ -20,20 +20,10 @@ absolute_disease_map_env <- get(
 absolute_disease_map_data <- ls(
     envir = absolute_disease_map_env, all.names = TRUE
 )
-cellmarker_database <- list(
-    human = data.table::fread(
-        "http://xteam.xbio.top/CellMarker/download/Human_cell_markers.txt"
-    ),
-    mouse = data.table::fread(
-        "http://xteam.xbio.top/CellMarker/download/Mouse_cell_markers.txt"
-    )
-)
-cellmarker_database <- lapply(cellmarker_database, cellmarker_prepare)
 
 usethis::use_data(
     cibersort_lm22,
     absolute_disease_map_data,
-    cellmarker_database,
     internal = TRUE, overwrite = TRUE,
     compress = "gzip"
 )
