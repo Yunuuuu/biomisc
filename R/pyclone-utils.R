@@ -56,9 +56,9 @@ prepare_pyclone <- function(mut_data, cnv_data, normal_cn = 2, pyclone_vi = FALS
         on = c("chromosome", "start_pos<=pos", "end_pos>=pos"),
         nomatch = NULL
     ][, .SD[rowSums(is.na(.SD)) == 0L]]
-    test_pos <- pyclone_data[["pos"]] < pyclone_data[["start_pos"]] |
+    failed_pos <- pyclone_data[["pos"]] < pyclone_data[["start_pos"]] |
         pyclone_data[["pos"]] > pyclone_data[["end_pos"]]
-    if (any(test_pos)) {
+    if (any(failed_pos)) {
         cli::cli_abort("Something wrong when parsing CN of mutation")
     }
     pyclone_data[, mutation_id := paste(chromosome, position, sep = ":")]
