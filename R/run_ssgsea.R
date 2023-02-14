@@ -139,6 +139,7 @@ project_to_geneset <- function(data_matrix, gene_set_list, weight, perm) {
     res
 }
 
+# derived from https://github.com/YuLab-SMU/DOSE/blob/master/R/gsea.R
 ssgsea <- function(gene_list, gene_set, weight, perm) {
     es <- ssgsea_core(
         gene_list = gene_list,
