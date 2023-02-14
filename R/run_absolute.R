@@ -37,7 +37,7 @@
 #' @param max_ploidy Maximum ploidy value to consider. Solutions implying
 #'   greater ploidy values will be discarded. Default: \code{10}
 #' @param primary_disease Primary disease of the sample. A scalar string in the
-#' values returned by `absolute_disease_map()` or NA. Default: \code{NA}
+#' values returned by `absolute_disease_map()` or `NULL`. Default: `NULL`
 #' @param platform one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 #'   \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}
 #' @param results_dir directory path used to store result files. Default:
@@ -90,7 +90,7 @@
 #' @export
 run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                          min_ploidy = 0.95, max_ploidy = 10,
-                         primary_disease = NA,
+                         primary_disease = NULL,
                          platform = NULL,
                          results_dir = "ABSOLUTE",
                          max_as_seg_count = 1500,
@@ -114,27 +114,22 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
-    if (identical(length(primary_disease), 0L)) {
+    if (length(primary_disease) == 0L) {
         primary_disease <- NA_character_
-    } else if (!(rlang::is_scalar_character(primary_disease) || rlang::is_na(primary_disease))) {
-        cli::cli_abort(
-            "{.arg primary_disease} should be a scalar string, {.field NA} or {.field NULL}"
-        )
-    }
-
-    if (!rlang::is_na(primary_disease)) {
+    } else if (length(primary_disease) == 1L) {
         # nolint
-        primary_disease <- intersect(
-            primary_disease,
-            absolute_disease_map()
-        )
-        if (identical(length(primary_disease), 0L)) {
+        primary_disease <- intersect(primary_disease, absolute_disease_map())
+        if (length(primary_disease) == 0L) {
             cli::cli_warn(
                 "Cannot find {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
-                i = "you can check out {.fun absolute_disease_map()}"
+                i = "you can check out {.code absolute_disease_map()}"
             )
             primary_disease <- NA_character_
         }
+    } else {
+        cli::cli_abort(
+            "{.arg primary_disease} should be a scalar string, {.field NA} or {.field NULL}"
+        )
     }
 
     # preprocessing data ---------------------------------------------------
@@ -339,7 +334,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
     }
     seg <- data.table::as.data.table(seg)
 
-    if (!"Sample" %in% names(seg)) seg[, Sample := "SampleOne"]
+    if (!any("Sample" == names(seg))) seg[, Sample := "SampleOne"]
 
     # check seg data ----------------------------------------------
     seg_cols <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Segment_Mean")

@@ -11,7 +11,7 @@ run_absolute(
   max_sigma_h = 0.015,
   min_ploidy = 0.95,
   max_ploidy = 10,
-  primary_disease = NA,
+  primary_disease = NULL,
   platform = NULL,
   results_dir = "ABSOLUTE",
   max_as_seg_count = 1500,
@@ -41,7 +41,7 @@ ploidy values will be discarded. Default: \code{0.95}}
 greater ploidy values will be discarded. Default: \code{10}}
 
 \item{primary_disease}{Primary disease of the sample. A scalar string in the
-values returned by \code{absolute_disease_map()} or NA. Default: \code{NA}}
+values returned by \code{absolute_disease_map()} or \code{NULL}. Default: \code{NULL}}
 
 \item{platform}{one of \code{"SNP_6.0"}, \code{"Illumina_WES"},
 \code{"SNP_250K_STY"}. Default: \code{"SNP_6.0"}}
