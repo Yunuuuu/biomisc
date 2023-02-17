@@ -165,7 +165,8 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
         )
     }
     results <- data.table::as.data.table(results, keep.rownames = "Samples")
-    data.table::setDF(results)[]
+    data.table::setDF(results)
+    results
 }
 
 # Core algorithm

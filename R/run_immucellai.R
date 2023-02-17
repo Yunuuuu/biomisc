@@ -93,7 +93,8 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     infiltrating_score <- (infiltrating_score / max(infiltrating_score)) * 0.9
     result_mat <- rbind(result_norm, infiltrating_score = infiltrating_score)
     res <- data.table::as.data.table(t(result_mat), keep.rownames = "Samples")
-    data.table::setDF(res)[]
+    data.table::setDF(res)
+    res
 }
 
 compensation <- function(raw_score, compensation_matrix) {
