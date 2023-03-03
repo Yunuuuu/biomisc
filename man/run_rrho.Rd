@@ -10,7 +10,7 @@ run_rrho(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L)
 \method{print}{rrho}(x, ...)
 }
 \arguments{
-\item{list1, list2}{a named numeric vector, For differential gene expression,
+\item{list1, list2}{A named numeric vector, For differential gene expression,
 values are often \code{-log10(P-value) * sign(effect)}. \code{list1} will be regarded
 as the reference populations.}
 
@@ -47,7 +47,9 @@ both \code{list1} and \code{list2} and sort them based on their value.}
 }
 \description{
 The function tests for significant overlap between two sorted lists using the
-method in the reference.
+method in the reference. Modified from \url{https://github.com/johnros/RRHO} by
+making adjustment with official RRHO described in
+\url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642652}.
 }
 \examples{
 n <- 200

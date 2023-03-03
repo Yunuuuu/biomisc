@@ -84,9 +84,11 @@
 #' Rank-Rank Hypergeometric Overlap Test
 #'
 #' The function tests for significant overlap between two sorted lists using the
-#' method in the reference.
+#' method in the reference. Modified from <https://github.com/johnros/RRHO> by
+#' making adjustment with official RRHO described in
+#' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>.
 #'
-#' @param list1,list2 a named numeric vector, For differential gene expression,
+#' @param list1,list2 A named numeric vector, For differential gene expression,
 #' values are often `-log10(P-value) * sign(effect)`. `list1` will be regarded
 #' as the reference populations.
 #' @param stepsize Controls the resolution of the test: how many items between
@@ -127,8 +129,7 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
     rrho_data <- set_rrho_list(list1, list2, correction = correction)
     if (is.null(stepsize)) {
         stepsize <- as.integer(sqrt(min(lengths(rrho_data)[1:2])))
-    } else if (rlang::is_scalar_double(stepsize) ||
-        rlang::is_scalar_integer(stepsize)) {
+    } else if (length(stepsize) == 1L && is.numeric(stepsize)) {
         stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     } else {
         cli::cli_abort("{.arg stepsize} should be a scalar numeric")
