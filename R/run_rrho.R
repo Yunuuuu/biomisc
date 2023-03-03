@@ -775,6 +775,10 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         )
     } else {
         quadrant <- unique(quadrant)
+        # we want to use over-enrichment for all quadrant, but we actually want
+        # to a under-enrichment test in c("up-down", "down-up"), by providing a
+        # `quadrant_sign`, we can easily transformed the under-enrichment into a
+        # under-enrichment.
         if (all(quadrant %in% c("up-up", "down-down"))) {
             quadrant_sign <- 1L
         } else if (all(quadrant %in% c("up-down", "down-up"))) {
@@ -866,7 +870,10 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         list(
             ecdf = pecdf,
             statistic = actual_stats,
-            pvalue_perm = 1L - min(pecdf(actual_stats) + 1L / perm, 1L)
+            # we test a greater alternative hypothesis
+            # `pecdf(actual_stats)` gives the Pvalue with a permuation stats
+            # lower than the actual_stats.
+            pvalue_perm = 1L - min(pecdf(actual_stats) + (1L / perm), 1L)
         )
     }
 }
