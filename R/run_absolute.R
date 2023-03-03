@@ -361,6 +361,10 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
             ))
         }
         maf <- data.table::as.data.table(maf)
+        # the maf_cols values is the column names user can provided, if the
+        # element values has more than one items we prefer to the first.
+        # the maf_cols names is the standardized names used by downstream
+        # analysis 
         maf_cols <- list(
             Tumor_Sample_Barcode = "Tumor_Sample_Barcode",
             Chromosome = "Chromosome",
@@ -371,14 +375,9 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
             t_alt_count = c("t_alt_count", "i_t_alt_count")
         )
         idx <- vapply(maf_cols, function(x) {
-            i <- match(names(maf), x, nomatch = 0L)
-            if (any(i > 0L)) {
-                # the first match
-                if (any(i == 1L)) {
-                    return(which(i == 1L, useNames = FALSE)[[1L]])
-                } else {
-                    return(which(i == 2L, useNames = FALSE)[[1L]])
-                }
+            i <- match(names(maf), x, nomatch = NA_integer_)
+            if (any(!is.na(i))) {
+                which.min(i)
             } else {
                 return(0L)
             }
@@ -400,7 +399,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
         }
         x[
             , Chromosome := sub(
-                pattern = "chr", replacement = "",
+                pattern = "^chr", replacement = "",
                 as.character(Chromosome),
                 perl = TRUE, ignore.case = TRUE
             )
@@ -411,7 +410,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
                 Chromosome, perl = TRUE, ignore.case = TRUE
             )
         ]
-        x[Chromosome %in% as.character(1:23), ]
+        x[Chromosome %in% as.character(1:23)]
     })
 }
 
