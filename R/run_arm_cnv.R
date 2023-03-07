@@ -78,7 +78,7 @@ run_arm_cnv <- function(
     }
 
     if (rlang::is_scalar_character(ref_cytoband) &&
-        ref_cytoband %in% c("hg19", "hg38")) {
+        any(ref_cytoband == c("hg19", "hg38"))) {
         ref_cytoband <- get_cytoband(ref_cytoband, add_arm = TRUE)
         arm_col <- "arm"
     } else if (!inherits(ref_cytoband, "GenomicRanges")) {
