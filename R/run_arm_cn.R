@@ -6,17 +6,17 @@
 #'   or relative segment copy number defined with -1 meaning del, 0 meaning
 #'   neutral and 1 meaning amp) and samples IDs in "sample_id_col" column.
 #' @param cnv_col A scalar character gives the column containing CNV values.
-#' @param ref_cytoband is a [GenomicRanges][GenomicRanges::GenomicRanges]
-#'   obeject containing the Cytoband reference, It can be a scalar character
-#'   `"hg19"` or `"hg38"`, or you can provided a self-defined
-#'   [GenomicRanges][GenomicRanges::GenomicRanges] obeject. `"hg38"` is derived
-#'   from AnnotationHub by record id "AH53178" and `"hg19"` is by record id
-#'   "AH53177". Default: `"hg38"`.
+#' @param ref_cytoband A [GenomicRanges][GenomicRanges::GenomicRanges] obeject
+#'   containing the Cytoband reference, It can be a scalar character `"hg19"` or
+#'   `"hg38"`, in this way, see [get_cytoband], or you can provided a
+#'   self-defined [GenomicRanges][GenomicRanges::GenomicRanges] obeject.
+#' @inheritParams get_arm_ranges
 #' @param cnv_mode One of "rel" and "abs" correspongding to what Shukla, A and
 #'   Cohen-Sharir have presented respectively.
 #' @param ... Not used currently.
 #' @param filter_centromere Whether to include or exclude segments across
-#'   centromere. Default: `TRUE`.
+#'   centromere, namely genomic ranges interseted with "acen" arm of
+#'   ref_cytoband.  Default: `TRUE`.
 #' @param threshold The fraction to define Chromosome arm-level aneuploidy
 #'   profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).
 #' @param ploidy The ploidy to define Chromosome arm-level aneuploidy profiling.
@@ -35,12 +35,11 @@
 #' @export
 run_arm_cnv <- function(
     seg_cnv, cnv_col,
-    ref_cytoband = "hg38",
+    ref_cytoband = "hg38", arm_col = NULL,
     cnv_mode = c("rel", "abs"),
     ..., filter_centromere = TRUE,
     ploidy = NULL,
     threshold = 0.9) {
-
     if (!requireNamespace("matrixStats", quietly = TRUE)) {
         cli::cli_abort("{.pkg matrixStats} must be installed to use this function.")
     }
@@ -80,16 +79,14 @@ run_arm_cnv <- function(
 
     if (rlang::is_scalar_character(ref_cytoband) &&
         ref_cytoband %in% c("hg19", "hg38")) {
-        ref_cytoband <- switch(ref_cytoband,
-            hg19 = run_arm_cnv_ref_cytoband_hg19, # nolint
-            hg38 = run_arm_cnv_ref_cytoband_hg38 # nolint
-        )
+        ref_cytoband <- get_cytoband(ref_cytoband, add_arm = TRUE)
+        arm_col <- "arm"
     } else if (!inherits(ref_cytoband, "GenomicRanges")) {
         cli::cli_abort(
             '{.arg ref_cytoband} must be a scalar character ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
         )
     }
-    arm_cytoband <- get_arm_ranges(ref_cytoband)
+    arm_cytoband <- get_arm_ranges(ref_cytoband, arm_col = arm_col)
     if (filter_centromere) {
         acen_region <- arm_cytoband[arm_cytoband$arm == "acen"]
         # Remove any segment that sligthly overlaps the centromere
@@ -156,3 +153,7 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_col, arm_cytoband, cnv_mode = "rel", ...
     )
     data.table::setDF(out)
 }
+
+utils::globalVariables(c(
+    "CNV", "width", "arm_width"
+))

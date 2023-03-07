@@ -8,6 +8,7 @@ run_arm_cnv(
   seg_cnv,
   cnv_col,
   ref_cytoband = "hg38",
+  arm_col = NULL,
   cnv_mode = c("rel", "abs"),
   ...,
   filter_centromere = TRUE,
@@ -24,12 +25,14 @@ neutral and 1 meaning amp) and samples IDs in "sample_id_col" column.}
 
 \item{cnv_col}{A scalar character gives the column containing CNV values.}
 
-\item{ref_cytoband}{is a \link[GenomicRanges:GRanges-class]{GenomicRanges}
-obeject containing the Cytoband reference, It can be a scalar character
-\code{"hg19"} or \code{"hg38"}, or you can provided a self-defined
-\link[GenomicRanges:GRanges-class]{GenomicRanges} obeject. \code{"hg38"} is derived
-from AnnotationHub by record id "AH53178" and \code{"hg19"} is by record id
-"AH53177". Default: \code{"hg38"}.}
+\item{ref_cytoband}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject
+containing the Cytoband reference, It can be a scalar character \code{"hg19"} or
+\code{"hg38"}, in this way, see \link{get_cytoband}, or you can provided a
+self-defined \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject.}
+
+\item{arm_col}{A scalar string indicates the column containing the chromosome
+arm. If \code{NULL}, the internal will search the first column startwith "arm"
+(ignore letter case).}
 
 \item{cnv_mode}{One of "rel" and "abs" correspongding to what Shukla, A and
 Cohen-Sharir have presented respectively.}
@@ -37,7 +40,8 @@ Cohen-Sharir have presented respectively.}
 \item{...}{Not used currently.}
 
 \item{filter_centromere}{Whether to include or exclude segments across
-centromere. Default: \code{TRUE}.}
+centromere, namely genomic ranges interseted with "acen" arm of
+ref_cytoband.  Default: \code{TRUE}.}
 
 \item{ploidy}{The ploidy to define Chromosome arm-level aneuploidy profiling.
 Cohen-Sharir uses background ploidy ("abs" cnv_mode) derived from
