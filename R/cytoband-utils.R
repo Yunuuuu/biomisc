@@ -77,3 +77,28 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
     arm_ranges <- unlist(arm_ranges, use.names = TRUE)
     arm_ranges
 }
+
+#' Get UCSC cytoband data
+#' @param x One of "hg19" or "hg38". "hg38" is derived from AnnotationHub by
+#'   record id "AH53178" and "hg19" is by record id "AH53177". Default: "hg38".
+#' @param add_arm A scalar logical value indicates whether add a column named
+#'  "arm" defining the chromosome-arm for each items.
+#' @return A [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
+#'   cytoband informations.
+#' @export 
+get_cytoband <- function(x = "hg38", add_arm = TRUE) {
+    out <- switch(x,
+        hg19 = run_arm_cnv_ref_cytoband_hg19, # nolint
+        hg38 = run_arm_cnv_ref_cytoband_hg38 # nolint
+    )
+    if (add_arm) {
+        S4Vectors::mcols(out)$arm <- factor(
+            data.table::fifelse(
+                S4Vectors::mcols(out)$gieStain == "acen", "acen",
+                sub("^([pq])[0-9.]+", "\\1", S4Vectors::mcols(out)$name)
+            ),
+            levels = c("p", "acen", "q")
+        )
+    }
+    out
+}
