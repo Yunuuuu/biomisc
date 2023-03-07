@@ -8,17 +8,13 @@
 #' @export
 get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
     if (!requireNamespace("GenomicRanges", quietly = TRUE)) {
-        cli::cli_abort("GenomicRanges must be installed to use this function.",
-            call. = FALSE
-        )
+        cli::cli_abort("{.pkg GenomicRanges} must be installed to use this function.")
     }
     if (!requireNamespace("GenomeInfoDb", quietly = TRUE)) {
-        cli::cli_abort("GenomeInfoDb must be installed to use this function.")
+        cli::cli_abort("{.pkg GenomeInfoDb} must be installed to use this function.")
     }
     if (!requireNamespace("S4Vectors", quietly = TRUE)) {
-        cli::cli_abort("S4Vectors must be installed to use this function.",
-            call. = FALSE
-        )
+        cli::cli_abort("{.pkg S4Vectors} must be installed to use this function.")
     }
 
     if (!inherits(ref_ranges, "GenomicRanges")) {
