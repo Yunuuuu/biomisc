@@ -2,7 +2,8 @@
 #' @param ref_ranges A [`GenomicRanges`][GenomicRanges::GRanges-class] object to
 #'   combine into arm-level ranges.
 #' @param arm_col A scalar string indicates the column containing the chromosome
-#'   arm.
+#'   arm. If `NULL`, the internal will search the first column startwith "arm"
+#'   (ignore letter case).
 #' @return A [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
 #' @export
