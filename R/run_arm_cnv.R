@@ -130,7 +130,7 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_col, arm_cytoband, cnv_mode = "rel", ...
         width = GenomicRanges::width(intersect_region),
         # though we need the abolsute copy number only in rel cnv_mode
         # since the copy numbers of abs cnv_mode are always larger than zero
-        # it's save to do it for both cnv_mode.
+        # it won't hurt to do it for both cnv_mode.
         CNV = abs(S4Vectors::mcols(intersect_region)[[cnv_col]]),
         arm = S4Vectors::mcols(arm_ranges)[["arm"]],
         arm_width = GenomicRanges::width(arm_ranges)
@@ -139,6 +139,7 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_col, arm_cytoband, cnv_mode = "rel", ...
         rel = out[, list(arm_cnv = as.integer(
             sum(CNV * width / arm_width, na.rm = TRUE) > threshold # nolint
         )), by = c("seqnames", "arm")],
+        # https://github.com/broadinstitute/Aneuploidy_dependencies/blob/master/make_CCLE_arm_calls.R
         abs = out[,
             {
                 median_weighted <- matrixStats::weightedMedian(
