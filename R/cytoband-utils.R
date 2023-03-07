@@ -26,50 +26,47 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
     }
 
     if (!identical(GenomeInfoDb::seqlevelsStyle(ref_ranges), "UCSC")) {
-        cli::cli_inform("try to map seqnames of ref_ranges to UCSC style")
+        cli::cli_inform("try to map seqnames of {.arg ref_ranges} to UCSC style")
         GenomeInfoDb::seqlevels(ref_ranges) <- "UCSC"
     }
     if (is.null(arm_col)) {
         arm_col <- grep("^arm", names(S4Vectors::mcols(ref_ranges)),
-            ignore.case = TRUE,
+            ignore.case = TRUE, perl = TRUE,
             value = TRUE
         )
-        arm_col <- arm_col[[1L]]
         if (!length(arm_col)) {
             cli::cli_abort(c(
                 "Cannot determine right {.arg arm_col}",
                 "i" = "try to set {.arg arm_col}"
             ))
         }
+        arm_col <- arm_col[[1L]]
     } else if (!rlang::is_scalar_character(arm_col)) {
         cli::cli_abort("{.arg arm_col} should be a scalar string")
     }
 
     # we split ref_ranges by `chr` and `arm` and then combine ranges in
     # each groups if there aren't any intervals.
-    # we create factor levels to determine proper order, we order chr_arm pairs
-    # by chromosome firstly and then by arm.
-    # for chr, we order it by integer portion and then by character
-    chr_arm_dt <- data.table::data.table(
+    split_data <- data.table::data.table(
         chr = as.character(GenomeInfoDb::seqnames(ref_ranges)),
         arm = S4Vectors::mcols(ref_ranges)[[arm_col]]
     )
-    chr_arm_pair <- unique(chr_arm_dt)
-    chr_arm_pair[, seq_chr := sub("chr", "", chr)]
-    suppressWarnings(
-        chr_arm_pair[, seq_int := as.integer(seq_chr)]
-    )
+
+    # we create factor levels to determine proper order, we order chr_arm pairs
+    # by chromosome firstly and then by arm.
+    # for chr, we order it by integer portion and then by character
+    chr_arm_pair <- data.table::copy(split_data)
+    chr_arm_pair <- unique(chr_arm_pair)
+    chr_arm_pair[, seq_chr := sub("^chr", "", chr, perl = TRUE)]
+    suppressWarnings(chr_arm_pair[, seq_int := as.integer(seq_chr)])
     chr_arm_pair[, chr_arm_order := order(seq_int, seq_chr, arm)]
-    chr_arm_levels <- paste0(chr_arm_pair[["chr"]], chr_arm_pair[["arm"]])
-    chr_arm_levels <- chr_arm_levels[chr_arm_pair[["chr_arm_order"]]]
-    chr_arm_group <- factor(
-        paste0(chr_arm_dt[["chr"]], chr_arm_dt[["arm"]]),
+    chr_arm_levels <- chr_arm_pair[, paste0(chr, arm)[chr_arm_order]]
+
+    split_factor <- factor(
+        paste0(split_data[["chr"]], split_data[["arm"]]),
         chr_arm_levels
     )
-    ref_ranges <- GenomicRanges::split(
-        ref_ranges, chr_arm_group,
-        drop = TRUE
-    )
+    ref_ranges <- GenomicRanges::split(ref_ranges, split_factor, drop = TRUE)
     arm_ranges <- S4Vectors::endoapply(ref_ranges, function(chr_cytoband) {
         GenomicRanges::reduce(chr_cytoband)
     })
