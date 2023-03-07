@@ -1,8 +1,8 @@
 #' Get arm-level ranges
 #' @param ref_ranges A [`GenomicRanges`][GenomicRanges::GRanges-class] object to
-#' combine into arm-level ranges
+#'   combine into arm-level ranges.
 #' @param arm_col A scalar string indicates the column containing the chromosome
-#' arm
+#'   arm.
 #' @return A [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
 #' @export
@@ -53,10 +53,12 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
     # for chr, we order it by integer portion and then by character
     chr_arm_pair <- data.table::copy(split_data)
     chr_arm_pair <- unique(chr_arm_pair)
+    # nolint start
     chr_arm_pair[, seq_chr := sub("^chr", "", chr, perl = TRUE)]
     suppressWarnings(chr_arm_pair[, seq_int := as.integer(seq_chr)])
     chr_arm_pair[, chr_arm_order := order(seq_int, seq_chr, arm)]
     chr_arm_levels <- chr_arm_pair[, paste0(chr, arm)[chr_arm_order]]
+    # nolint end
 
     split_factor <- factor(
         paste0(split_data[["chr"]], split_data[["arm"]]),
