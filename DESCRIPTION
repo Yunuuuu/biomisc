@@ -31,7 +31,8 @@ Suggests:
     stats,
     utils,
     biomaRt,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    matrixStats
 Remotes:
     Yunuuuu/ABSOLUTE,
     Rdatatable/data.table
