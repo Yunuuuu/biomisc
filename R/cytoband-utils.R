@@ -1,9 +1,9 @@
 #' Get arm-level ranges
-#' @param ref_ranges a [`GenomicRanges`][GenomicRanges::GRanges-class] object to
+#' @param ref_ranges A [`GenomicRanges`][GenomicRanges::GRanges-class] object to
 #' combine into arm-level ranges
-#' @param arm_col a scalar string indicates the column containing the chromosome
+#' @param arm_col A scalar string indicates the column containing the chromosome
 #' arm
-#' @return a [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
+#' @return A [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
 #' @export
 get_arm_ranges <- function(ref_ranges, arm_col = NULL) {

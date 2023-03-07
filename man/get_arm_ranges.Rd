@@ -7,14 +7,14 @@
 get_arm_ranges(ref_ranges, arm_col = NULL)
 }
 \arguments{
-\item{ref_ranges}{a \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object to
+\item{ref_ranges}{A \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object to
 combine into arm-level ranges}
 
-\item{arm_col}{a scalar string indicates the column containing the chromosome
+\item{arm_col}{A scalar string indicates the column containing the chromosome
 arm}
 }
 \value{
-a \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object containing
+A \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object containing
 arm-level ranges.
 }
 \description{
