@@ -4,7 +4,7 @@
 #' @param arm_col A scalar string indicates the column containing the chromosome
 #'   arm. If `NULL`, the internal will search the first column startwith "arm"
 #'   (ignore letter case).
-#' @return A [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
+#' @return A [GenomicRanges][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
 #' @export
 get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
@@ -84,7 +84,7 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
 #'   record id "AH53178" and "hg19" is by record id "AH53177". Default: "hg38".
 #' @param add_arm A scalar logical value indicates whether add a column named
 #'  "arm" defining the chromosome-arm for each items.
-#' @return A [`GenomicRanges`][GenomicRanges::GRanges-class] object containing
+#' @return A [GenomicRanges][GenomicRanges::GRanges-class] object containing
 #'   cytoband informations.
 #' @export 
 get_cytoband <- function(x = "hg38", add_arm = TRUE) {

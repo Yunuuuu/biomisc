@@ -15,7 +15,7 @@ arm. If \code{NULL}, the internal will search the first column startwith "arm"
 (ignore letter case).}
 }
 \value{
-A \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object containing
+A \link[GenomicRanges:GRanges-class]{GenomicRanges} object containing
 arm-level ranges.
 }
 \description{

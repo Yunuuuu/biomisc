@@ -14,7 +14,7 @@ record id "AH53178" and "hg19" is by record id "AH53177". Default: "hg38".}
 "arm" defining the chromosome-arm for each items.}
 }
 \value{
-A \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object containing
+A \link[GenomicRanges:GRanges-class]{GenomicRanges} object containing
 cytoband informations.
 }
 \description{
