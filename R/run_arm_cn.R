@@ -32,11 +32,6 @@
 #'    aneuploidies shape tumour evolution and drug response. Nat Commun 11, 449
 #'    (2020).  \url{https://doi.org/10.1038/s41467-020-14286-0}
 #' }
-#' @examples
-#' seg_cnv <- readRDS(system.file("extdata", "run_arm_cnv_example_seg_cnv.rds",
-#'     package = "yjtools"
-#' ))
-#' arm_cnv_res <- run_arm_cnv(seg_cnv, "CNV", "barcode")
 #' @export
 run_arm_cnv <- function(
     seg_cnv, cnv_col,

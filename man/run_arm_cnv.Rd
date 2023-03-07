@@ -52,12 +52,6 @@ A data.frame containing Chromosome-arm-levels copy number.
 \description{
 Caculate Chromosome-arm-levels copy number variation
 }
-\examples{
-seg_cnv <- readRDS(system.file("extdata", "run_arm_cnv_example_seg_cnv.rds",
-    package = "yjtools"
-))
-arm_cnv_res <- run_arm_cnv(seg_cnv, "CNV", "barcode")
-}
 \references{
 \itemize{
 \item Cohen-Sharir, Y., McFarland, J.M., Abdusamad, M. et al. Aneuploidy
