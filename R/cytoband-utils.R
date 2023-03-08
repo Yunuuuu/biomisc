@@ -2,25 +2,16 @@
 #' @param ref_ranges A [`GenomicRanges`][GenomicRanges::GRanges-class] object to
 #'   combine into arm-level ranges.
 #' @param arm_col A scalar string indicates the column containing the chromosome
-#'   arm. If `NULL`, the internal will search the first column startwith "arm"
-#'   (ignore letter case).
+#'   arm. If `NULL`, the internal will search the first column starts with "arm"
+#'   (ignore letter case). Only values of "p", "q" and "acen" are supported.
 #' @return A [GenomicRanges][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
 #' @export
 get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
-    if (!requireNamespace("GenomicRanges", quietly = TRUE)) {
-        cli::cli_abort("{.pkg GenomicRanges} must be installed to use this function.")
-    }
-    if (!requireNamespace("GenomeInfoDb", quietly = TRUE)) {
-        cli::cli_abort("{.pkg GenomeInfoDb} must be installed to use this function.")
-    }
-    if (!requireNamespace("S4Vectors", quietly = TRUE)) {
-        cli::cli_abort("{.pkg S4Vectors} must be installed to use this function.")
-    }
-
-    if (!inherits(ref_ranges, "GenomicRanges")) {
-        cli::cli_abort("{.arg ref_ranges} should be a {.cls GenomicRanges} object")
-    }
+    assert_pkg("S4Vectors")
+    assert_pkg("GenomicRanges")
+    assert_pkg("GenomeInfoDb")
+    assert_class(ref_ranges, "GenomicRanges")
 
     if (!identical(GenomeInfoDb::seqlevelsStyle(ref_ranges), "UCSC")) {
         cli::cli_inform("try to map seqnames of {.arg ref_ranges} to UCSC style")
@@ -41,12 +32,19 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
     } else if (!rlang::is_scalar_character(arm_col)) {
         cli::cli_abort("{.arg arm_col} should be a scalar string")
     }
+    arm_values <- S4Vectors::mcols(ref_ranges)[[arm_col]]
+    arm_levels <- c("p", "acen", "q")
+    if (!any(arm_values %in% arm_levels)) {
+        cli::cli_abort("Only values of {.val {arm_levels}} are supported in column specified in {.arg arm_col}.")
+    }
+    arm_values <- factor(arm_values, arm_levels)
+    arm_values <- droplevels(arm_values)
 
     # we split ref_ranges by `chr` and `arm` and then combine ranges in
     # each groups if there aren't any intervals.
     split_data <- data.table::data.table(
         chr = as.character(GenomeInfoDb::seqnames(ref_ranges)),
-        arm = S4Vectors::mcols(ref_ranges)[[arm_col]]
+        arm = factor(S4Vectors::mcols(ref_ranges)[[arm_col]], c(""))
     )
 
     # we create factor levels to determine proper order, we order chr_arm pairs
@@ -86,7 +84,7 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
 #'  "arm" defining the chromosome-arm for each items.
 #' @return A [GenomicRanges][GenomicRanges::GRanges-class] object containing
 #'   cytoband informations.
-#' @export 
+#' @export
 get_cytoband <- function(x = "hg38", add_arm = TRUE) {
     out <- switch(x,
         hg19 = run_arm_cnv_ref_cytoband_hg19, # nolint
