@@ -31,8 +31,8 @@ containing the Cytoband reference, It can be a scalar character \code{"hg19"} or
 self-defined \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject.}
 
 \item{arm_col}{A scalar string indicates the column containing the chromosome
-arm. If \code{NULL}, the internal will search the first column startwith "arm"
-(ignore letter case).}
+arm. If \code{NULL}, the internal will search the first column starts with "arm"
+(ignore letter case). Only values of "p", "q" and "acen" are supported.}
 
 \item{cnv_mode}{One of "rel" and "abs" correspongding to what Shukla, A and
 Cohen-Sharir have presented respectively.}

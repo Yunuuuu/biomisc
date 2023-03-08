@@ -11,8 +11,8 @@ get_arm_ranges(ref_ranges, arm_col = NULL)
 combine into arm-level ranges.}
 
 \item{arm_col}{A scalar string indicates the column containing the chromosome
-arm. If \code{NULL}, the internal will search the first column startwith "arm"
-(ignore letter case).}
+arm. If \code{NULL}, the internal will search the first column starts with "arm"
+(ignore letter case). Only values of "p", "q" and "acen" are supported.}
 }
 \value{
 A \link[GenomicRanges:GRanges-class]{GenomicRanges} object containing
