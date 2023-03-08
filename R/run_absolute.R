@@ -98,13 +98,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
                          max_non_clonal = 0.05,
                          copy_num_type = NULL,
                          min_mut_af = 0.1) {
-    if (!requireNamespace("ABSOLUTE", quietly = TRUE)) {
-        cli::cli_abort(c(
-            "ABSOLUTE must be installed to use this function.",
-            i = "you can install it by {.code pak::pkg_install(\"Yunuuuu/ABSOLUTE\")}" # nolint
-        ))
-    }
-
+    assert_pkg("ABSOLUTE")
     # match options --------------------------------------------------------
     platform <- match.arg(
         platform, c("SNP_6.0", "Illumina_WES", "SNP_250K_STY")

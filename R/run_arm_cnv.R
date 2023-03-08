@@ -40,12 +40,12 @@ run_arm_cnv <- function(
     ..., filter_centromere = TRUE,
     ploidy = NULL,
     threshold = 0.9) {
-    if (!requireNamespace("matrixStats", quietly = TRUE)) {
-        cli::cli_abort("{.pkg matrixStats} must be installed to use this function.")
-    }
-    if (!inherits(seg_cnv, "GenomicRanges")) {
-        cli::cli_abort("{.arg seg_cnv} must be a {.cls GenomicRanges} object")
-    }
+    assert_pkg("S4Vectors")
+    assert_pkg("GenomicRanges")
+    assert_pkg("GenomeInfoDb")
+    assert_pkg("matrixStats")
+    assert_class(seg_cnv, "GenomicRanges")
+
     cnv_mode <- match.arg(cnv_mode)
 
     if (!rlang::is_scalar_character(cnv_col)) {

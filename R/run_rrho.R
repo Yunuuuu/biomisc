@@ -535,16 +535,8 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
             "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
         )
     }
-    if (!requireNamespace("ComplexHeatmap", quietly = TRUE)) {
-        cli::cli_abort(
-            "{.pkg ComplexHeatmap} must be installed to use this function."
-        )
-    }
-    if (!requireNamespace("circlize", quietly = TRUE)) {
-        cli::cli_abort(
-            "{.pkg circlize} must be installed to use this function."
-        )
-    }
+    assert_pkg("ComplexHeatmap")
+    assert_pkg("circlize")
     heat_matrix <- t(rrho_obj$hyper_metric)
     # heat_matrix <- t(-log(rrho_obj$hyper_pvalue, base = rrho_obj$log_base))
     heat_matrix <- heat_matrix[

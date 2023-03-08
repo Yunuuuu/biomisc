@@ -16,17 +16,9 @@
 #' run_immucellai(sample_exp, "microarray")
 #' @export
 run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
-    if (!requireNamespace("GSVA", quietly = TRUE)) {
-        cli::cli_abort(
-            "{.pkg GSVA} must be installed to use this function."
-        )
-    }
-    if (!requireNamespace("pracma", quietly = TRUE)) {
-        cli::cli_abort(
-            "{.pkg pracma} must be installed to use this function."
-        )
-    }
-    stopifnot(inherits(sample_exp, "matrix"))
+    assert_pkg("GSVA")
+    assert_pkg("pracma")
+    assert_class(sample_exp, "matrix")
     stopifnot(is.numeric(sample_exp))
     data_type <- match.arg(data_type)
 

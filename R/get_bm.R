@@ -12,6 +12,7 @@
 #' @seealso [getBM][biomaRt::getBM]
 #' @return A `data.frame`
 get_bm <- function(mart, attributes, split = "chromosome_name", ..., times = 10L) {
+    assert_pkg("biomaRt")
     if (!rlang::is_scalar_character(split)) {
         cli::cli_abort("{.arg split} must be a scalar string")
     }

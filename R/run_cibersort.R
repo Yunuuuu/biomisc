@@ -58,16 +58,8 @@
 run_cibersort <- function(mixture_data, sig_data = NULL,
                           perm = 200L, quantile_norm = TRUE, absolute = FALSE,
                           abs_method = "sig_score") {
-    if (!requireNamespace("e1071", quietly = TRUE)) {
-        cli::cli_abort(
-            "{.pkg e1071} must be installed to use this function."
-        )
-    }
-    if (!requireNamespace("preprocessCore", quietly = TRUE)) {
-        cli::cli_abort(
-            "{.pkg preprocessCore} must be installed to use this function."
-        )
-    }
+    assert_pkg("e1071")
+    assert_pkg("preprocessCore")
 
     if (absolute) {
         abs_method <- match.arg(abs_method, c("no_sumto1", "sig_score"))
