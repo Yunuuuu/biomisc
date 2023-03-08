@@ -22,8 +22,8 @@ assert_class <- function(x, is_class, class, null_ok = FALSE, arg = rlang::calle
     message <- sprintf("{.arg {arg}} must be a %s", message)
     if (rlang::is_scalar_character(is_class)) {
         is_class <- substitute(function(x) {
-            inherits(x, is_class)
-        }, list(is_class = is_class))
+            inherits(x, what = what)
+        }, list(what = is_class))
         is_class <- eval(is_class)
     }
 
