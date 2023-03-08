@@ -28,8 +28,7 @@ prepare_pyclone <- function(mut_data, cnv_data, normal_cn = 2, pyclone_vi = FALS
                 "{.arg sample_id} should be a scalar string"
             )
         }
-        if (!(rlang::is_scalar_double(purity) || rlang::is_scalar_integer(purity))) {
-            # nolint
+        if (!is_scalar_numeric(purity)) {
             cli::cli_abort("{.arg purity} should be a scalar numeric")
         }
     }
