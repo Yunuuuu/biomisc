@@ -14,19 +14,18 @@ has_names <- function(x) {
 #'
 #' @keywords internal
 #' @noRd
-assert_class <- function(x, is_class, class, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+assert_class <- function(x, class, is_class = NULL, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+    force(class)
+    if (is.null(is_class)) {
+        is_class <- function(x) {
+            inherits(x, what = class)
+        }
+    }
     message <- "{.cls {class}} object"
     if (null_ok) {
         message <- paste(message, "or {.code NULL}", sep = " ")
     }
     message <- sprintf("{.arg {arg}} must be a %s", message)
-    if (rlang::is_scalar_character(is_class)) {
-        is_class <- substitute(function(x) {
-            inherits(x, what = what)
-        }, list(what = is_class))
-        is_class <- eval(is_class)
-    }
-
     # class sometimes can also contain the `NULL`
     if (is.null(x) && !is_class(x)) {
         if (!null_ok) {
