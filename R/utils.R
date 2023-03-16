@@ -2,14 +2,6 @@
     if (is.null(x)) y else x
 }
 
-has_names <- function(x) {
-    nms <- names(x)
-    if (is.null(nms)) {
-        return(rep_len(FALSE, length(x)))
-    }
-    !is.na(nms) & nms != ""
-}
-
 #' Report if an argument is a specific class
 #'
 #' @keywords internal
