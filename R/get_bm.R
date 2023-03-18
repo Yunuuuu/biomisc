@@ -43,7 +43,7 @@ get_bm_safe <- function(..., times = 10L) {
         tryCatch(biomaRt::getBM(...), error = function(cnd) {
             if (i <= times) {
                 i <<- i + 1L
-                Recall(...)
+                get_bm_rec(...)
             } else {
                 cli::cli_abort("Cannot get data from {.field biomaRt} after trying {.val {times}} time{s?}")
             }
