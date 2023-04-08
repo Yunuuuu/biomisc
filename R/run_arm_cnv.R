@@ -51,7 +51,7 @@ run_arm_cnv <- function(
     if (!rlang::is_scalar_character(cnv_col)) {
         cli::cli_abort("{.arg cnv_col} must be a scalar character")
     } else if (!any(cnv_col == colnames(S4Vectors::mcols(seg_cnv)))) {
-        cli::cli_abort("Cannot find {.val {cnv_col}} in the metadata of {.arg seg_cnv}")
+        cli::cli_abort("Cannot find {.val {cnv_col}} in the metadata column of {.arg seg_cnv}")
     }
     cnv_values <- S4Vectors::mcols(seg_cnv)[[cnv_col]]
     if (!is.numeric(cnv_values)) {
