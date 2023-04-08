@@ -34,7 +34,7 @@ get_arm_ranges <- function(ref_ranges, arm_col = NULL) {
     }
     arm_values <- S4Vectors::mcols(ref_ranges)[[arm_col]]
     arm_levels <- c("p", "acen", "q")
-    if (!any(arm_values %in% arm_levels)) {
+    if (!any(as.character(arm_values) %chin% arm_levels)) {
         cli::cli_abort("Only values of {.val {arm_levels}} are supported in column specified in {.arg arm_col}.")
     }
     arm_values <- factor(arm_values, arm_levels)

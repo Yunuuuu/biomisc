@@ -95,7 +95,7 @@ run_arm_cnv <- function(
             seg_cnv <- seg_cnv[-S4Vectors::queryHits(centromere_hits)]
         }
     }
-    arm_cytoband <- arm_cytoband[arm_cytoband$arm %in% c("p", "q")]
+    arm_cytoband <- arm_cytoband[arm_cytoband$arm %chin% c("p", "q")]
     seg_to_arm_cnv(
         seg_cnv = seg_cnv,
         cnv_col = cnv_col,

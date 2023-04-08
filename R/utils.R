@@ -2,6 +2,9 @@
     if (is.null(x)) y else x
 }
 
+#' @importFrom data.table %chin%
+NULL
+
 #' Report if an argument is a specific class
 #'
 #' @keywords internal

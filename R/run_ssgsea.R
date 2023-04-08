@@ -189,7 +189,7 @@ perm_ssgsea_es <- function(gene_list, gene_set, weight) {
 ssgsea_core <- function(gene_list, gene_set, weight) {
     n <- length(gene_list)
     k <- length(gene_set)
-    idx <- match(gene_set, names(gene_list))
+    idx <- data.table::chmatch(gene_set, names(gene_list))
     gene_list <- abs(gene_list)^weight
     stepCDFinGeneSet <- sum(gene_list[idx] * (n - idx + 1)) /
         sum(gene_list[idx])

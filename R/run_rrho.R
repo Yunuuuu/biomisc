@@ -341,7 +341,7 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         )
     }
     stopifnot(
-        all(quadrant %in% c("up-up", "down-down", "up-down", "down-up"))
+        all(quadrant %chin% c("up-up", "down-down", "up-down", "down-up"))
     )
     rrho_list1_index <- seq.int(
         rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
@@ -380,7 +380,7 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # integer index relative to `quadrant_hyper_metric`
         # the row index is relative to `quadrant_row_index`
         # the column index is relative to `quadrant_col_index`
-        if (x %in% c("up-up", "down-down")) {
+        if (x %chin% c("up-up", "down-down")) {
             quadrant_sig_value <- max(quadrant_hyper_metric, na.rm = TRUE)
             if (quadrant_sig_value <= 0L) {
                 return(NULL)
@@ -398,7 +398,7 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
                     arr.ind = TRUE
                 )
             }
-        } else if (x %in% c("up-down", "down-up")) {
+        } else if (x %chin% c("up-down", "down-up")) {
             # for "up-down" and "down-up" quadrant, under-enrichment means
             # over-enrichment, so we should find the minimal value and ensue it
             # is negative
@@ -772,9 +772,9 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         # to a under-enrichment test in c("up-down", "down-up"), by providing a
         # `quadrant_sign`, we can easily transformed the under-enrichment into a
         # under-enrichment.
-        if (all(quadrant %in% c("up-up", "down-down"))) {
+        if (all(quadrant %chin% c("up-up", "down-down"))) {
             quadrant_sign <- 1L
-        } else if (all(quadrant %in% c("up-down", "down-up"))) {
+        } else if (all(quadrant %chin% c("up-down", "down-up"))) {
             quadrant_sign <- -1L
         } else if (!identical(quadrant, "all")) {
             cli::cli_abort(

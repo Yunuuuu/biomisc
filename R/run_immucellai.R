@@ -42,10 +42,7 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
 
     # prepare marker tag matrix
     marker_tag_mat <- lapply(paper_marker, function(markers) {
-        data.table::fifelse(
-            common_genes %in% markers,
-            1L, 0L
-        )
+        data.table::fifelse(common_genes %chin% markers, 1L, 0L)
     })
 
     # prepare sample expression matrix
@@ -92,7 +89,7 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
 compensation <- function(raw_score, compensation_matrix) {
     diag(compensation_matrix) <- 1L
     common_cells <- rownames(raw_score)[
-        rownames(raw_score) %in% rownames(compensation_matrix)
+        rownames(raw_score) %chin% rownames(compensation_matrix)
     ]
     scores <- apply(raw_score[common_cells, , drop = FALSE], 2L, function(x) {
         pracma::lsqlincon(

@@ -332,7 +332,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
 
     # check seg data ----------------------------------------------
     seg_cols <- c("Sample", "Chromosome", "Start", "End", "Num_Probes", "Segment_Mean")
-    if (!all(seg_cols %in% names(seg))) {
+    if (!all(seg_cols %chin% names(seg))) {
         cli::cli_abort(c(
             "Mising {.field columns} in {.arg seg}",
             i = "Cannot find {.field {setdiff(seg_cols, names(seg))}}"
@@ -369,7 +369,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
             t_alt_count = c("t_alt_count", "i_t_alt_count")
         )
         idx <- vapply(maf_cols, function(x) {
-            i <- match(names(maf), x, nomatch = NA_integer_)
+            i <- data.table::chmatch(names(maf), x, nomatch = NA_integer_)
             if (any(!is.na(i))) {
                 which.min(i)
             } else {
@@ -404,7 +404,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
                 Chromosome, perl = TRUE, ignore.case = TRUE
             )
         ]
-        x[Chromosome %in% as.character(1:23)]
+        x[Chromosome %chin% as.character(1:23)]
     })
 }
 
@@ -428,13 +428,13 @@ absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
     if (is.null(maf)) {
         maf_filepath <- NULL
     } else {
-        maf <- maf[Tumor_Sample_Barcode %in% sample_id, ]
-        maf[, group_id := Tumor_Sample_Barcode]
+        maf[, group_id := as.character(Tumor_Sample_Barcode)]
+        maf <- maf[group_id %chin% sample_id, ]
         if (!dir.exists(file.path(results_dir, "maf"))) {
             dir.create(file.path(results_dir, "maf"))
         }
         maf_filepath <- data.table::fifelse(
-            sample_id %in% unique(maf[["Tumor_Sample_Barcode"]]),
+            sample_id %chin% maf$group_id,
             file.path(results_dir, "maf", paste0(sample_id, ".maf")),
             NA_character_
         )
