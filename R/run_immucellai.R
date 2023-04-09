@@ -18,6 +18,7 @@
 run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     assert_pkg("GSVA")
     assert_pkg("pracma")
+    assert_pkg("quadprog")
     assert_class(sample_exp, "matrix")
     stopifnot(is.numeric(sample_exp))
     data_type <- match.arg(data_type)
