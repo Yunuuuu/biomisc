@@ -14,6 +14,7 @@
 #'     package = "biomisc"
 #' ))
 #' run_immucellai(sample_exp, "microarray")
+#' @seealso <https://github.com/lydiaMyr/ImmuCellAI>
 #' @export
 run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     assert_pkg("GSVA")

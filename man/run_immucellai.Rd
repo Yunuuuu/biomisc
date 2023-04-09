@@ -27,3 +27,6 @@ sample_exp <- readRDS(system.file(
 ))
 run_immucellai(sample_exp, "microarray")
 }
+\seealso{
+\url{https://github.com/lydiaMyr/ImmuCellAI}
+}
