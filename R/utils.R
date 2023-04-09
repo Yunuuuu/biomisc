@@ -10,7 +10,6 @@ NULL
 #' @keywords internal
 #' @noRd
 assert_class <- function(x, class, is_class = NULL, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
-    force(class)
     if (is.null(is_class)) {
         is_class <- function(x) {
             inherits(x, what = class)
@@ -21,14 +20,15 @@ assert_class <- function(x, class, is_class = NULL, null_ok = FALSE, arg = rlang
         message <- paste(message, "or {.code NULL}", sep = " ")
     }
     message <- sprintf("{.arg {arg}} must be a %s", message)
-    # class sometimes can also contain the `NULL`
-    if (is.null(x) && !is_class(x)) {
+    is_right_class <- is_class(x)
+    # is_class sometimes return `TRUE` for`NULL`
+    if (is.null(x) && !is_right_class) {
         if (!null_ok) {
             cli::cli_abort(c(message,
                 "x" = "You've supplied a {.code NULL}"
             ), call = call)
         }
-    } else if (!is_class(x)) {
+    } else if (!is_right_class) {
         cli::cli_abort(c(message,
             "x" = "You've supplied a {.cls {class(x)}} object"
         ), call = call)
