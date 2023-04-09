@@ -70,7 +70,7 @@ assert_pkg <- function(pkg, fun = NULL, call = parent.frame()) {
             fun <- rlang::as_string(fn_call[[1L]])
         }
         cli::cli_abort(
-            "{.pkg pkg} must be installed to use {.fn {fun}}.",
+            "{.pkg {pkg}} must be installed to use {.fn {fun}}.",
             call = call
         )
     }
