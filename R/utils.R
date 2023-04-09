@@ -9,27 +9,30 @@ NULL
 #'
 #' @keywords internal
 #' @noRd
-assert_class <- function(x, class, is_class = NULL, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
-    if (is.null(is_class)) {
+assert_class <- function(x, is_class, msg, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+    if (rlang::is_scalar_character(is_class)) {
+        class <- is_class
         is_class <- function(x) {
             inherits(x, what = class)
         }
+        if (missing(msg)) {
+            msg <- "{.cls {class}} object"
+        }
     }
-    message <- "{.cls {class}} object"
     if (null_ok) {
-        message <- paste(message, "or {.code NULL}", sep = " ")
+        msg <- paste(msg, "or {.code NULL}", sep = " ")
     }
-    message <- sprintf("{.arg {arg}} must be a %s", message)
+    msg <- sprintf("{.arg {arg}} must be a %s", msg)
     is_right_class <- is_class(x)
     # is_class sometimes return `TRUE` for`NULL`
     if (is.null(x) && !is_right_class) {
         if (!null_ok) {
-            cli::cli_abort(c(message,
+            cli::cli_abort(c(msg,
                 "x" = "You've supplied a {.code NULL}"
             ), call = call)
         }
     } else if (!is_right_class) {
-        cli::cli_abort(c(message,
+        cli::cli_abort(c(msg,
             "x" = "You've supplied a {.cls {class(x)}} object"
         ), call = call)
     }
@@ -41,23 +44,23 @@ assert_class <- function(x, class, is_class = NULL, null_ok = FALSE, arg = rlang
 assert_length <- function(x, length, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
     length <- as.integer(length)
     if (length == 1L) {
-        message <- "{.field scalar} object"
+        msg <- "{.field scalar} object"
     } else {
-        message <- "length {.val {length}} object"
+        msg <- "length {.val {length}} object"
     }
     if (null_ok) {
-        message <- paste(message, "or {.code NULL}", sep = " ")
+        msg <- paste(msg, "or {.code NULL}", sep = " ")
     }
-    message <- sprintf("{.arg {arg}} must be a %s", message)
+    msg <- sprintf("{.arg {arg}} must be a %s", msg)
     is_right_length <- length(x) == length
     if (is.null(x) && !is_right_length) {
         if (!null_ok) {
-            cli::cli_abort(c(message,
+            cli::cli_abort(c(msg,
                 "x" = "You've supplied a {.code NULL}"
             ), call = call)
         }
     } else if (!is_right_length) {
-        cli::cli_abort(c(message,
+        cli::cli_abort(c(msg,
             "x" = "You've supplied a length {.val {length(x)}} object"
         ), call = call)
     }
