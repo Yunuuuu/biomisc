@@ -17,21 +17,22 @@ Imports:
     rlang (>= 0.4.11)
 Suggests: 
     ABSOLUTE,
-    circlize,
     ComplexHeatmap,
+    circlize,
+    matrixStats,
     e1071,
     GenomeInfoDb,
     GenomicRanges,
     GSVA,
-    pracma,
     preprocessCore,
-    roxygen2,
     S4Vectors,
     stats,
     utils,
     biomaRt,
-    testthat (>= 3.0.0),
-    matrixStats
+    pracma,
+    quadprog,
+    roxygen2,
+    testthat (>= 3.0.0)
 Remotes:
     Yunuuuu/ABSOLUTE,
     Rdatatable/data.table
