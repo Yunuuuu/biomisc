@@ -20,8 +20,11 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     assert_pkg("GSVA")
     assert_pkg("pracma")
     assert_pkg("quadprog")
-    assert_class(sample_exp, "matrix")
-    stopifnot(is.numeric(sample_exp))
+    assert_class(
+        sample_exp,
+        function(x) is.matrix(x) && is.numeric(x),
+        msg = "numeric {.cls matrix} object"
+    )
     data_type <- match.arg(data_type)
 
     paper_marker <- readRDS(
