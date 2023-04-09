@@ -108,17 +108,23 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
-    if (length(primary_disease) == 0L) {
+    if (is.null(primary_disease)) {
         primary_disease <- NA_character_
     } else if (length(primary_disease) == 1L) {
-        # nolint
-        primary_disease <- intersect(primary_disease, absolute_disease_map())
-        if (length(primary_disease) == 0L) {
-            cli::cli_warn(
-                "Cannot find {.arg primary_disease} in {.pkg ABSOLUTE} {.field disease_map}",
-                i = "you can check out {.code absolute_disease_map()}"
+        if (!is.na(primary_disease)) {
+            tmp_primary_disease <- intersect(
+                primary_disease,
+                absolute_disease_map()
             )
-            primary_disease <- NA_character_
+            if (length(tmp_primary_disease) == 0L) {
+                cli::cli_warn(
+                    "Cannot find primary_disease: {.val {primary_disease}} in {.pkg ABSOLUTE} {.field disease_map}",
+                    i = "you can check out {.code absolute_disease_map()}"
+                )
+                primary_disease <- NA_character_
+            } else {
+                primary_disease <- tmp_primary_disease
+            }
         }
     } else {
         cli::cli_abort(
@@ -188,7 +194,7 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
             file.exists(run_absolute_files)
         ]
 
-        if (!length(run_absolute_files)) {
+        if (length(run_absolute_files) == 0L) {
             cli::cli_abort("No RunAbsolute results file to proceed.")
         }
 
@@ -284,7 +290,7 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
             cli::cli_alert_danger(
                 "Error message: {conditionMessage(cnd)}"
             )
-            if (any(grepl("mutations left", conditionMessage(cnd)))) {
+            if (any(grepl("mutations left", conditionMessage(cnd), perl = TRUE))) {
                 cli::cli_alert_info(
                     "Try to fix error by removing ({.file {basename(maf_fn)}}) file"
                 )
@@ -322,8 +328,8 @@ absolute_safe <- function(seg_dat_fn, maf_fn,
 absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
     if (!inherits(seg, "data.frame")) {
         cli::cli_abort(c(
-            "The class of {.arg seg} must inherited from data.frame including data.frame, data.table, or tibble",
-            i = "{.arg seg} is a {.cls {class(seg)}}"
+            "The class of {.arg seg} must be a {.cls data.frame}-like object including data.frame, data.table, and tibble",
+            i = "You have supplied a {.cls {class(seg)}}"
         ))
     }
     seg <- data.table::as.data.table(seg)
@@ -338,7 +344,7 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
             i = "Cannot find {.field {setdiff(seg_cols, names(seg))}}"
         ))
     }
-    if (any(is.na(seg[["Sample"]]))) {
+    if (anyNA(seg[["Sample"]])) {
         cli::cli_warn(c(
             "Find NA values in {.field Sample} column of {.arg seg}",
             i = "Removing it..."
@@ -350,15 +356,15 @@ absolute_validate_seg_and_maf_data <- function(seg, maf = NULL) {
     if (!is.null(maf)) {
         if (!inherits(maf, "data.frame")) {
             cli::cli_abort(c(
-                "{.arg maf} should inherit from data.frame including data.frame, data.table, or tibble",
-                "x" = "{.arg maf} is a {class(maf)}"
+                "{.arg maf} mut be a {.cls data.frame}-like object including data.frame, data.table, and tibble",
+                "x" = "You have supplied a {class(maf)}"
             ))
         }
         maf <- data.table::as.data.table(maf)
         # the maf_cols values is the column names user can provided, if the
         # element values has more than one items we prefer to the first.
         # the maf_cols names is the standardized names used by downstream
-        # analysis 
+        # analysis
         maf_cols <- list(
             Tumor_Sample_Barcode = "Tumor_Sample_Barcode",
             Chromosome = "Chromosome",
