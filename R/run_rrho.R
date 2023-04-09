@@ -126,13 +126,12 @@
 #' @rdname run_rrho
 run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L) {
     correction <- match.arg(correction, c("common", "length"))
+    assert_class(stepsize, is_scalar_numeric, "scalar numeric", null_ok = TRUE)
     rrho_data <- set_rrho_list(list1, list2, correction = correction)
     if (is.null(stepsize)) {
         stepsize <- as.integer(sqrt(min(lengths(rrho_data)[1:2])))
-    } else if (length(stepsize) == 1L && is.numeric(stepsize)) {
-        stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     } else {
-        cli::cli_abort("{.arg stepsize} should be a scalar numeric")
+        stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     }
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- calculate_hyper_overlap(

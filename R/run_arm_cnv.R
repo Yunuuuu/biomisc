@@ -45,12 +45,10 @@ run_arm_cnv <- function(
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
     assert_class(seg_cnv, "GenomicRanges")
-
+    assert_class(cnv_col, rlang::is_scalar_character, "scalar character")
     cnv_mode <- match.arg(cnv_mode)
 
-    if (!rlang::is_scalar_character(cnv_col)) {
-        cli::cli_abort("{.arg cnv_col} must be a scalar character")
-    } else if (!any(cnv_col == colnames(S4Vectors::mcols(seg_cnv)))) {
+    if (!any(cnv_col == colnames(S4Vectors::mcols(seg_cnv)))) {
         cli::cli_abort("Cannot find {.val {cnv_col}} in the metadata column of {.arg seg_cnv}")
     }
     cnv_values <- S4Vectors::mcols(seg_cnv)[[cnv_col]]
