@@ -11,6 +11,7 @@
 #' @param times The maximal times to try to download data from biomaRt database.
 #' @seealso [getBM][biomaRt::getBM]
 #' @return A `data.frame`
+#' @export 
 get_bm <- function(mart, attributes, split = "chromosome_name", ..., times = 10L) {
     assert_pkg("biomaRt")
     if (!rlang::is_scalar_character(split)) {
