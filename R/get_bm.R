@@ -46,7 +46,7 @@ get_bm_safe <- function(..., times = 10L) {
                 i <<- i + 1L
                 get_bm_rec(...)
             } else {
-                cli::cli_abort("Cannot get data from {.field biomaRt} after trying {.val {times}} time{s?}")
+                cli::cli_abort("Cannot get data from {.field biomaRt} after trying {.val {times}} time{?s}")
             }
         })
     }
