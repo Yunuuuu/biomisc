@@ -11,25 +11,42 @@
 #' @param times The maximal times to try to download data from biomaRt database.
 #' @seealso [getBM][biomaRt::getBM]
 #' @return A `data.frame`
+#' @export
 get_bm <- function(mart, attributes, split = "chromosome_name", ..., times = 10L) {
     assert_pkg("biomaRt")
+    assert_pkg("curl")
     if (!rlang::is_scalar_character(split)) {
         cli::cli_abort("{.arg split} must be a scalar string")
     }
-    split_list <- get_bm_safe(
-        mart = mart, attributes = split,
-        ..., times = times
-    )
-    out <- lapply(cli::cli_progress_along(split_list), function(idx) {
-        get_bm_safe(
-            mart = mart,
-            filters = split,
-            attributes = attributes,
-            values = split_list[[idx]],
-            ...,
+    dots <- list(...)
+    dots$curl <- NULL
+    if (!is.null(dots$values)) {
+        cli::cli_abort(c(
+            "{.arg values} argument cannot work",
+            "Use a named {.arg filters} instead"
+        ))
+    }
+    split_list <- do.call(
+        "get_bm_safe",
+        c(dots, list(
+            mart = mart, attributes = split,
             times = times
-        )
-    })
+        ))
+    )[[split]]
+    out <- lapply(
+        cli::cli_progress_along(split_list, "Downloading"),
+        function(idx) {
+            args <- c(dots, list(
+                mart = mart, attributes = attributes,
+                times = times, curl = curl::new_handle()
+            ))
+            args$filters <- c(
+                args$filters,
+                rlang::inject(rlang::list2(!!split := split_list[[idx]]))
+            )
+            do.call("get_bm_safe", args)
+        }
+    )
     out <- data.table::rbindlist(out, use.names = FALSE)
     data.table::setDF(out)
     out
@@ -45,7 +62,7 @@ get_bm_safe <- function(..., times = 10L) {
                 i <<- i + 1L
                 get_bm_rec(...)
             } else {
-                cli::cli_abort("Cannot get data from {.field biomaRt} after trying {.val {times}} time{s?}")
+                cli::cli_abort("Cannot get data from {.field biomaRt} after trying {.val {times}} time{?s}")
             }
         })
     }
