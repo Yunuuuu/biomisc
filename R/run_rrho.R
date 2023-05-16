@@ -25,17 +25,15 @@
 # all(dplyr::near(
 #     -log(res1$pvalue), res2$log.pval
 # ))
-# all(dplyr::near(
-#     res1$counts, res2$counts
-# ))
-# res3 <- run_rrho(sample1, sample2, 1)
-# rrho_heatmap(res3)
+# 
+# rrho_res <- run_rrho(sample1, sample2, 1)
+# rrho_heatmap(rrho_res)
 # set.seed(1)
-# rrho_correct_pval(res3, "perm", 10)
-# rrho_correct_pval(res3, "perm", 10)
+# rrho_correct_pval(rrho_res, "perm", 10)
+# rrho_correct_pval(rrho_res, "perm", 10)
 # set.seed(1)
-# rrho_corrected_pval(res3, "perm", 10)
-# rrho_corrected_pval(res3, "perm", 10)
+# rrho_correct_pval(rrho_res, "perm", 10)
+# rrho_correct_pval(rrho_res, "perm", 10)
 # res4 <- RRHO::RRHO(
 #     as.data.frame(tibble::enframe(sample1)),
 #     as.data.frame(tibble::enframe(sample2)),
@@ -379,46 +377,33 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # integer index relative to `quadrant_hyper_metric`
         # the row index is relative to `quadrant_row_index`
         # the column index is relative to `quadrant_col_index`
-        if (x %chin% c("up-up", "down-down")) {
-            quadrant_sig_value <- max(quadrant_hyper_metric, na.rm = TRUE)
-            if (quadrant_sig_value <= 0L) {
-                return(NULL)
-            }
-            if (is.infinite(quadrant_sig_value)) {
-                quadrant_sig_coord <- which(
-                    is.infinite(quadrant_hyper_metric) &
-                        quadrant_hyper_metric > 0L,
-                    arr.ind = TRUE
-                )
-            } else {
-                quadrant_sig_coord <- which(
-                    abs(quadrant_hyper_metric - quadrant_sig_value) <
-                        sqrt(.Machine$double.eps),
-                    arr.ind = TRUE
-                )
-            }
-        } else if (x %chin% c("up-down", "down-up")) {
-            # for "up-down" and "down-up" quadrant, under-enrichment means
-            # over-enrichment, so we should find the minimal value and ensue it
-            # is negative
-            quadrant_sig_value <- min(quadrant_hyper_metric, na.rm = TRUE)
-            if (quadrant_sig_value >= 0L) {
-                return(NULL)
-            }
-            if (is.infinite(quadrant_sig_value)) {
-                quadrant_sig_coord <- which(
-                    is.infinite(quadrant_hyper_metric) &
-                        quadrant_hyper_metric < 0L,
-                    arr.ind = TRUE
-                )
-            } else {
-                quadrant_sig_coord <- which(
-                    abs(quadrant_hyper_metric - quadrant_sig_value) <
-                        sqrt(.Machine$double.eps),
-                    arr.ind = TRUE
-                )
-            }
+
+        # for "up-down" and "down-up" quadrant, under-enrichment means
+        # over-enrichment, so we should find the minimal value and ensue it
+        # is negative
+        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
+            sign <- 1L
+        } else {
+            sign <- -1L
         }
+        quadrant_hyper_metric <- quadrant_hyper_metric * sign
+        quadrant_sig_value <- max(quadrant_hyper_metric, na.rm = TRUE)
+        if (quadrant_sig_value <= 0L) {
+            return(NULL)
+        }
+        if (is.infinite(quadrant_sig_value)) {
+            quadrant_sig_coord <- which(
+                is.infinite(quadrant_hyper_metric) &
+                    quadrant_hyper_metric > 0L,
+                arr.ind = TRUE
+            )
+        } else {
+            quadrant_sig_coord <- which(
+                quadrant_hyper_metric == quadrant_sig_value,
+                arr.ind = TRUE
+            )
+        }
+
         # if there exists more than one significant values
         # Just keep the one with the largest number of items.
         # `quadrant_sig_coord` is a matrix with every row correspond to
@@ -739,6 +724,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c("up-up", "down-down")) {
+    assert_pkg("progressr")
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
             "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
@@ -778,9 +764,9 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         } else if (!identical(quadrant, "all")) {
             cli::cli_abort(
                 c(
-                    "{.arg quadrant} is in wrong form.",
-                    "*" = "{.arg quadrant} should be one of {.code c(\"all\", \"up-up\", \"down-down\", \"up-down\", \"down-up\")}.", # nolint
-                    "*" = "you can also specify {.code c(\"up-up\", \"down-down\")} or {.code c(\"up-down\", \"down-up\")} as a whole." # nolint
+                    "x" = "Wrong {.arg quadrant}",
+                    "i" = "{.arg quadrant} should be one of {.code c(\"all\", \"up-up\", \"down-down\", \"up-down\", \"down-up\")}.", # nolint
+                    "i" = "you can also specify {.code c(\"up-up\", \"down-down\")} or {.code c(\"up-down\", \"down-up\")} as a whole." # nolint
                 )
             )
         }
