@@ -231,8 +231,9 @@ hyper_test <- function(sample1, sample2, n) {
     count <- length(intersect(sample1, sample2))
     m <- length(sample1)
     k <- length(sample2)
+
     # under-enrichment
-    if (count <= m * k / n) {
+    if (count <= m / n * k) { # fix error: NAs produced by integer overflow
         sign <- -1L
         pvalue <- stats::phyper(
             q = count, m = m, n = n - m,
@@ -810,16 +811,6 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         )
         # derive permutation summary statistics for given quadrant
         summary_stats <- vapply(perm_hyper_metric, function(hyper_metric_mat) {
-            # if (!identical(quadrant, "all")) {
-            #     stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
-            #         max(hyper_metric_mat[quadrant_idx] * quadrant_sign,
-            #             na.rm = TRUE
-            #         )
-            #     }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
-            #     sum(stats, na.rm = TRUE)
-            # } else {
-            #     max(abs(hyper_metric_mat), na.rm = TRUE)
-            # }
             rrho_summary_stats(
                 quadrant = quadrant,
                 quadrant_idx_list = quadrant_idx_list,
@@ -829,17 +820,6 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
         pecdf <- stats::ecdf(summary_stats)
 
-        # actual summary statistic
-        # if (!identical(quadrant, "all")) {
-        #     actual_stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
-        #         max(rrho_obj$hyper_metric[quadrant_idx] * quadrant_sign,
-        #             na.rm = TRUE
-        #         )
-        #     }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
-        #     actual_stats <- sum(actual_stats, na.rm = TRUE)
-        # } else {
-        #     actual_stats <- max(abs(rrho_obj$hyper_metric), na.rm = TRUE)
-        # }
         actual_stats <- rrho_summary_stats(
             quadrant = quadrant,
             quadrant_idx_list = quadrant_idx_list,
