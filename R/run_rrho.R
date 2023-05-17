@@ -263,7 +263,10 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
         row_ids = row_ids,
         col_ids = col_ids
     )
-    overlaps <- apply(as.matrix(indexes), 1L, function(x) {
+
+    p <- progressr::progressor(steps = nrow(indexes))
+    overlaps <- future.apply::future_apply(as.matrix(indexes), 1L, function(x) {
+        p(message = "hyper-geometric testing")
         hyper_test(
             sample1[seq_len(x[["row_ids"]])],
             sample2[seq_len(x[["col_ids"]])],
@@ -726,7 +729,6 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c("up-up", "down-down")) {
-    assert_pkg("progressr")
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
             "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
