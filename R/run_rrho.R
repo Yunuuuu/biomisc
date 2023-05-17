@@ -514,7 +514,11 @@ print.rrho_sig <- function(x, ...) {
 #' `circlize::colorRamp2`). If the matrix is continuous, the value can also be a
 #' vector of colors so that colors can be interpolated. Pass to `ColorMapping`.
 #' For more details and examples, please refer to [ComplexHeatmap::Heatmap]
-#' @param ... other parameters passed to [ComplexHeatmap::Heatmap]
+#' @inheritParams ComplexHeatmap::Heatmap
+#' @inheritDotParams ComplexHeatmap::Heatmap -matrix -col -name -column_title
+#' -column_title_gp -row_title -left_annotation -bottom_annotation -row_split
+#' -cluster_rows -cluster_row_slices -column_split -cluster_columns
+#' -cluster-column_slices -heatmap_legend_param -use_raster
 #' @examples
 #' n <- 200
 #' sample1 <- rnorm(n)
@@ -634,10 +638,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ..., use_raster = NULL) {
     }
     legend_name <- paste0("Signed |log", legend_name, "(P-value)|")
     if (is.null(use_raster)) {
-        if (length(rrho_list1_index) > 1000L) {
+        if (length(rrho_list1_index) > 500L) {
             cli::cli_inform("Setting {.code use_raster = TRUE}")
             use_raster <- TRUE
         } else {
+            cli::cli_inform("Setting {.code use_raster = FALSE}")
             use_raster <- FALSE
         }
     }
