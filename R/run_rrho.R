@@ -263,16 +263,22 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
         row_ids = row_ids,
         col_ids = col_ids
     )
-
-    p <- progressr::progressor(steps = nrow(indexes))
-    overlaps <- future.apply::future_apply(as.matrix(indexes), 1L, function(x) {
-        p(message = "hyper-geometric testing")
-        hyper_test(
-            sample1[seq_len(x[["row_ids"]])],
-            sample2[seq_len(x[["col_ids"]])],
-            n = n
-        )
-    }, simplify = FALSE)
+    row_ind <- indexes[["row_ids"]]
+    col_ind <- indexes[["col_ids"]]
+    p <- progressr::progressor(steps = nrow(indexes) / 100L)
+    overlaps <- future.apply::future_lapply(seq_len(nrow(indexes)),
+        function(i) {
+            if (i %% 100L == 0L) {
+                p(message = "hyper-geometric testing")
+            }
+            hyper_test(
+                sample1[seq_len(row_ind[[i]])],
+                sample2[seq_len(col_ind[[i]])],
+                n = n
+            )
+        },
+        simplify = FALSE
+    )
     overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
     matrix_counts <- matrix(
@@ -518,7 +524,7 @@ print.rrho_sig <- function(x, ...) {
 #' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' biomisc::rrho_heatmap(rrho_res)
 #' @export
-rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
+rrho_heatmap <- function(rrho_obj, labels, col = NULL, ..., use_raster = NULL) {
     if (!inherits(rrho_obj, "rrho")) {
         cli::cli_abort(
             "{.arg rrho_obj} should be a {.cls rrho} class object returned by {.fn run_rrho} function."
@@ -526,6 +532,9 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     }
     assert_pkg("ComplexHeatmap")
     assert_pkg("circlize")
+    assert_class(use_raster, rlang::is_scalar_logical,
+        msg = "scalar {.cls logical} value", null_ok = TRUE
+    )
     heat_matrix <- t(rrho_obj$hyper_metric)
     # heat_matrix <- t(-log(rrho_obj$hyper_pvalue, base = rrho_obj$log_base))
     heat_matrix <- heat_matrix[
@@ -625,6 +634,14 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         legend_name <- rrho_obj$log_base
     }
     legend_name <- paste0("Signed |log", legend_name, "(P-value)|")
+    if (is.null(use_raster)) {
+        if (length(rrho_list1_index) > 1000L) {
+            cli::cli_inform("Setting {.code use_raster = TRUE}")
+            use_raster <- TRUE
+        } else {
+            use_raster <- FALSE
+        }
+    }
     ComplexHeatmap::Heatmap(
         heat_matrix,
         col = col, name = legend_name,
@@ -675,7 +692,8 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
         heatmap_legend_param = list(
             title_position = "leftcenter-rot"
         ),
-        ...
+        ...,
+        use_raster = use_raster
     )
 }
 
