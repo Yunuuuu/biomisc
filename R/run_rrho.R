@@ -276,8 +276,7 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
                 sample2[seq_len(col_ind[[i]])],
                 n = n
             )
-        },
-        simplify = FALSE
+        }
     )
     overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
