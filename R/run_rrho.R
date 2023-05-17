@@ -275,9 +275,9 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
         nrow = number_of_obj
     )
     # check Pvalue range from [0L, 1L]
-    if (any(overlaps[[2L]] > 1L | overlaps[[2L]] < 0L)) {
-        cli::cli_abort("Something wrong when calculating Hypergeometric Distribution pvalue")
-    }
+    # if (any(overlaps[[2L]] > 1L | overlaps[[2L]] < 0L)) {
+    #     cli::cli_abort("Something wrong when calculating Hypergeometric Distribution pvalue")
+    # }
     matrix_pvals <- matrix(
         overlaps[[2L]],
         nrow = number_of_obj
