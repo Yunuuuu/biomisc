@@ -138,8 +138,10 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
         names(rrho_data$list2),
         stepsize = stepsize
     )
-    hyper_metric <- abs(log(hyper_res$pvalue, base = log_base)) *
-        hyper_res$signs * rrho_data$scale_size
+    hyper_metric <- abs(log(
+        hyper_res$pvalue + .Machine$double.eps,
+        base = log_base
+    )) * hyper_res$signs * rrho_data$scale_size
 
     structure(
         list(
@@ -266,7 +268,8 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
     row_ind <- indexes[["row_ids"]]
     col_ind <- indexes[["col_ids"]]
     p <- progressr::progressor(steps = nrow(indexes) / 100L)
-    overlaps <- future.apply::future_lapply(seq_len(nrow(indexes)),
+    overlaps <- future.apply::future_lapply(
+        seq_len(nrow(indexes)),
         function(i) {
             if (i %% 100L == 0L) {
                 p(message = "hyper-geometric testing")
@@ -827,8 +830,13 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
         p <- progressr::progressor(steps = perm)
         perm_hyper_metric <- future.apply::future_lapply(
             seq_len(perm), function(i) {
+                # https://github.com/HenrikBengtsson/progressr/issues/136
+                # call inner progress first then the outer progress bar
+                # in case of Inner progress bars displayed after outer progress
+                # finishes
+                out <- perm_rrho(rrho_obj)
                 p(message = sprintf("Permuatating %d times", i))
-                perm_rrho(rrho_obj)
+                out
             },
             future.globals = TRUE,
             future.seed = TRUE
@@ -887,7 +895,7 @@ perm_rrho <- function(rrho_obj) {
         ],
         stepsize = rrho_obj$stepsize
     )
-    abs(log(hyper_res$pvalue, base = rrho_obj$log_base)) *
+    abs(log(hyper_res$pvalue + .Machine$double.eps, base = rrho_obj$log_base)) *
         hyper_res$signs * rrho_obj$rrho_data$scale_size
 }
 
