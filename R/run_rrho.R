@@ -97,7 +97,7 @@
 #' @param log_base Normally, `hyper_metric` in the results are transformed by
 #' logarithm, this control the logarithm base. Just like the `base` parameter in
 #' [base::log] function. Default: `10L`.
-#' @return a list of class "rrho" with the following fields:
+#' @return A list of class "rrho" with the following fields:
 #' \describe{
 #'  \item{hyper_metric}{the metric of Rank-Rank Hypergeometric Overlap analysis,
 #'  which is the basis of the RRHO heatmap and permutation test, usually equals
@@ -106,8 +106,9 @@
 #'  \item{hyper_signs}{the signs of `hyper_metric`, negative values indicate
 #'  under-enrichment, and positive values indicate over-enrichment.}
 #'  \item{hyper_counts}{the overlapping counts number in each test.}
-#'  \item{rrho_data}{the data used in RRHO analysis: keep the same items in
-#'  both `list1` and `list2` and sort them based on their value.}
+#'  \item{rrho_data}{the data used in RRHO analysis: both `list1` (all items or
+#'  only keep items also in `list2` base on "correction" argument) and `list2`
+#'  (will only keep items in `list1`) and sort them based on their value.}
 #'  \item{stepsize}{the provided `stepsize` parameter.}
 #'  \item{log_base}{the provided `log_base` parameter.}
 #' }

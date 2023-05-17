@@ -30,7 +30,7 @@ logarithm, this control the logarithm base. Just like the \code{base} parameter 
 \item{...}{Not used currently}
 }
 \value{
-a list of class "rrho" with the following fields:
+A list of class "rrho" with the following fields:
 \describe{
 \item{hyper_metric}{the metric of Rank-Rank Hypergeometric Overlap analysis,
 which is the basis of the RRHO heatmap and permutation test, usually equals
@@ -39,8 +39,9 @@ to \code{abs(log(hyper_pvalue)) * hyper_signs}.}
 \item{hyper_signs}{the signs of \code{hyper_metric}, negative values indicate
 under-enrichment, and positive values indicate over-enrichment.}
 \item{hyper_counts}{the overlapping counts number in each test.}
-\item{rrho_data}{the data used in RRHO analysis: keep the same items in
-both \code{list1} and \code{list2} and sort them based on their value.}
+\item{rrho_data}{the data used in RRHO analysis: both \code{list1} (all items or
+only keep items also in \code{list2} base on "correction" argument) and \code{list2}
+(will only keep items in \code{list1}) and sort them based on their value.}
 \item{stepsize}{the provided \code{stepsize} parameter.}
 \item{log_base}{the provided \code{log_base} parameter.}
 }
