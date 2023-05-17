@@ -404,18 +404,10 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         if (quadrant_sig_value <= 0L) {
             return(NULL)
         }
-        if (is.infinite(quadrant_sig_value)) {
-            quadrant_sig_coord <- which(
-                is.infinite(quadrant_hyper_metric) &
-                    quadrant_hyper_metric > 0L,
-                arr.ind = TRUE
-            )
-        } else {
-            quadrant_sig_coord <- which(
-                quadrant_hyper_metric == quadrant_sig_value,
-                arr.ind = TRUE
-            )
-        }
+        quadrant_sig_coord <- which(
+            quadrant_hyper_metric == quadrant_sig_value,
+            arr.ind = TRUE
+        )
 
         # if there exists more than one significant values
         # Just keep the one with the largest number of items.
@@ -634,7 +626,7 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ..., use_raster = NULL) {
             )
         )
     }
-    if (abs(rrho_obj$log_base - exp(1L)) < sqrt(.Machine$double.eps)) {
+    if (rrho_obj$log_base == exp(1L)) {
         legend_name <- ""
     } else {
         legend_name <- rrho_obj$log_base
