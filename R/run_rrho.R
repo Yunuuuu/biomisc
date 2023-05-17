@@ -25,7 +25,7 @@
 # all(dplyr::near(
 #     -log(res1$pvalue), res2$log.pval
 # ))
-# 
+#
 # rrho_res <- run_rrho(sample1, sample2, 1)
 # rrho_heatmap(rrho_res)
 # set.seed(1)
@@ -595,11 +595,11 @@ rrho_heatmap <- function(rrho_obj, labels, col = NULL, ...) {
     # split parameters
     row_split <- factor(
         rrho_get_direction(row_ranked_list),
-        levels = c("down", "none", "up")
+        levels = c("down", "up")
     )
     column_split <- factor(
         rrho_get_direction(column_ranked_list),
-        levels = c("up", "none", "down")
+        levels = c("up", "down")
     )
 
     if (is.null(col)) {
@@ -888,9 +888,5 @@ perm_rrho <- function(rrho_obj) {
 }
 
 rrho_get_direction <- function(x) {
-    data.table::fcase(
-        x < 0L, "down",
-        x == 0L, "none",
-        x > 0L, "up"
-    )
+    data.table::fifelse(x <= 0L, "down", "up")
 }
