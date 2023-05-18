@@ -172,8 +172,16 @@ print.rrho <- function(x, ...) {
         "Rank-Rank Hypergeometric Overlap analysis",
         indent = 0, exdent = 2
     ), sep = "\n")
+    sig_spots <- rrho_sig_spot_internal(x)
     cat(strwrap(
-        sprintf("The maximal RRHO metrix: %.2g", max(x$hyper_metric)),
+        paste(
+            "The maximal RRHO metrix",
+            paste(sprintf(
+                "%.2g (%s-%s)", sig_spots$spots,
+                sig_spots$list1, sig_spots$list2
+            ), collapse = ", "),
+            sep = ": "
+        ),
         indent = 2, exdent = 2
     ), sep = "\n")
     if (is.integer(x$rrho_data$scale_size)) {
@@ -192,6 +200,25 @@ print.rrho <- function(x, ...) {
         sprintf("Analysis with stepsize: %d", x$stepsize),
         indent = 2, exdent = 2
     ), sep = "\n")
+}
+
+rrho_sig_spot_internal <- function(rrho_obj) {
+    rrho_list1_index <- seq.int(
+        rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
+        by = rrho_obj$stepsize
+    )
+    rrho_list2_index <- seq.int(
+        rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
+        by = rrho_obj$stepsize
+    )
+    abs_metrix <- abs(rrho_obj$hyper_metric)
+    idx <- which(abs_metrix == max(abs_metrix), arr.ind = TRUE)
+    out <- data.table::data.table(
+        spots = rrho_obj$hyper_metric[idx],
+        list1 = rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index]),
+        list2 = rrho_get_direction(rrho_obj$rrho_data$list2[rrho_list2_index])
+    )
+    unique(out)
 }
 
 set_rrho_list <- function(list1, list2, correction) {
@@ -464,6 +491,17 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     })
     names(res) <- quadrant
     res
+}
+
+#' Rank-Rank Hypergeometric Overlap significant spot
+#'
+#' @export
+#' @rdname rrho_sig_items
+rrho_sig_spot <- function(rrho_obj) {
+    assert_rrho(rrho_obj)
+    sig_spot <- rrho_sig_spot_internal(rrho_obj)
+    data.table::setDF(sig_spot)
+    sig_spot
 }
 
 #' @param x An object returned by [rrho_sig_items()]
@@ -823,7 +861,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
                 )
                 p(message = sprintf("Permuatating %d times", i))
                 rrho_metric(
-                    out$pvalue, out$signs, 
+                    out$pvalue, out$signs,
                     rrho_obj$rrho_data$scale_size,
                     rrho_obj$log_base
                 )
