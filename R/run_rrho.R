@@ -524,29 +524,29 @@ print.rrho_sig <- function(x, ...) {
             "Finding %d significant overlapping items by list1 and list2 in RRHO analysis",
             length(x$common_items)
         ),
-        indent = 0, exdent = 2
+        indent = 0L, exdent = 2L
     ), sep = "\n")
     cat(strwrap(
         sprintf(
             "Significant items in list1: %d",
             length(x$sig_item1)
         ),
-        indent = 2, exdent = 2
+        indent = 2L, exdent = 2L
     ), sep = "\n")
     cat(strwrap(
         sprintf(
             "Significant items in list2: %d",
             length(x$sig_item2)
         ),
-        indent = 2, exdent = 2
+        indent = 2L, exdent = 2L
     ), sep = "\n")
     cat(strwrap(
         sprintf("The significant RRHO metrix: %.2g", x$hyper_metric),
-        indent = 0, exdent = 2
+        indent = 0L, exdent = 2L
     ), sep = "\n")
     cat(strwrap(
         sprintf("The significant RRHO pvalue: %.2g", x$hyper_pvalue),
-        indent = 0, exdent = 2
+        indent = 0L, exdent = 2L
     ), sep = "\n")
 }
 
@@ -793,20 +793,18 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
     if (!identical(method, "permutation")) {
         # Convert hypermat to a vector and apply Benjamini Yekutieli Pvalue
         # correction
-        hyper_pvalue_by <- stats::p.adjust(
+        hyper_pvalue_adj <- stats::p.adjust(
             c(rrho_obj$hyper_pvalue),
             method = method
         )
-        rrho_obj$hyper_pvalue <- matrix(
-            hyper_pvalue_by,
+        rrho_obj$hyper_pvalue_adj <- matrix(
+            hyper_pvalue_adj,
             nrow = nrow(rrho_obj$hyper_pvalue),
             ncol = ncol(rrho_obj$hyper_pvalue)
         )
-        rrho_obj$hyper_metric <- define_metrics(
-            rrho_obj$hyper_signs, log(rrho_obj$hyper_pvalue),
-            rrho_obj$rrho_data$scale_size,
-            rrho_obj$log_base
-        )
+        # here we don't generate Benjamini-Yekutieli corrected hypergeometric
+        # maps, since this will create many zero value resulted from the double
+        # fload calculations.
         new_rrho(rrho_obj)
     } else {
         quadrant <- unique(quadrant)
