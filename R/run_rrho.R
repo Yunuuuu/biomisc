@@ -436,16 +436,6 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             quadrant_hyper_pvalue == min(quadrant_hyper_pvalue, na.rm = TRUE),
             arr.ind = TRUE
         )
-        quadrant_sig_sign <- quadrant_hyper_metric[quadrant_sig_coord]
-        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
-            if (quadrant_sig_sign <= 0L) {
-                return(NULL)
-            }
-        } else {
-            if (quadrant_sig_sign >= 0L) {
-                return(NULL)
-            }
-        }
 
         # if there exists more than one significant values
         # Just keep the one with the largest number of items.
@@ -462,6 +452,18 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             which.max(quadrant_hyper_counts[quadrant_sig_coord]), ,
             drop = TRUE
         ]
+
+        metric_sign <- quadrant_hyper_metric[quadrant_sig_coord]
+        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
+            if (metric_sign <= 0L) {
+                return(NULL)
+            }
+        } else {
+            if (metric_sign >= 0L) {
+                return(NULL)
+            }
+        }
+
         sig_coord <- c(
             rrho_list1_index[quadrant_row_index[
                 quadrant_sig_coord[[1L]]
