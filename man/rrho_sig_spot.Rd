@@ -14,7 +14,7 @@ A data.frame, of which each row indicates the highest intensity
 point.
 }
 \description{
-Rank-Rank Hypergeometric Overlap significant spot
+Extract the the significant spot and its quadrant
 }
 \details{
 The highest intensity point on the resulting Rank-Rank
@@ -25,4 +25,7 @@ represents the optimal overlap between the profiles in that this is the
 overlap that is least likely to occur by chance. The coordinates of the
 highest intensity point are the rank in each experiment above which are the
 most statistically significant set of overlapping genes.
+}
+\seealso{
+\link{rrho_sig_items}
 }

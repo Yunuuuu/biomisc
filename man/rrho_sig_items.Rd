@@ -57,3 +57,6 @@ biomisc::rrho_sig_items(rrho_res)
 \references{
 \url{https://academic.oup.com/nar/article/38/17/e169/1033168#82642652}
 }
+\seealso{
+\link{rrho_sig_spot}
+}

@@ -368,6 +368,7 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
 #' }
 #' @references
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>
+#' @seealso [rrho_sig_spot]
 #' @examples
 #' n <- 200
 #' sample1 <- rnorm(n)
@@ -495,10 +496,13 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
 
 #' Rank-Rank Hypergeometric Overlap significant spot
 #'
+#' Extract the the significant spot and its quadrant
+#'  
 #' @inheritParams rrho_sig_items
 #' @inherit rrho_sig_items details 
 #' @return A data.frame, of which each row indicates the highest intensity
 #'   point. 
+#' @seealso [rrho_sig_items]
 #' @export
 rrho_sig_spot <- function(rrho_obj) {
     assert_rrho(rrho_obj)
