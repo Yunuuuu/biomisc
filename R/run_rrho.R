@@ -260,21 +260,21 @@ set_rrho_list <- function(list1, list2, correction) {
 
 # Manuscript definition
 # N: the length of list1 - population size
-# M: the current rank step pair of sample1 - target population
-# s: the current rank step pair of sample2 - sample size
+# s: the current rank step pair of sample1 - sample size
+# M: the current rank step pair of sample2 - target population
 # k: overlapping length
 
 # `phyper` function definition
-# count = q = k: overlapping length
-# m = M: the current rank step pair of sample1 - target population
+# k = s: sample size
 # n = N-M: non-target population
-# k = s: the current rank step pair of sample2 - sample size
+# m = M: target population
+# count = q = k: overlapping length
 
 ## Compute the overlaps between two *character* atomic vector:
 hyper_test <- function(sample1, sample2, n) {
-    count <- length(intersect(sample1, sample2))
-    m <- length(sample1)
-    k <- length(sample2)
+    count <- length(intersect(sample1, sample2)) # k
+    k <- length(sample1) # sample size
+    m <- length(sample2) # target size
 
     # under-enrichment
     if (count <= m / n * k) { # fix error: NAs produced by integer overflow
