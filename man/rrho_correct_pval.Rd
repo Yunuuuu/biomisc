@@ -6,7 +6,7 @@
 \usage{
 rrho_correct_pval(
   rrho_obj,
-  method = NULL,
+  method = "BY",
   perm = 200L,
   quadrant = c("up-up", "down-down")
 )
@@ -14,7 +14,8 @@ rrho_correct_pval(
 \arguments{
 \item{rrho_obj}{An object returned by \code{\link[=run_rrho]{run_rrho()}}}
 
-\item{method}{one of \code{c("BY", "permutation")} indicates which method to use
+\item{method}{A string, "permutation" or other correction method (details
+see \code{\link[=p.adjust]{p.adjust()}}) indicates which method to use
 to correct multiple hypothesis}
 
 \item{perm}{if use "permutation", indicates how many times should be used.}

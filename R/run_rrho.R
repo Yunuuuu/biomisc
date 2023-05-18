@@ -746,7 +746,8 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
 #' using resampling or by Benjamini-Yekutieli correction.
 #'
 #' @inheritParams rrho_sig_items
-#' @param method one of `c("BY", "permutation")` indicates which method to use
+#' @param method A string, "permutation" or other correction method (details
+#' see [p.adjust()]) indicates which method to use
 #' to correct multiple hypothesis
 #' @param perm if use "permutation", indicates how many times should be used.
 #' @param quadrant the "quadrant" to test significance, usually we want to test
@@ -789,15 +790,15 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642617>
 #' <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
-rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c("up-up", "down-down")) {
+rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c("up-up", "down-down")) {
     assert_rrho(rrho_obj)
-    method <- match.arg(method, c("BY", "permutation"))
-    if (identical(method, "BY")) {
+    method <- match.arg(method, c(p.adjust.methods, "permutation"))
+    if (!identical(method, "permutation")) {
         # Convert hypermat to a vector and apply Benjamini Yekutieli Pvalue
         # correction
         hyper_pvalue_by <- stats::p.adjust(
             c(rrho_obj$hyper_pvalue),
-            method = "BY"
+            method = method
         )
         rrho_obj$hyper_pvalue <- matrix(
             hyper_pvalue_by,
