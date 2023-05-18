@@ -12,8 +12,8 @@
 ## stepsize indicates how many genes to increase by
 ##    in each algorithm iteration
 ### Testing:
-# res1 <- calculate_hyper_overlap(
-#     names(sample1), names(sample2), length(sample1), 1
+# res1 <- rrho_hyper_overlap(
+#     names(sample1), names(sample2), length(sample1), 1L, 10L
 # )
 # res2 <- RRHO:::numericListOverlap(
 #     names(sample1), names(sample2), 1,
@@ -133,19 +133,17 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
         stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     }
     ## DO Rank Rank Hypergeometric Overlap
-    hyper_res <- calculate_hyper_overlap(
+    hyper_res <- rrho_hyper_overlap(
         names(rrho_data$list1),
         names(rrho_data$list2),
-        stepsize = stepsize
+        stepsize = stepsize,
+        scale_size = rrho_data$scale_size,
+        log_base = log_base
     )
-    hyper_metric <- abs(log(
-        hyper_res$pvalue + .Machine$double.xmin,
-        base = log_base
-    )) * hyper_res$signs * rrho_data$scale_size
 
     structure(
         list(
-            hyper_metric = hyper_metric,
+            hyper_metric = hyper_res$metric,
             hyper_pvalue = hyper_res$pvalue,
             hyper_signs = hyper_res$signs,
             hyper_counts = hyper_res$counts,
@@ -257,7 +255,7 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, pvalue, sign)
 }
 
-calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
+rrho_hyper_overlap <- function(sample1, sample2, stepsize, scale_size, log_base) {
     n <- length(sample1)
     row_ids <- seq.int(stepsize, length(sample1), by = stepsize)
     col_ids <- seq.int(stepsize, length(sample2), by = stepsize)
@@ -302,7 +300,11 @@ calculate_hyper_overlap <- function(sample1, sample2, stepsize) {
     list(
         counts = matrix_counts,
         pvalue = matrix_pvals,
-        signs = matrix_signs
+        signs = matrix_signs,
+        metric = abs(log(
+            matrix_pvals + .Machine$double.xmin,
+            base = log_base
+        )) * matrix_signs * scale_size
     )
 }
 
@@ -813,9 +815,19 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
                 # call inner progress first then the outer progress bar
                 # in case of Inner progress bars displayed after outer progress
                 # finishes
-                out <- perm_rrho(rrho_obj)
+                out <- rrho_hyper_overlap(
+                    names(rrho_obj$rrho_data$list1)[
+                        sample.int(length(rrho_obj$rrho_data$list1), replace = FALSE)
+                    ],
+                    names(rrho_obj$rrho_data$list2)[
+                        sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
+                    ],
+                    stepsize = rrho_obj$stepsize,
+                    scale_size = rrho_obj$rrho_data$scale_size,
+                    log_base = rrho_obj$log_base
+                )
                 p(message = sprintf("Permuatating %d times", i))
-                out
+                out$metric
             },
             future.globals = TRUE,
             future.seed = TRUE
@@ -849,7 +861,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
 }
 
 #' Rank-Rank Hypergeometric Overlap Map Dots plot
-#' 
+#'
 #' @inheritParams rrho_sig_items
 #' @param type One of "normal" or "rank", if "normal", the plot value will be
 #'   the list1 and list2 used to calculate Rank-Rank Hypergeometric Overlap Map,
@@ -857,7 +869,7 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
 #' @inheritDotParams ggplot2::geom_point
 #' @return A ggplot Object
 #' @importFrom rlang .data
-#' @export 
+#' @export
 rrho_dots <- function(rrho_obj, type = c("normal", "rank"), ...) {
     assert_rrho(rrho_obj)
     type <- match.arg(type)
@@ -899,22 +911,6 @@ rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper
     } else {
         max(abs(hyper_metric_mat), na.rm = TRUE)
     }
-}
-
-perm_rrho <- function(rrho_obj) {
-    hyper_res <- calculate_hyper_overlap(
-        names(rrho_obj$rrho_data$list1)[
-            sample.int(length(rrho_obj$rrho_data$list1), replace = FALSE)
-        ],
-        names(rrho_obj$rrho_data$list2)[
-            sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
-        ],
-        stepsize = rrho_obj$stepsize
-    )
-    abs(log(hyper_res$pvalue + .Machine$double.xmin,
-        base = rrho_obj$log_base
-    )) *
-        hyper_res$signs * rrho_obj$rrho_data$scale_size
 }
 
 rrho_get_direction <- function(x) {
