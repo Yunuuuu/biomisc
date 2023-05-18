@@ -315,11 +315,11 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
     )
     row_idx <- indexes[["row_ids"]]
     col_idx <- indexes[["col_ids"]]
-    p <- progressr::progressor(steps = nrow(indexes) / 100L)
+    p <- progressr::progressor(steps = nrow(indexes) / 200L)
     overlaps <- future.apply::future_lapply(
         seq_len(nrow(indexes)),
         function(i) {
-            if (i %% 100L == 0L) {
+            if (i %% 200L == 0L) {
                 p(message = "hyper-geometric testing")
             }
             hyper_test(
