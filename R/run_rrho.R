@@ -285,9 +285,14 @@ hyper_test <- function(sample1, sample2, n) {
         )
     } else {
         # over-enrichment
+        # since lower.tail = FALSE won't include point estimation in `k`
+        # value, so we just subtract one to include the point estimation
+        # Also since count > m * k / n, `count` won't be able to equal to zero
+        # and also count must smaller than k, so k is larger than 0, it's safe
+        # to just subtract one 
         sign <- 1L
         pvalue <- stats::phyper(
-            q = count, m = m, n = n - m,
+            q = count - 1L, m = m, n = n - m,
             k = k, lower.tail = FALSE, log.p = FALSE
         )
     }
@@ -303,8 +308,8 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
         row_ids = row_ids,
         col_ids = col_ids
     )
-    row_ind <- indexes[["row_ids"]]
-    col_ind <- indexes[["col_ids"]]
+    row_idx <- indexes[["row_ids"]]
+    col_idx <- indexes[["col_ids"]]
     p <- progressr::progressor(steps = nrow(indexes) / 100L)
     overlaps <- future.apply::future_lapply(
         seq_len(nrow(indexes)),
@@ -313,11 +318,14 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
                 p(message = "hyper-geometric testing")
             }
             hyper_test(
-                sample1[seq_len(row_ind[[i]])],
-                sample2[seq_len(col_ind[[i]])],
+                sample1[seq_len(row_idx[[i]])],
+                sample2[seq_len(col_idx[[i]])],
                 n = n
             )
-        }
+        },
+        future.globals = c(
+            "sample1", "sample2", "row_idx", "col_idx", "n", "hyper_test"
+        )
     )
     overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
@@ -578,10 +586,9 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
     assert_class(use_raster, rlang::is_scalar_logical,
         msg = "scalar {.cls logical} value", null_ok = TRUE
     )
-    heat_matrix <- t(rrho_obj$hyper_metric)
-    # heat_matrix <- t(-log(rrho_obj$hyper_pvalue, base = rrho_obj$log_base))
-    heat_matrix <- heat_matrix[
-        rev(seq_len(nrow(heat_matrix))), ,
+    heat_matric <- t(rrho_obj$hyper_metric)
+    heat_matric <- heat_matric[
+        rev(seq_len(nrow(heat_matric))), ,
         drop = FALSE
     ]
 
@@ -659,12 +666,9 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
     )
 
     if (is.null(col)) {
+        range_val <- range(heat_matric, na.rm = TRUE, finite = TRUE)
         col <- circlize::colorRamp2(
-            seq(
-                min(heat_matrix[is.finite(heat_matrix)], na.rm = TRUE),
-                max(heat_matrix[is.finite(heat_matrix)], na.rm = TRUE),
-                length.out = 9L
-            ),
+            seq(range_val[[1L]], range_val[[2L]], length.out = 9L),
             c(
                 "#00007F", "blue", "#007FFF", "cyan",
                 "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"
@@ -687,7 +691,7 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
         }
     }
     ComplexHeatmap::Heatmap(
-        heat_matrix,
+        heat_matric,
         col = col, name = legend_name,
         column_title = "Rank Rank Hypergeometric Overlap Map",
         column_title_gp = grid::gpar(fontface = "bold"),
