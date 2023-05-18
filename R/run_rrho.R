@@ -176,7 +176,7 @@ print.rrho <- function(x, ...) {
         paste(
             "The maximal RRHO metrix",
             paste(sprintf(
-                "%.2g (%s-%s)", sig_spots$spots,
+                "%.2g (%s-%s)", sig_spots$hyper_metric,
                 sig_spots$list1, sig_spots$list2
             ), collapse = ", "),
             sep = ": "
