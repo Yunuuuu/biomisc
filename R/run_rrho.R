@@ -205,13 +205,13 @@ print.rrho <- function(x, ...) {
 }
 
 rrho_sig_spot_internal <- function(rrho_obj) {
-    rrho_list1_index <- seq.int(
-        rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
-        by = rrho_obj$stepsize
+    rrho_list1_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list1),
+        rrho_obj$stepsize
     )
-    rrho_list2_index <- seq.int(
-        rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
-        by = rrho_obj$stepsize
+    rrho_list2_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list2),
+        rrho_obj$stepsize
     )
     idx <- which(
         rrho_obj$hyper_pvalue == min(rrho_obj$hyper_pvalue, na.rm = TRUE),
@@ -300,10 +300,14 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, pvalue, sign)
 }
 
+rrho_seq_idx <- function(n, stepsize) {
+    seq.int(stepsize, n, by = stepsize)
+}
+
 rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
     n <- length(sample1)
-    row_ids <- seq.int(stepsize, length(sample1), by = stepsize)
-    col_ids <- seq.int(stepsize, length(sample2), by = stepsize)
+    row_ids <- rrho_seq_idx(length(sample1), stepsize)
+    col_ids <- rrho_seq_idx(length(sample2), stepsize)
     indexes <- expand.grid(
         row_ids = row_ids,
         col_ids = col_ids
@@ -396,13 +400,13 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     stopifnot(
         all(quadrant %chin% c("up-up", "down-down", "up-down", "down-up"))
     )
-    rrho_list1_index <- seq.int(
-        rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
-        by = rrho_obj$stepsize
+    rrho_list1_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list1),
+        rrho_obj$stepsize
     )
-    rrho_list2_index <- seq.int(
-        rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
-        by = rrho_obj$stepsize
+    rrho_list2_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list2),
+        rrho_obj$stepsize
     )
     res <- lapply(quadrant, function(x) {
         quadrant_dir <- strsplit(x, "-")[[1L]]
@@ -592,13 +596,13 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
         drop = FALSE
     ]
 
-    rrho_list1_index <- seq.int(
-        rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
-        by = rrho_obj$stepsize
+    rrho_list1_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list1),
+        rrho_obj$stepsize
     )
-    rrho_list2_index <- seq.int(
-        rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
-        by = rrho_obj$stepsize
+    rrho_list2_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list2),
+        rrho_obj$stepsize
     )
 
     # Since now the matrix is transposed
@@ -833,13 +837,13 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
 
         # define quadrant for testing
         if (!identical(quadrant, "all")) {
-            rrho_list1_index <- seq.int(
-                rrho_obj$stepsize, length(rrho_obj$rrho_data$list1),
-                by = rrho_obj$stepsize
+            rrho_list1_index <- rrho_seq_idx(
+                length(rrho_obj$rrho_data$list1),
+                rrho_obj$stepsize
             )
-            rrho_list2_index <- seq.int(
-                rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
-                by = rrho_obj$stepsize
+            rrho_list2_index <- rrho_seq_idx(
+                length(rrho_obj$rrho_data$list2),
+                rrho_obj$stepsize
             )
             rrho_list1_quadrant <- rrho_get_direction(
                 rrho_obj$rrho_data$list1[rrho_list1_index]
