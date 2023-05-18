@@ -13,7 +13,7 @@
 ##    in each algorithm iteration
 ### Testing:
 # res1 <- rrho_hyper_overlap(
-#     names(sample1), names(sample2), length(sample1), 1L, 10L
+#     names(sample1), names(sample2), length(sample1), 1L
 # )
 # res2 <- RRHO:::numericListOverlap(
 #     names(sample1), names(sample2), 1,
@@ -136,23 +136,31 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
     hyper_res <- rrho_hyper_overlap(
         names(rrho_data$list1),
         names(rrho_data$list2),
+        stepsize = stepsize
+    )
+    new_rrho(list(
+        hyper_pvalue = hyper_res$pvalue,
+        hyper_signs = hyper_res$signs,
+        hyper_counts = hyper_res$counts,
+        rrho_data = rrho_data,
         stepsize = stepsize,
-        scale_size = rrho_data$scale_size,
         log_base = log_base
-    )
+    ))
+}
 
-    structure(
-        list(
-            hyper_metric = hyper_res$metric,
-            hyper_pvalue = hyper_res$pvalue,
-            hyper_signs = hyper_res$signs,
-            hyper_counts = hyper_res$counts,
-            rrho_data = rrho_data,
-            stepsize = stepsize,
-            log_base = log_base
-        ),
-        class = "rrho"
+new_rrho <- function(list) {
+    list$hyper_metric <- rrho_metric(
+        list$hyper_pvalue,
+        list$hyper_signs,
+        list$rrho_data$scale_size,
+        list$log_base
     )
+    structure(list, class = "rrho")
+}
+
+rrho_metric <- function(pvalue, signs, scale_size, log_base) {
+    abs(log(pvalue + .Machine$double.xmin, log_base)) *
+        signs * scale_size
 }
 
 #' @param x An object returned by [run_rrho()]
@@ -255,7 +263,7 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, pvalue, sign)
 }
 
-rrho_hyper_overlap <- function(sample1, sample2, stepsize, scale_size, log_base) {
+rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
     n <- length(sample1)
     row_ids <- seq.int(stepsize, length(sample1), by = stepsize)
     col_ids <- seq.int(stepsize, length(sample2), by = stepsize)
@@ -300,11 +308,7 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize, scale_size, log_base)
     list(
         counts = matrix_counts,
         pvalue = matrix_pvals,
-        signs = matrix_signs,
-        metric = abs(log(
-            matrix_pvals + .Machine$double.xmin,
-            base = log_base
-        )) * matrix_signs * scale_size
+        signs = matrix_signs
     )
 }
 
@@ -748,19 +752,12 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
             c(rrho_obj$hyper_pvalue),
             method = "BY"
         )
-        hyper_pvalue_by <- matrix(
+        rrho_obj$hyper_pvalue <- matrix(
             hyper_pvalue_by,
             nrow = nrow(rrho_obj$hyper_pvalue),
             ncol = ncol(rrho_obj$hyper_pvalue)
         )
-        list(
-            hyper_metric_by = abs(
-                log(hyper_pvalue_by, base = rrho_obj$log_base)
-            ) *
-                rrho_obj$hyper_signs *
-                rrho_obj$rrho_data$scale_size,
-            hyper_pvalue_by = hyper_pvalue_by
-        )
+        new_rrho(rrho_obj)
     } else {
         quadrant <- unique(quadrant)
         # we want to use over-enrichment for all quadrant, but we actually want
@@ -822,12 +819,14 @@ rrho_correct_pval <- function(rrho_obj, method = NULL, perm = 200L, quadrant = c
                     names(rrho_obj$rrho_data$list2)[
                         sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
                     ],
-                    stepsize = rrho_obj$stepsize,
-                    scale_size = rrho_obj$rrho_data$scale_size,
-                    log_base = rrho_obj$log_base
+                    stepsize = rrho_obj$stepsize
                 )
                 p(message = sprintf("Permuatating %d times", i))
-                out$metric
+                rrho_metric(
+                    out$pvalue, out$signs, 
+                    rrho_obj$rrho_data$scale_size,
+                    rrho_obj$log_base
+                )
             },
             future.globals = TRUE,
             future.seed = TRUE
