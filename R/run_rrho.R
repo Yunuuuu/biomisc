@@ -142,27 +142,29 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
         stepsize = stepsize
     )
     new_rrho(list(
-        hyper_pvalue = hyper_res$pvalue,
+        hyper_pvalue = exp(hyper_res$metrics),
         hyper_signs = hyper_res$signs,
         hyper_counts = hyper_res$counts,
+        hyper_metric = rrho_metrics(hyper_res, rrho_data$scale_size, log_base),
         rrho_data = rrho_data,
         stepsize = stepsize,
         log_base = log_base
     ))
 }
 
-new_rrho <- function(list) {
-    list$hyper_metric <- rrho_metric(
-        list$hyper_pvalue,
-        list$hyper_signs,
-        list$rrho_data$scale_size,
-        list$log_base
+rrho_metrics <- function(hyper_res, scale_size = 1L, log_base = 10L) {
+    define_metrics(
+        hyper_res$signs, hyper_res$metrics,
+        scale_size = scale_size, log_base = log_base
     )
-    structure(list, class = "rrho")
 }
 
-rrho_metric <- function(pvalue, signs, scale_size, log_base) {
-    signs * scale_size * abs(log(pvalue, log_base))
+define_metrics <- function(signs, metrics, scale_size, log_base) {
+    signs * abs(metrics) * scale_size * log(exp(1L), base = log_base)
+}
+
+new_rrho <- function(list) {
+    structure(list, class = "rrho")
 }
 
 #' @param x An object returned by [run_rrho()]
@@ -214,7 +216,7 @@ rrho_sig_spot_internal <- function(rrho_obj) {
         rrho_obj$stepsize
     )
     idx <- which(
-        rrho_obj$hyper_pvalue == min(rrho_obj$hyper_pvalue, na.rm = TRUE),
+        rrho_obj$hyper_metric == max(rrho_obj$hyper_metric, na.rm = TRUE),
         arr.ind = TRUE
     )
     out <- data.table::data.table(
@@ -279,9 +281,9 @@ hyper_test <- function(sample1, sample2, n) {
     # under-enrichment
     if (count <= m / n * k) { # fix error: NAs produced by integer overflow
         sign <- -1L
-        pvalue <- stats::phyper(
+        metric <- stats::phyper(
             q = count, m = m, n = n - m,
-            k = k, lower.tail = TRUE, log.p = FALSE
+            k = k, lower.tail = TRUE, log.p = TRUE
         )
     } else {
         # over-enrichment
@@ -289,15 +291,14 @@ hyper_test <- function(sample1, sample2, n) {
         # value, so we just subtract one to include the point estimation
         # Also since count > m * k / n, `count` won't be able to equal to zero
         # and also count must smaller than k, so k is larger than 0, it's safe
-        # to just subtract one 
+        # to just subtract one
         sign <- 1L
-        pvalue <- stats::phyper(
+        metric <- stats::phyper(
             q = count - 1L, m = m, n = n - m,
-            k = k, lower.tail = FALSE, log.p = FALSE
+            k = k, lower.tail = FALSE, log.p = TRUE
         )
     }
-
-    c(count, pvalue, sign)
+    c(count, metric, sign)
 }
 
 rrho_seq_idx <- function(n, stepsize) {
@@ -333,25 +334,12 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
     )
     overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
-    matrix_counts <- matrix(
-        as.integer(overlaps[[1L]]),
-        nrow = number_of_obj
-    )
-    # check Pvalue range from [0L, 1L]
-    # if (any(overlaps[[2L]] > 1L | overlaps[[2L]] < 0L)) {
-    #     cli::cli_abort("Something wrong when calculating Hypergeometric Distribution pvalue")
-    # }
-    matrix_pvals <- matrix(
-        overlaps[[2L]],
-        nrow = number_of_obj
-    )
-    matrix_signs <- matrix(
-        as.integer(overlaps[[3L]]),
-        nrow = number_of_obj
-    )
+    matrix_counts <- matrix(as.integer(overlaps[[1L]]), nrow = number_of_obj)
+    matrix_metric <- matrix(overlaps[[2L]], nrow = number_of_obj)
+    matrix_signs <- matrix(as.integer(overlaps[[3L]]), nrow = number_of_obj)
     list(
         counts = matrix_counts,
-        pvalue = matrix_pvals,
+        metrics = matrix_metric,
         signs = matrix_signs
     )
 }
@@ -432,12 +420,12 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         quadrant_hyper_pvalue <- rrho_obj$hyper_pvalue[
             quadrant_row_index, quadrant_col_index
         ]
-        if (!length(quadrant_hyper_pvalue)) {
+        if (!length(quadrant_hyper_metric)) {
             return(NULL)
         }
 
         # For `quadrant_sig_coord`
-        # integer index relative to `quadrant_hyper_pvalue`
+        # integer index relative to `quadrant_hyper_metric`
         # the row index is relative to `quadrant_row_index`
         # the column index is relative to `quadrant_col_index`
 
@@ -445,7 +433,7 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # over-enrichment, so we should find the minimal value and ensue it
         # is negative
         quadrant_sig_coord <- which(
-            quadrant_hyper_pvalue == min(quadrant_hyper_pvalue, na.rm = TRUE),
+            quadrant_hyper_metric == max(quadrant_hyper_metric, na.rm = TRUE),
             arr.ind = TRUE
         )
 
@@ -465,13 +453,13 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             drop = TRUE
         ]
 
-        metric_sign <- quadrant_hyper_metric[quadrant_sig_coord]
+        sig_metric_sign <- quadrant_hyper_metric[quadrant_sig_coord]
         if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
-            if (metric_sign <= 0L) {
+            if (sig_metric_sign <= 0L) {
                 return(NULL)
             }
         } else {
-            if (metric_sign >= 0L) {
+            if (sig_metric_sign >= 0L) {
                 return(NULL)
             }
         }
@@ -814,6 +802,11 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
             nrow = nrow(rrho_obj$hyper_pvalue),
             ncol = ncol(rrho_obj$hyper_pvalue)
         )
+        rrho_obj$hyper_metric <- define_metrics(
+            rrho_obj$hyper_signs, log(rrho_obj$hyper_pvalue),
+            rrho_obj$rrho_data$scale_size,
+            rrho_obj$log_base
+        )
         new_rrho(rrho_obj)
     } else {
         quadrant <- unique(quadrant)
@@ -869,7 +862,7 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
                 # call inner progress first then the outer progress bar
                 # in case of Inner progress bars displayed after outer progress
                 # finishes
-                out <- rrho_hyper_overlap(
+                hyper_res <- rrho_hyper_overlap(
                     names(rrho_obj$rrho_data$list1)[
                         sample.int(length(rrho_obj$rrho_data$list1), replace = FALSE)
                     ],
@@ -879,10 +872,10 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
                     stepsize = rrho_obj$stepsize
                 )
                 p(message = sprintf("Permuatating %d times", i))
-                rrho_metric(
-                    out$pvalue, out$signs,
+                rrho_metrics(
+                    hyper_res, 
                     rrho_obj$rrho_data$scale_size,
-                    rrho_obj$log_base
+                    log_base = rrho_obj$log_base
                 )
             },
             future.globals = TRUE,
