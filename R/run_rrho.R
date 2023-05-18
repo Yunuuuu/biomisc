@@ -125,7 +125,10 @@
 #' @rdname run_rrho
 run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L) {
     correction <- match.arg(correction, c("common", "length"))
-    assert_class(stepsize, is_scalar_numeric, "scalar numeric", null_ok = TRUE)
+    assert_class(stepsize, is_scalar_numeric,
+        "scalar {.cls numeric}",
+        null_ok = TRUE
+    )
     rrho_data <- set_rrho_list(list1, list2, correction = correction)
     if (is.null(stepsize)) {
         stepsize <- as.integer(sqrt(min(lengths(rrho_data)[1:2])))
@@ -282,13 +285,9 @@ hyper_test <- function(sample1, sample2, n) {
         )
     } else {
         # over-enrichment
-        # since lower.tail = FALSE won't include point estimation in `count`
-        # value, so we just subtract one to include the point estimation
-        # Also since count > m * k / n, `count` won't be able to equal to zero
-        # it's safe to just subtract one
         sign <- 1L
         pvalue <- stats::phyper(
-            q = count - 1L, m = m, n = n - m,
+            q = count, m = m, n = n - m,
             k = k, lower.tail = FALSE, log.p = FALSE
         )
     }
