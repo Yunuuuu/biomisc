@@ -159,8 +159,7 @@ new_rrho <- function(list) {
 }
 
 rrho_metric <- function(pvalue, signs, scale_size, log_base) {
-    abs(log(pvalue + .Machine$double.xmin, log_base)) *
-        signs * scale_size
+    abs(log(pvalue, log_base)) * signs * scale_size
 }
 
 #' @param x An object returned by [run_rrho()]
@@ -211,11 +210,13 @@ rrho_sig_spot_internal <- function(rrho_obj) {
         rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
         by = rrho_obj$stepsize
     )
-    abs_metric <- abs(rrho_obj$hyper_metric)
-    idx <- which(abs_metric == max(abs_metric), arr.ind = TRUE)
+    idx <- which(
+        rrho_obj$hyper_pvalue == min(rrho_obj$hyper_pvalue, na.rm = TRUE),
+        arr.ind = TRUE
+    )
     out <- data.table::data.table(
-        spots = rrho_obj$hyper_metric[idx],
-        pvalues = rrho_obj$hyper_pvalue[idx],
+        hyper_metric = rrho_obj$hyper_metric[idx],
+        hyper_pvalue = rrho_obj$hyper_pvalue[idx],
         list1 = rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index])[
             idx[, 1L, drop = TRUE]
         ],
@@ -417,32 +418,35 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         quadrant_hyper_counts <- rrho_obj$hyper_counts[
             quadrant_row_index, quadrant_col_index
         ]
-        if (!length(quadrant_hyper_metric)) {
+        quadrant_hyper_pvalue <- rrho_obj$hyper_pvalue[
+            quadrant_row_index, quadrant_col_index
+        ]
+        if (!length(quadrant_hyper_pvalue)) {
             return(NULL)
         }
 
         # For `quadrant_sig_coord`
-        # integer index relative to `quadrant_hyper_metric`
+        # integer index relative to `quadrant_hyper_pvalue`
         # the row index is relative to `quadrant_row_index`
         # the column index is relative to `quadrant_col_index`
 
         # for "up-down" and "down-up" quadrant, under-enrichment means
         # over-enrichment, so we should find the minimal value and ensue it
         # is negative
-        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
-            sign <- 1L
-        } else {
-            sign <- -1L
-        }
-        quadrant_hyper_metric <- quadrant_hyper_metric * sign
-        quadrant_sig_value <- max(quadrant_hyper_metric, na.rm = TRUE)
-        if (quadrant_sig_value <= 0L) {
-            return(NULL)
-        }
         quadrant_sig_coord <- which(
-            quadrant_hyper_metric == quadrant_sig_value,
+            quadrant_hyper_pvalue == min(quadrant_hyper_pvalue, na.rm = TRUE),
             arr.ind = TRUE
         )
+        quadrant_sig_sign <- quadrant_hyper_metric[quadrant_sig_coord]
+        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
+            if (quadrant_sig_sign <= 0L) {
+                return(NULL)
+            }
+        } else {
+            if (quadrant_sig_sign >= 0L) {
+                return(NULL)
+            }
+        }
 
         # if there exists more than one significant values
         # Just keep the one with the largest number of items.
@@ -475,22 +479,15 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             up = seq_len(sig_coord[[2L]]),
             down = seq_along(rrho_obj$rrho_data$list2) >= sig_coord[[2L]]
         )
+        sig_item1 <- names(rrho_obj$rrho_data$list1)[list1_index]
+        sig_item2 <- names(rrho_obj$rrho_data$list2)[list2_index]
+
         structure(
             list(
-                sig_item1 = names(rrho_obj$rrho_data$list1)[list1_index],
-                sig_item2 = names(rrho_obj$rrho_data$list2)[list2_index],
-                common_items = intersect(
-                    names(rrho_obj$rrho_data$list1)[list1_index],
-                    names(rrho_obj$rrho_data$list2)[list2_index]
-                ),
-                hyper_metric = rrho_obj$hyper_metric[
-                    quadrant_row_index[quadrant_sig_coord[[1L]]],
-                    quadrant_col_index[quadrant_sig_coord[[2L]]]
-                ],
-                hyper_pvalue = rrho_obj$hyper_pvalue[
-                    quadrant_row_index[quadrant_sig_coord[[1L]]],
-                    quadrant_col_index[quadrant_sig_coord[[2L]]]
-                ]
+                sig_item1 = sig_item1, sig_item2 = sig_item2,
+                common_items = intersect(sig_item1, sig_item2),
+                hyper_metric = quadrant_hyper_metric[quadrant_sig_coord],
+                hyper_pvalue = quadrant_hyper_pvalue[quadrant_sig_coord]
             ),
             class = "rrho_sig"
         )
@@ -502,11 +499,11 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
 #' Rank-Rank Hypergeometric Overlap significant spot
 #'
 #' Extract the the significant spot and its quadrant
-#'  
+#'
 #' @inheritParams rrho_sig_items
-#' @inherit rrho_sig_items details 
+#' @inherit rrho_sig_items details
 #' @return A data.frame, of which each row indicates the highest intensity
-#'   point. 
+#'   point.
 #' @seealso [rrho_sig_items]
 #' @export
 rrho_sig_spot <- function(rrho_obj) {
