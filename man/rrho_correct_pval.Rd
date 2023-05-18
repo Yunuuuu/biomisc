@@ -12,7 +12,7 @@ rrho_correct_pval(
 )
 }
 \arguments{
-\item{rrho_obj}{an object returned by \code{\link[=run_rrho]{run_rrho()}}}
+\item{rrho_obj}{An object returned by \code{\link[=run_rrho]{run_rrho()}}}
 
 \item{method}{one of \code{c("BY", "permutation")} indicates which method to use
 to correct multiple hypothesis}

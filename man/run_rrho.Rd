@@ -25,7 +25,7 @@ the \code{scale_size} will be equal to 1L.}
 logarithm, this control the logarithm base. Just like the \code{base} parameter in
 \link[base:Log]{base::log} function. Default: \code{10L}.}
 
-\item{x}{an object returned by \code{\link[=run_rrho]{run_rrho()}}}
+\item{x}{An object returned by \code{\link[=run_rrho]{run_rrho()}}}
 
 \item{...}{Not used currently}
 }
