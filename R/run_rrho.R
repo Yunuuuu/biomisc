@@ -159,7 +159,7 @@ new_rrho <- function(list) {
 }
 
 rrho_metric <- function(pvalue, signs, scale_size, log_base) {
-    abs(log(pvalue, log_base)) * signs * scale_size
+    signs * scale_size * abs(log(pvalue, log_base))
 }
 
 #' @param x An object returned by [run_rrho()]
