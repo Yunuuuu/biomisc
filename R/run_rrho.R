@@ -495,8 +495,11 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
 
 #' Rank-Rank Hypergeometric Overlap significant spot
 #'
+#' @inheritParams rrho_sig_items
+#' @inherit rrho_sig_items details 
+#' @return A data.frame, of which each row indicates the highest intensity
+#'   point. 
 #' @export
-#' @rdname rrho_sig_items
 rrho_sig_spot <- function(rrho_obj) {
     assert_rrho(rrho_obj)
     sig_spot <- rrho_sig_spot_internal(rrho_obj)

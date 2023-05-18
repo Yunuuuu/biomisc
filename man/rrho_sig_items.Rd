@@ -2,13 +2,10 @@
 % Please edit documentation in R/run_rrho.R
 \name{rrho_sig_items}
 \alias{rrho_sig_items}
-\alias{rrho_sig_spot}
 \alias{print.rrho_sig}
 \title{Rank-Rank Hypergeometric Overlap significant items}
 \usage{
 rrho_sig_items(rrho_obj, quadrant = c("up-up", "down-down"))
-
-rrho_sig_spot(rrho_obj)
 
 \method{print}{rrho_sig}(x, ...)
 }
