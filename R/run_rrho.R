@@ -211,12 +211,17 @@ rrho_sig_spot_internal <- function(rrho_obj) {
         rrho_obj$stepsize, length(rrho_obj$rrho_data$list2),
         by = rrho_obj$stepsize
     )
-    abs_metrix <- abs(rrho_obj$hyper_metric)
-    idx <- which(abs_metrix == max(abs_metrix), arr.ind = TRUE)
+    abs_metric <- abs(rrho_obj$hyper_metric)
+    idx <- which(abs_metric == max(abs_metric), arr.ind = TRUE)
     out <- data.table::data.table(
         spots = rrho_obj$hyper_metric[idx],
-        list1 = rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index]),
-        list2 = rrho_get_direction(rrho_obj$rrho_data$list2[rrho_list2_index])
+        pvalues = rrho_obj$hyper_pvalue[idx],
+        list1 = rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index])[
+            idx[, 1L, drop = TRUE]
+        ],
+        list2 = rrho_get_direction(rrho_obj$rrho_data$list2[rrho_list2_index])[
+            idx[, 2L, drop = TRUE]
+        ]
     )
     unique(out)
 }
