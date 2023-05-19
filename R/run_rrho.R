@@ -267,7 +267,7 @@ hyper_test <- function(sample1, sample2, n) {
 
 rrho_hyper_overlap <- function(sample1, sample2, stepsize, .parallel = FALSE) {
     n <- length(sample1)
-    row_ids <- rrho_seq_idx(length(sample1), stepsize)
+    row_ids <- rrho_seq_idx(n, stepsize)
     col_ids <- rrho_seq_idx(length(sample2), stepsize)
     indexes <- expand.grid(
         row_ids = row_ids,
