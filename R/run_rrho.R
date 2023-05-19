@@ -212,7 +212,11 @@ set_rrho_list <- function(list1, list2, correction) {
             "Finding {length(common_names)} genes shared by {.field list1} and {.field list2}"
         )
     } else if (identical(correction, "length")) {
-        scale_size <- length(list2_filtered) / length(list1)
+        # we calculate hyper-metric based on the length of list2
+        # but we need hyper-metric based on the length of list1
+        # https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf
+        # log Plonger, corrected = log Plonger, uncorrected (Nshorter / Nlonger)
+        scale_size <- length(list1) / length(list2_filtered)
         cli::cli_inform(
             "Removing {length(list2) - length(list2_filtered)} genes from {.field list2} not in {.field list1}"
         )
@@ -969,6 +973,7 @@ rrho_metrics <- function(hyper_res, scale_size = 1L, log_base = 10L) {
     )
 }
 
+# metrics should be ln(P-value)
 define_metrics <- function(signs, metrics, scale_size, log_base) {
     signs * abs(metrics) * scale_size * log(exp(1L), base = log_base)
 }
