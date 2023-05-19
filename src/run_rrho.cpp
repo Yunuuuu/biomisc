@@ -25,15 +25,16 @@ List rrho_hyper_overlap_cpp(CharacterVector sample1, CharacterVector sample2, in
         // inner loop
         int m = 0;
         int counts = 0;
+        int total = list1.size();
         
         for (int j = 0; j < list2_len; j++)
         {
             m += stepsize;
-            int total = list1.size();
             if (total > 0) 
             {
                 list1 = setdiff(list1, sample2[Range(m - stepsize, m - 1)]);
                 counts += total - list1.size();
+                total = list1.size();
             }
 
             if (counts > double(m) / n * k)
