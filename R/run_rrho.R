@@ -139,7 +139,8 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
     hyper_res <- rrho_hyper_overlap(
         names(rrho_data$list1),
         names(rrho_data$list2),
-        stepsize = stepsize
+        stepsize = stepsize,
+        .progress = TRUE
     )
     new_rrho(list(
         hyper_pvalue = exp(hyper_res$metrics),
@@ -264,7 +265,7 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, metric, sign)
 }
 
-rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
+rrho_hyper_overlap <- function(sample1, sample2, stepsize, .progress) {
     n <- length(sample1)
     row_ids <- rrho_seq_idx(length(sample1), stepsize)
     col_ids <- rrho_seq_idx(length(sample2), stepsize)
@@ -274,23 +275,34 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
     )
     row_idx <- indexes[["row_ids"]]
     col_idx <- indexes[["col_ids"]]
-    p <- progressr::progressor(steps = nrow(indexes) / 500L)
-    overlaps <- future.apply::future_lapply(
-        seq_len(nrow(indexes)),
-        function(i) {
-            if (i %% 500L == 0L) {
-                p(message = "hyper-geometric testing")
-            }
+
+    if (.progress) {
+        p <- progressr::progressor(steps = nrow(indexes) / 500L)
+        overlaps <- future.apply::future_lapply(
+            seq_len(nrow(indexes)),
+            function(i) {
+                if (i %% 500L == 0L) {
+                    p(message = "hyper-geometric testing")
+                }
+                hyper_test(
+                    sample1[seq_len(row_idx[[i]])],
+                    sample2[seq_len(col_idx[[i]])],
+                    n = n
+                )
+            },
+            future.globals = c(
+                "sample1", "sample2", "row_idx", "col_idx", "n", "hyper_test"
+            )
+        )
+    } else {
+        overlaps <- lapply(seq_len(nrow(indexes)), function(i) {
             hyper_test(
                 sample1[seq_len(row_idx[[i]])],
                 sample2[seq_len(col_idx[[i]])],
                 n = n
             )
-        },
-        future.globals = c(
-            "sample1", "sample2", "row_idx", "col_idx", "n", "hyper_test"
-        )
-    )
+        })
+    }
     overlaps <- data.table::transpose(overlaps)
     number_of_obj <- length(row_ids)
     matrix_counts <- matrix(as.integer(overlaps[[1L]]), nrow = number_of_obj)
@@ -852,11 +864,12 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
                     names(rrho_obj$rrho_data$list2)[
                         sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
                     ],
-                    stepsize = rrho_obj$stepsize
+                    stepsize = rrho_obj$stepsize,
+                    .progress = FALSE
                 )
                 p(message = sprintf("Permuatating %d times", i))
                 rrho_metrics(
-                    hyper_res, 
+                    hyper_res,
                     rrho_obj$rrho_data$scale_size,
                     log_base = rrho_obj$log_base
                 )
