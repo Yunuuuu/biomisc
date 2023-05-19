@@ -450,7 +450,7 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # not harmful for us since we usually only need the overlapping items
         quadrant_sig_coord <- quadrant_sig_coord[
             which.max(quadrant_hyper_counts[quadrant_sig_coord]), ,
-            drop = TRUE
+            drop = FALSE
         ]
 
         sig_metric_sign <- quadrant_hyper_metric[quadrant_sig_coord]
