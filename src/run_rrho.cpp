@@ -12,35 +12,46 @@ List rrho_hyper_overlap_cpp(CharacterVector sample1, CharacterVector sample2, in
     int list2_len = ceil(n2 / stepsize);
 
     // Pre-allocate results matrix
-    IntegerMatrix counts(list1_len, list2_len);
+    IntegerMatrix counts_mat(list1_len, list2_len);
     NumericMatrix metrics(list1_len, list2_len);
     IntegerMatrix signs(list1_len, list2_len);
+
+    int k = 0;
     for (int i = 0; i < list1_len; i++)
     {
-        int k = (i + 1) * stepsize;
+        k += stepsize;
         CharacterVector list1 = sample1[Range(0, k - 1)];
 
+        // inner loop
+        int m = 0;
+        int counts = 0;
+        
         for (int j = 0; j < list2_len; j++)
         {
-            int m = (j + 1) * stepsize;
-            CharacterVector list2 = sample2[Range(0, m - 1)];
-            int count = intersect(list1, list2).size();
-            counts(i, j) = count;
-            if (count > double(m) / n * k)
+            m += stepsize;
+            int total = list1.size();
+            if (total > 0) 
+            {
+                list1 = setdiff(list1, sample2[Range(m - stepsize, m - 1)]);
+                counts += total - list1.size();
+            }
+
+            if (counts > double(m) / n * k)
             // over-enrichment
             {
                 signs(i, j) = 1;
-                metrics(i, j) = R::phyper(count - 1, m, n - m, k, false, true);
+                metrics(i, j) = R::phyper(counts - 1, m, n - m, k, false, true);
             }
             else
             // under-enrichment
             {
                 signs(i, j) = -1;
-                metrics(i, j) = R::phyper(count, m, n - m, k, true, true);
+                metrics(i, j) = R::phyper(counts, m, n - m, k, true, true);
             }
+            counts_mat(i, j) = counts;
         }
     }
-    return List::create(Named("counts") = counts,
+    return List::create(Named("counts") = counts_mat,
                         Named("metrics") = metrics,
                         Named("signs") = signs);
 }
