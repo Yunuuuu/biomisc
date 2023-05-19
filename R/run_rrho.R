@@ -91,10 +91,7 @@
 #' as the reference populations.
 #' @param stepsize Controls the resolution of the test: how many items between
 #'   any two overlap tests. For gene expression data on the scale of
-#'   10,000-50,000 probes, we recommend a step size of 100-500. 
-#' @param correction A string indicates the correction methods when `list1` and
-#' `list2` have different length. One of `c("common", "length")`, if "common",
-#' the `scale_size` will be equal to 1L.
+#'   10,000-50,000 probes, we recommend a step size of 100-500.
 #' @param log_base Normally, `hyper_metric` in the results are transformed by
 #' logarithm, this control the logarithm base. Just like the `base` parameter in
 #' [base::log] function. Default: `10L`.
@@ -107,9 +104,8 @@
 #'  \item{hyper_signs}{the signs of `hyper_metric`, negative values indicate
 #'  under-enrichment, and positive values indicate over-enrichment.}
 #'  \item{hyper_counts}{the overlapping counts number in each test.}
-#'  \item{rrho_data}{the data used in RRHO analysis: both `list1` (all items or
-#'  only keep items also in `list2` base on "correction" argument) and `list2`
-#'  (will only keep items in `list1`) and sort them based on their value.}
+#'  \item{rrho_data}{the data used in RRHO analysis: both `list1` and `list2`
+#'  (will only keep items in both list) and sort them based on their value.}
 #'  \item{stepsize}{the provided `stepsize` parameter.}
 #'  \item{log_base}{the provided `log_base` parameter.}
 #' }
@@ -124,15 +120,18 @@
 #' * <https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf>
 #' @export
 #' @rdname run_rrho
-run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L) {
-    correction <- match.arg(correction, c("common", "length"))
+run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     assert_class(stepsize, is_scalar_numeric,
         "scalar {.cls numeric}",
         null_ok = TRUE
     )
-    rrho_data <- set_rrho_list(list1, list2, correction = correction)
+    rrho_data <- set_rrho_list(list1, list2)
     if (is.null(stepsize)) {
-        stepsize <- as.integer(sqrt(min(lengths(rrho_data)[1:2])))
+        if (length(rrho_data$list1) > 5000L) {
+            stepsize <- as.integer(length(rrho_data$list1) / 100L)
+        } else {
+            stepsize <- 1L
+        }
     } else {
         stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     }
@@ -147,7 +146,7 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
         hyper_pvalue = exp(hyper_res$metrics),
         hyper_signs = hyper_res$signs,
         hyper_counts = hyper_res$counts,
-        hyper_metric = rrho_metrics(hyper_res, rrho_data$scale_size, log_base),
+        hyper_metric = rrho_metrics(hyper_res, log_base),
         rrho_data = rrho_data,
         stepsize = stepsize,
         log_base = log_base
@@ -179,16 +178,8 @@ print.rrho <- function(x, ...) {
         ),
         indent = 2L, exdent = 2L
     ), sep = "\n")
-    if (is.integer(x$rrho_data$scale_size)) {
-        sprintf_term <- "%d"
-    } else {
-        sprintf_term <- "%.2f"
-    }
     cat(strwrap(
-        sprintf(
-            paste0("RRHO metrix scale_size: ", sprintf_term),
-            x$rrho_data$scale_size
-        ),
+        sprintf("RRHO metrix list length: %d", length(x$rrho_data$list1)),
         indent = 2L, exdent = 2L
     ), sep = "\n")
     cat(strwrap(
@@ -197,35 +188,22 @@ print.rrho <- function(x, ...) {
     ), sep = "\n")
 }
 
-set_rrho_list <- function(list1, list2, correction) {
+set_rrho_list <- function(list1, list2) {
     # remove NA value
     list1 <- list1[!is.na(list1)]
     list2 <- list2[!is.na(list2)]
 
     # keep items in both lists
     common_names <- intersect(names(list1), names(list2))
-    list2_filtered <- list2[common_names]
-    if (identical(correction, "common")) {
-        list1 <- list1[common_names]
-        scale_size <- 1L
-        cli::cli_inform(
-            "Finding {length(common_names)} genes shared by {.field list1} and {.field list2}"
-        )
-    } else if (identical(correction, "length")) {
-        # we calculate hyper-metric based on the length of list2
-        # but we need hyper-metric based on the length of list1
-        # https://systems.crump.ucla.edu/rankrank/PlaisierSupplemetaryData-SupplementaryMethods_UsersGuide.pdf
-        # log Plonger, corrected = log Plonger, uncorrected (Nshorter / Nlonger)
-        scale_size <- length(list1) / length(list2_filtered)
-        cli::cli_inform(
-            "Removing {length(list2) - length(list2_filtered)} genes from {.field list2} not in {.field list1}"
-        )
-    }
+    list2 <- list2[common_names]
+    list1 <- list1[common_names]
+    cli::cli_inform(
+        "Finding {length(common_names)} genes shared by {.field list1} and {.field list2}"
+    )
 
     list(
         list1 = sort(list1, decreasing = TRUE),
-        list2 = sort(list2_filtered, decreasing = TRUE),
-        scale_size = scale_size
+        list2 = sort(list2, decreasing = TRUE)
     )
 }
 
@@ -875,11 +853,7 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
                     .parallel = FALSE
                 )
                 p(message = sprintf("Permuatating %d times", i))
-                rrho_metrics(
-                    hyper_res,
-                    rrho_obj$rrho_data$scale_size,
-                    log_base = rrho_obj$log_base
-                )
+                rrho_metrics(hyper_res, log_base = rrho_obj$log_base)
             },
             future.globals = TRUE,
             future.seed = TRUE
@@ -966,16 +940,13 @@ rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper
     }
 }
 
-rrho_metrics <- function(hyper_res, scale_size = 1L, log_base = 10L) {
-    define_metrics(
-        hyper_res$signs, hyper_res$metrics,
-        scale_size = scale_size, log_base = log_base
-    )
+rrho_metrics <- function(hyper_res, log_base = 10L) {
+    define_metrics(hyper_res$signs, hyper_res$metrics, log_base = log_base)
 }
 
 # metrics should be ln(P-value)
-define_metrics <- function(signs, metrics, scale_size, log_base) {
-    signs * abs(metrics) * scale_size * log(exp(1L), base = log_base)
+define_metrics <- function(signs, metrics, log_base) {
+    signs * abs(metrics) * log(exp(1L), base = log_base)
 }
 
 rrho_get_direction <- function(x) {

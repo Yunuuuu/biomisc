@@ -5,7 +5,7 @@
 \alias{print.rrho}
 \title{Rank-Rank Hypergeometric Overlap Test}
 \usage{
-run_rrho(list1, list2, stepsize = NULL, correction = NULL, log_base = 10L)
+run_rrho(list1, list2, stepsize = NULL, log_base = 10L)
 
 \method{print}{rrho}(x, ...)
 }
@@ -17,10 +17,6 @@ as the reference populations.}
 \item{stepsize}{Controls the resolution of the test: how many items between
 any two overlap tests. For gene expression data on the scale of
 10,000-50,000 probes, we recommend a step size of 100-500.}
-
-\item{correction}{A string indicates the correction methods when \code{list1} and
-\code{list2} have different length. One of \code{c("common", "length")}, if "common",
-the \code{scale_size} will be equal to 1L.}
 
 \item{log_base}{Normally, \code{hyper_metric} in the results are transformed by
 logarithm, this control the logarithm base. Just like the \code{base} parameter in
@@ -40,9 +36,8 @@ to \code{abs(log(hyper_pvalue)) * hyper_signs}.}
 \item{hyper_signs}{the signs of \code{hyper_metric}, negative values indicate
 under-enrichment, and positive values indicate over-enrichment.}
 \item{hyper_counts}{the overlapping counts number in each test.}
-\item{rrho_data}{the data used in RRHO analysis: both \code{list1} (all items or
-only keep items also in \code{list2} base on "correction" argument) and \code{list2}
-(will only keep items in \code{list1}) and sort them based on their value.}
+\item{rrho_data}{the data used in RRHO analysis: both \code{list1} and \code{list2}
+(will only keep items in both list) and sort them based on their value.}
 \item{stepsize}{the provided \code{stepsize} parameter.}
 \item{log_base}{the provided \code{log_base} parameter.}
 }
