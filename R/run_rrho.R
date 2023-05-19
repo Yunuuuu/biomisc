@@ -265,7 +265,7 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, metric, sign)
 }
 
-rrho_hyper_overlap <- function(sample1, sample2, stepsize, .progress) {
+rrho_hyper_overlap <- function(sample1, sample2, stepsize, .progress = FALSE) {
     n <- length(sample1)
     row_ids <- rrho_seq_idx(length(sample1), stepsize)
     col_ids <- rrho_seq_idx(length(sample2), stepsize)
