@@ -174,7 +174,7 @@ new_rrho <- function(list) {
 print.rrho <- function(x, ...) {
     cat(strwrap(
         "Rank-Rank Hypergeometric Overlap analysis",
-        indent = 0, exdent = 2
+        indent = 0L, exdent = 2L
     ), sep = "\n")
     sig_spots <- rrho_sig_spot_internal(x)
     cat(strwrap(
@@ -186,7 +186,7 @@ print.rrho <- function(x, ...) {
             ), collapse = ", "),
             sep = ": "
         ),
-        indent = 2, exdent = 2
+        indent = 2L, exdent = 2L
     ), sep = "\n")
     if (is.integer(x$rrho_data$scale_size)) {
         sprintf_term <- "%d"
@@ -198,11 +198,11 @@ print.rrho <- function(x, ...) {
             paste0("RRHO metrix scale_size: ", sprintf_term),
             x$rrho_data$scale_size
         ),
-        indent = 2, exdent = 2
+        indent = 2L, exdent = 2L
     ), sep = "\n")
     cat(strwrap(
         sprintf("Analysis with stepsize: %d", x$stepsize),
-        indent = 2, exdent = 2
+        indent = 2L, exdent = 2L
     ), sep = "\n")
 }
 
@@ -315,11 +315,11 @@ rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
     )
     row_idx <- indexes[["row_ids"]]
     col_idx <- indexes[["col_ids"]]
-    p <- progressr::progressor(steps = nrow(indexes) / 200L)
+    p <- progressr::progressor(steps = nrow(indexes) / 500L)
     overlaps <- future.apply::future_lapply(
         seq_len(nrow(indexes)),
         function(i) {
-            if (i %% 200L == 0L) {
+            if (i %% 500L == 0L) {
                 p(message = "hyper-geometric testing")
             }
             hyper_test(
