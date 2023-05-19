@@ -10,23 +10,22 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// calculate_hyper_overlap_cpp
-List calculate_hyper_overlap_cpp(CharacterVector sample1, CharacterVector sample2, int n, int stepsize);
-RcppExport SEXP _biomisc_calculate_hyper_overlap_cpp(SEXP sample1SEXP, SEXP sample2SEXP, SEXP nSEXP, SEXP stepsizeSEXP) {
+// rrho_hyper_overlap_cpp
+List rrho_hyper_overlap_cpp(CharacterVector sample1, CharacterVector sample2, int stepsize);
+RcppExport SEXP _biomisc_rrho_hyper_overlap_cpp(SEXP sample1SEXP, SEXP sample2SEXP, SEXP stepsizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< CharacterVector >::type sample1(sample1SEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type sample2(sample2SEXP);
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< int >::type stepsize(stepsizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(calculate_hyper_overlap_cpp(sample1, sample2, n, stepsize));
+    rcpp_result_gen = Rcpp::wrap(rrho_hyper_overlap_cpp(sample1, sample2, stepsize));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_biomisc_calculate_hyper_overlap_cpp", (DL_FUNC) &_biomisc_calculate_hyper_overlap_cpp, 4},
+    {"_biomisc_rrho_hyper_overlap_cpp", (DL_FUNC) &_biomisc_rrho_hyper_overlap_cpp, 3},
     {NULL, NULL, 0}
 };
 
