@@ -152,17 +152,6 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
     ))
 }
 
-rrho_metrics <- function(hyper_res, scale_size = 1L, log_base = 10L) {
-    define_metrics(
-        hyper_res$signs, hyper_res$metrics,
-        scale_size = scale_size, log_base = log_base
-    )
-}
-
-define_metrics <- function(signs, metrics, scale_size, log_base) {
-    signs * abs(metrics) * scale_size * log(exp(1L), base = log_base)
-}
-
 new_rrho <- function(list) {
     structure(list, class = "rrho")
 }
@@ -204,32 +193,6 @@ print.rrho <- function(x, ...) {
         sprintf("Analysis with stepsize: %d", x$stepsize),
         indent = 2L, exdent = 2L
     ), sep = "\n")
-}
-
-rrho_sig_spot_internal <- function(rrho_obj) {
-    rrho_list1_index <- rrho_seq_idx(
-        length(rrho_obj$rrho_data$list1),
-        rrho_obj$stepsize
-    )
-    rrho_list2_index <- rrho_seq_idx(
-        length(rrho_obj$rrho_data$list2),
-        rrho_obj$stepsize
-    )
-    idx <- which(
-        rrho_obj$hyper_metric == max(rrho_obj$hyper_metric, na.rm = TRUE),
-        arr.ind = TRUE
-    )
-    out <- data.table::data.table(
-        hyper_metric = rrho_obj$hyper_metric[idx],
-        hyper_pvalue = rrho_obj$hyper_pvalue[idx],
-        list1 = rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index])[
-            idx[, 1L, drop = TRUE]
-        ],
-        list2 = rrho_get_direction(rrho_obj$rrho_data$list2[rrho_list2_index])[
-            idx[, 2L, drop = TRUE]
-        ]
-    )
-    unique(out)
 }
 
 set_rrho_list <- function(list1, list2, correction) {
@@ -299,10 +262,6 @@ hyper_test <- function(sample1, sample2, n) {
         )
     }
     c(count, metric, sign)
-}
-
-rrho_seq_idx <- function(n, stepsize) {
-    seq.int(stepsize, n, by = stepsize)
 }
 
 rrho_hyper_overlap <- function(sample1, sample2, stepsize) {
@@ -512,6 +471,32 @@ rrho_sig_spot <- function(rrho_obj) {
     sig_spot <- rrho_sig_spot_internal(rrho_obj)
     data.table::setDF(sig_spot)
     sig_spot
+}
+
+rrho_sig_spot_internal <- function(rrho_obj) {
+    rrho_list1_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list1),
+        rrho_obj$stepsize
+    )
+    rrho_list2_index <- rrho_seq_idx(
+        length(rrho_obj$rrho_data$list2),
+        rrho_obj$stepsize
+    )
+    idx <- which(
+        rrho_obj$hyper_metric == max(rrho_obj$hyper_metric, na.rm = TRUE),
+        arr.ind = TRUE
+    )
+    out <- data.table::data.table(
+        hyper_metric = rrho_obj$hyper_metric[idx],
+        hyper_pvalue = rrho_obj$hyper_pvalue[idx],
+        list1 = rrho_get_direction(rrho_obj$rrho_data$list1[rrho_list1_index])[
+            idx[, 1L, drop = TRUE]
+        ],
+        list2 = rrho_get_direction(rrho_obj$rrho_data$list2[rrho_list2_index])[
+            idx[, 2L, drop = TRUE]
+        ]
+    )
+    unique(out)
 }
 
 #' @param x An object returned by [rrho_sig_items()]
@@ -960,8 +945,23 @@ rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper
     }
 }
 
+rrho_metrics <- function(hyper_res, scale_size = 1L, log_base = 10L) {
+    define_metrics(
+        hyper_res$signs, hyper_res$metrics,
+        scale_size = scale_size, log_base = log_base
+    )
+}
+
+define_metrics <- function(signs, metrics, scale_size, log_base) {
+    signs * abs(metrics) * scale_size * log(exp(1L), base = log_base)
+}
+
 rrho_get_direction <- function(x) {
     data.table::fifelse(x <= 0L, "down", "up")
+}
+
+rrho_seq_idx <- function(n, stepsize) {
+    seq.int(stepsize, n, by = stepsize)
 }
 
 assert_rrho <- function(x, arg = rlang::caller_arg(x), call = parent.frame()) {
