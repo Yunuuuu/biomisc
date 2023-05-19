@@ -456,6 +456,42 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
     res
 }
 
+#' @param x An object returned by [rrho_sig_items()]
+#' @param ... Not used currently
+#' @export
+#' @rdname rrho_sig_items
+print.rrho_sig <- function(x, ...) {
+    cat(strwrap(
+        sprintf(
+            "Finding %d significant overlapping items by list1 and list2 in RRHO analysis",
+            length(x$common_items)
+        ),
+        indent = 0L, exdent = 2L
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf(
+            "Significant items in list1: %d",
+            length(x$sig_item1)
+        ),
+        indent = 2L, exdent = 2L
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf(
+            "Significant items in list2: %d",
+            length(x$sig_item2)
+        ),
+        indent = 2L, exdent = 2L
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf("The significant RRHO metrix: %.2g", x$hyper_metric),
+        indent = 0L, exdent = 2L
+    ), sep = "\n")
+    cat(strwrap(
+        sprintf("The significant RRHO pvalue: %.2g", x$hyper_pvalue),
+        indent = 0L, exdent = 2L
+    ), sep = "\n")
+}
+
 #' Rank-Rank Hypergeometric Overlap significant spot
 #'
 #' Extract the the significant spot and its quadrant
@@ -497,42 +533,6 @@ rrho_sig_spot_internal <- function(rrho_obj) {
         ]
     )
     unique(out)
-}
-
-#' @param x An object returned by [rrho_sig_items()]
-#' @param ... Not used currently
-#' @export
-#' @rdname rrho_sig_items
-print.rrho_sig <- function(x, ...) {
-    cat(strwrap(
-        sprintf(
-            "Finding %d significant overlapping items by list1 and list2 in RRHO analysis",
-            length(x$common_items)
-        ),
-        indent = 0L, exdent = 2L
-    ), sep = "\n")
-    cat(strwrap(
-        sprintf(
-            "Significant items in list1: %d",
-            length(x$sig_item1)
-        ),
-        indent = 2L, exdent = 2L
-    ), sep = "\n")
-    cat(strwrap(
-        sprintf(
-            "Significant items in list2: %d",
-            length(x$sig_item2)
-        ),
-        indent = 2L, exdent = 2L
-    ), sep = "\n")
-    cat(strwrap(
-        sprintf("The significant RRHO metrix: %.2g", x$hyper_metric),
-        indent = 0L, exdent = 2L
-    ), sep = "\n")
-    cat(strwrap(
-        sprintf("The significant RRHO pvalue: %.2g", x$hyper_pvalue),
-        indent = 0L, exdent = 2L
-    ), sep = "\n")
 }
 
 #' Rank-Rank Hypergeometric Overlap Map heatmap
