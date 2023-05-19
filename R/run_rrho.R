@@ -140,7 +140,7 @@ run_rrho <- function(list1, list2, stepsize = NULL, correction = NULL, log_base 
         names(rrho_data$list1),
         names(rrho_data$list2),
         stepsize = stepsize,
-        .progress = TRUE
+        .parallel = TRUE
     )
     new_rrho(list(
         hyper_pvalue = exp(hyper_res$metrics),
@@ -238,7 +238,7 @@ set_rrho_list <- function(list1, list2, correction) {
 
 ## Compute the overlaps between two *character* atomic vector:
 hyper_test <- function(sample1, sample2, n) {
-    count <- length(intersect(sample1, sample2)) # k
+    count <- sum(sample1 %chin% sample2) # k
     k <- length(sample1) # sample size
     m <- length(sample2) # target size
 
@@ -265,18 +265,20 @@ hyper_test <- function(sample1, sample2, n) {
     c(count, metric, sign)
 }
 
-rrho_hyper_overlap <- function(sample1, sample2, stepsize, .progress = FALSE) {
+rrho_hyper_overlap <- function(sample1, sample2, stepsize, .parallel = FALSE) {
     n <- length(sample1)
     row_ids <- rrho_seq_idx(length(sample1), stepsize)
     col_ids <- rrho_seq_idx(length(sample2), stepsize)
     indexes <- expand.grid(
         row_ids = row_ids,
-        col_ids = col_ids
+        col_ids = col_ids,
+        KEEP.OUT.ATTRS = FALSE,
+        stringsAsFactors = FALSE
     )
-    row_idx <- indexes[["row_ids"]]
-    col_idx <- indexes[["col_ids"]]
+    row_idx <- indexes[[1L]]
+    col_idx <- indexes[[2L]]
 
-    if (.progress) {
+    if (.parallel) {
         p <- progressr::progressor(steps = nrow(indexes) / 500L)
         overlaps <- future.apply::future_lapply(
             seq_len(nrow(indexes)),
@@ -865,7 +867,7 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
                         sample.int(length(rrho_obj$rrho_data$list2), replace = FALSE)
                     ],
                     stepsize = rrho_obj$stepsize,
-                    .progress = FALSE
+                    .parallel = FALSE
                 )
                 p(message = sprintf("Permuatating %d times", i))
                 rrho_metrics(
