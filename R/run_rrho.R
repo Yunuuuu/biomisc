@@ -774,7 +774,7 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
 #' @export
 rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c("up-up", "down-down")) {
     assert_rrho(rrho_obj)
-    method <- match.arg(method, c(p.adjust.methods, "permutation"))
+    method <- match.arg(method, c(stats::p.adjust.methods, "permutation"))
     if (!identical(method, "permutation")) {
         # Convert hypermat to a vector and apply Benjamini Yekutieli Pvalue
         # correction
@@ -903,6 +903,7 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
 #' @importFrom rlang .data
 #' @export
 rrho_dots <- function(rrho_obj, type = c("normal", "rank"), ...) {
+    assert_pkg("ggplot2")
     assert_rrho(rrho_obj)
     type <- match.arg(type)
     list1 <- rrho_obj$rrho_data$list1
