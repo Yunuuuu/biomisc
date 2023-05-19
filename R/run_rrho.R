@@ -132,6 +132,7 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
         } else {
             stepsize <- 1L
         }
+        cli::cli_inform("Setting {.code stepsize = {stepsize}}")
     } else {
         stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
     }
