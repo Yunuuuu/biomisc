@@ -90,7 +90,8 @@
 #' values are often `-log10(P-value) * sign(effect)`. `list1` will be regarded
 #' as the reference populations.
 #' @param stepsize Controls the resolution of the test: how many items between
-#' any two overlap tests.
+#'   any two overlap tests. For gene expression data on the scale of
+#'   10,000-50,000 probes, we recommend a step size of 100-500. 
 #' @param correction A string indicates the correction methods when `list1` and
 #' `list2` have different length. One of `c("common", "length")`, if "common",
 #' the `scale_size` will be equal to 1L.

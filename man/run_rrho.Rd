@@ -15,7 +15,8 @@ values are often \code{-log10(P-value) * sign(effect)}. \code{list1} will be reg
 as the reference populations.}
 
 \item{stepsize}{Controls the resolution of the test: how many items between
-any two overlap tests.}
+any two overlap tests. For gene expression data on the scale of
+10,000-50,000 probes, we recommend a step size of 100-500.}
 
 \item{correction}{A string indicates the correction methods when \code{list1} and
 \code{list2} have different length. One of \code{c("common", "length")}, if "common",
