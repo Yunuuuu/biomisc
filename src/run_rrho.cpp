@@ -12,9 +12,9 @@ List rrho_hyper_overlap_cpp(CharacterVector sample1, CharacterVector sample2, in
     int list2_len = ceil(n2 / stepsize);
 
     // Pre-allocate results matrix
-    IntegerMatrix counts_mat(list1_len, list2_len);
-    NumericMatrix metrics(list1_len, list2_len);
-    IntegerMatrix signs(list1_len, list2_len);
+    IntegerMatrix counts_mat = no_init_matrix(list1_len, list2_len);
+    NumericMatrix metrics = no_init_matrix(list1_len, list2_len);
+    IntegerMatrix signs = no_init_matrix(list1_len, list2_len);
 
     int k = 0;
     for (int i = 0; i < list1_len; i++)
