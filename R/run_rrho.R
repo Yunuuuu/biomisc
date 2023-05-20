@@ -839,13 +839,12 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
             rrho_list2_quadrant <- rrho_get_direction(
                 rrho_obj$rrho_data$list2[rrho_list2_index]
             )
-            rrho_quadrant <- outer(
-                rrho_list1_quadrant, rrho_list2_quadrant,
-                paste,
-                sep = "-"
-            )
             quadrant_idx_list <- lapply(quadrant, function(x) {
-                x == rrho_quadrant
+                quadrant_dir <- strsplit(x, "-")[[1L]]
+                list(
+                    rrho_list1_quadrant == quadrant_dir[[1L]],
+                    rrho_list2_quadrant == quadrant_dir[[2L]]
+                )
             })
         }
 
@@ -945,9 +944,10 @@ rrho_dots <- function(rrho_obj, type = c("normal", "rank"), ...) {
 rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper_metric_mat) {
     if (!identical(quadrant, "all")) {
         stats <- vapply(quadrant_idx_list, function(quadrant_idx) {
-            max(hyper_metric_mat[quadrant_idx] * quadrant_sign,
-                na.rm = TRUE
-            )
+            quadrant_metric <- hyper_metric_mat[
+                quadrant_idx[[1L]], quadrant_idx[[2L]]
+            ]
+            max(quadrant_metric * quadrant_sign, na.rm = TRUE)
         }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
         sum(stats, na.rm = TRUE)
     } else {
