@@ -403,8 +403,19 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
         # for "up-down" and "down-up" quadrant, under-enrichment means
         # over-enrichment, so we should find the minimal value and ensue it
         # is negative
+        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
+            sig_metric <- max(quadrant_hyper_metric, na.rm = TRUE)
+            if (sig_metric <= 0L) {
+                return(NULL)
+            }
+        } else {
+            sig_metric <- min(quadrant_hyper_metric, na.rm = TRUE)
+            if (sig_metric >= 0L) {
+                return(NULL)
+            }
+        }
         quadrant_sig_coord <- which(
-            quadrant_hyper_metric == max(quadrant_hyper_metric, na.rm = TRUE),
+            quadrant_hyper_metric == sig_metric,
             arr.ind = TRUE
         )
 
@@ -423,17 +434,6 @@ rrho_sig_items <- function(rrho_obj, quadrant = c("up-up", "down-down")) {
             which.max(quadrant_hyper_counts[quadrant_sig_coord]), ,
             drop = FALSE
         ]
-
-        sig_metric_sign <- quadrant_hyper_metric[quadrant_sig_coord]
-        if (quadrant_dir[[1L]] == quadrant_dir[[2L]]) {
-            if (sig_metric_sign <= 0L) {
-                return(NULL)
-            }
-        } else {
-            if (sig_metric_sign >= 0L) {
-                return(NULL)
-            }
-        }
 
         sig_coord <- c(
             rrho_list1_index[quadrant_row_index[
@@ -558,7 +558,7 @@ rrho_sig_spot_internal <- function(rrho_obj) {
 #' @param name Name of the heatmap. By default the heatmap name is used as the
 #'   title of the heatmap legend. If NULL, this will be defined from "log_base"
 #'   in `rrho_obj` with something like `sprintf("Signed |log%s(P-value)|",
-#'   rrho_obj$log_base)`.  
+#'   rrho_obj$log_base)`.
 #' @inheritParams ComplexHeatmap::Heatmap
 #' @inheritDotParams ComplexHeatmap::Heatmap -matrix -col -name -column_title
 #' -column_title_gp -row_title -left_annotation -bottom_annotation -row_split
@@ -577,7 +577,7 @@ rrho_heatmap <- function(
     rrho_obj, col = NULL, name = NULL,
     row_title = NULL,
     column_title = "Rank-Rank Hypergeometric Overlap Map",
-    column_title_gp = grid::gpar(fontface = "bold"), 
+    column_title_gp = grid::gpar(fontface = "bold"),
     ..., use_raster = NULL) {
     assert_rrho(rrho_obj)
     assert_pkg("ComplexHeatmap")
