@@ -11,8 +11,7 @@ run_rrho(list1, list2, stepsize = NULL, log_base = 10L)
 }
 \arguments{
 \item{list1, list2}{A named numeric vector, For differential gene expression,
-values are often \code{-log10(P-value) * sign(effect)}. \code{list1} will be regarded
-as the reference populations.}
+values are often \code{-log10(P-value) * sign(effect)}.}
 
 \item{stepsize}{Controls the resolution of the test: how many items between
 any two overlap tests. For gene expression data on the scale of

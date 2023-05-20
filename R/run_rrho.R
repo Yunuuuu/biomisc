@@ -87,8 +87,7 @@
 #' <https://academic.oup.com/nar/article/38/17/e169/1033168#82642652>.
 #'
 #' @param list1,list2 A named numeric vector, For differential gene expression,
-#' values are often `-log10(P-value) * sign(effect)`. `list1` will be regarded
-#' as the reference populations.
+#' values are often `-log10(P-value) * sign(effect)`.
 #' @param stepsize Controls the resolution of the test: how many items between
 #'   any two overlap tests. For gene expression data on the scale of
 #'   10,000-50,000 probes, we recommend a step size of 100-500.
@@ -128,14 +127,15 @@ run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     rrho_data <- set_rrho_list(list1, list2)
     if (is.null(stepsize)) {
         if (length(rrho_data$list1) > 5000L) {
-            stepsize <- as.integer(length(rrho_data$list1) / 100L)
+            stepsize <- max(1L, as.integer(length(rrho_data$list1) / 100L))
         } else {
             stepsize <- 1L
         }
         cli::cli_inform("Setting {.code stepsize = {stepsize}}")
     } else {
-        stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)[1:2]))
+        stepsize <- max(1L, min(as.integer(stepsize), lengths(rrho_data)))
     }
+
     ## DO Rank Rank Hypergeometric Overlap
     hyper_res <- rrho_hyper_overlap(
         names(rrho_data$list1),
@@ -196,11 +196,22 @@ set_rrho_list <- function(list1, list2) {
 
     # keep items in both lists
     common_names <- intersect(names(list1), names(list2))
-    list2 <- list2[common_names]
-    list1 <- list1[common_names]
+    common_len <- length(common_names)
     cli::cli_inform(
-        "Finding {length(common_names)} genes shared by {.field list1} and {.field list2}"
+        "Finding {common_len} genes shared by {.field list1} and {.field list2}"
     )
+    if (length(list1) > common_len) {
+        cli::cli_warn(
+            "Removing {length(list1) - common_len} genes from {.field list1}"
+        )
+    }
+    if (length(list2) > common_len) {
+        cli::cli_warn(
+            "Removing {length(list2) - common_len} genes from {.field list2}"
+        )
+    }
+    list1 <- list1[common_names]
+    list2 <- list2[common_names]
 
     list(
         list1 = sort(list1, decreasing = TRUE),
