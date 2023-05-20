@@ -947,6 +947,9 @@ rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper
             quadrant_metric <- hyper_metric_mat[
                 quadrant_idx[[1L]], quadrant_idx[[2L]]
             ]
+            quadrant_metric <- c(quadrant_metric)
+            quadrant_metric <- quadrant_metric[!is.na(quadrant_metric)]
+            if (!length(quadrant_metric)) return(0L)
             max(quadrant_metric * quadrant_sign, na.rm = TRUE)
         }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
         sum(stats, na.rm = TRUE)
