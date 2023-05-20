@@ -555,11 +555,16 @@ rrho_sig_spot_internal <- function(rrho_obj) {
 #' `circlize::colorRamp2`). If the matrix is continuous, the value can also be a
 #' vector of colors so that colors can be interpolated. Pass to `ColorMapping`.
 #' For more details and examples, please refer to [ComplexHeatmap::Heatmap]
+#' @param name Name of the heatmap. By default the heatmap name is used as the
+#'   title of the heatmap legend. If NULL, this will be defined from "log_base"
+#'   in `rrho_obj` with something like `sprintf("Signed |log%s(P-value)|",
+#'   rrho_obj$log_base)`.  
 #' @inheritParams ComplexHeatmap::Heatmap
 #' @inheritDotParams ComplexHeatmap::Heatmap -matrix -col -name -column_title
 #' -column_title_gp -row_title -left_annotation -bottom_annotation -row_split
 #' -cluster_rows -cluster_row_slices -column_split -cluster_columns
 #' -cluster-column_slices -heatmap_legend_param -use_raster
+#' @return A [Heatmap][ComplexHeatmap::Heatmap] object.
 #' @examples
 #' n <- 200
 #' sample1 <- rnorm(n)
@@ -568,16 +573,21 @@ rrho_sig_spot_internal <- function(rrho_obj) {
 #' rrho_res <- biomisc::run_rrho(sample1, sample2, 1)
 #' biomisc::rrho_heatmap(rrho_res)
 #' @export
-rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
+rrho_heatmap <- function(
+    rrho_obj, col = NULL, name = NULL,
+    row_title = NULL,
+    column_title = "Rank-Rank Hypergeometric Overlap Map",
+    column_title_gp = grid::gpar(fontface = "bold"), 
+    ..., use_raster = NULL) {
     assert_rrho(rrho_obj)
     assert_pkg("ComplexHeatmap")
     assert_pkg("circlize")
     assert_class(use_raster, rlang::is_scalar_logical,
         msg = "scalar {.cls logical} value", null_ok = TRUE
     )
-    heat_matric <- t(rrho_obj$hyper_metric)
-    heat_matric <- heat_matric[
-        rev(seq_len(nrow(heat_matric))), ,
+    heat_matrix <- t(rrho_obj$hyper_metric)
+    heat_matrix <- heat_matrix[
+        rev(seq_len(nrow(heat_matrix))), ,
         drop = FALSE
     ]
 
@@ -655,7 +665,7 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
     )
 
     if (is.null(col)) {
-        range_val <- range(heat_matric, na.rm = TRUE, finite = TRUE)
+        range_val <- range(heat_matrix, na.rm = TRUE, finite = TRUE)
         col <- circlize::colorRamp2(
             seq(range_val[[1L]], range_val[[2L]], length.out = 9L),
             c(
@@ -664,12 +674,14 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
             )
         )
     }
-    if (rrho_obj$log_base == exp(1L)) {
-        legend_name <- ""
-    } else {
-        legend_name <- rrho_obj$log_base
+    if (is.null(name)) {
+        if (rrho_obj$log_base == exp(1L)) {
+            name <- ""
+        } else {
+            name <- rrho_obj$log_base
+        }
+        name <- sprintf("Signed |log%s(P-value)|", name)
     }
-    legend_name <- paste0("Signed |log", legend_name, "(P-value)|")
     if (is.null(use_raster)) {
         if (length(rrho_list1_index) > 500L) {
             cli::cli_inform("Setting {.code use_raster = TRUE}")
@@ -680,11 +692,11 @@ rrho_heatmap <- function(rrho_obj, col = NULL, ..., use_raster = NULL) {
         }
     }
     ComplexHeatmap::Heatmap(
-        heat_matric,
-        col = col, name = legend_name,
-        column_title = "Rank Rank Hypergeometric Overlap Map",
-        column_title_gp = grid::gpar(fontface = "bold"),
-        row_title = NULL,
+        heat_matrix,
+        col = col, name = name,
+        column_title = column_title,
+        column_title_gp = column_title_gp,
+        row_title = row_title,
         left_annotation = ComplexHeatmap::rowAnnotation(
             list2_label = ComplexHeatmap::anno_customize(
                 row_label,
@@ -949,7 +961,9 @@ rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper
             ]
             quadrant_metric <- c(quadrant_metric)
             quadrant_metric <- quadrant_metric[!is.na(quadrant_metric)]
-            if (!length(quadrant_metric)) return(0L)
+            if (!length(quadrant_metric)) {
+                return(0L)
+            }
             max(quadrant_metric * quadrant_sign, na.rm = TRUE)
         }, FUN.VALUE = numeric(1L), USE.NAMES = FALSE)
         sum(stats, na.rm = TRUE)
