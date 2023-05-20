@@ -35,7 +35,8 @@ Suggests:
     testthat (>= 3.0.0),
     curl,
     ggplot2,
-    magick
+    magick,
+    SummarizedExperiment
 Remotes:
     Yunuuuu/ABSOLUTE,
     Rdatatable/data.table
