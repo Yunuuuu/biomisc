@@ -202,12 +202,12 @@ set_rrho_list <- function(list1, list2) {
     )
     if (length(list1) > common_len) {
         cli::cli_warn(
-            "Removing {length(list1) - common_len} genes from {.field list1}"
+            "Removing {length(list1) - common_len} genes from {.field list1} not in {.field list2}"
         )
     }
     if (length(list2) > common_len) {
         cli::cli_warn(
-            "Removing {length(list2) - common_len} genes from {.field list2}"
+            "Removing {length(list2) - common_len} genes from {.field list2} not in {.field list1}"
         )
     }
     list1 <- list1[common_names]
