@@ -190,6 +190,9 @@ print.rrho <- function(x, ...) {
 }
 
 set_rrho_list <- function(list1, list2) {
+    len1 <- length(list1)
+    len2 <- length(list2)
+
     # remove NA value
     list1 <- list1[!is.na(list1)]
     list2 <- list2[!is.na(list2)]
@@ -200,14 +203,14 @@ set_rrho_list <- function(list1, list2) {
     cli::cli_inform(
         "Finding {common_len} genes shared by {.field list1} and {.field list2}"
     )
-    if (length(list1) > common_len) {
+    if (len1 > common_len) {
         cli::cli_warn(
-            "Removing {length(list1) - common_len} genes from {.field list1} not in {.field list2}"
+            "Removing {len1 - common_len} genes from {.field list1}"
         )
     }
-    if (length(list2) > common_len) {
+    if (len2 > common_len) {
         cli::cli_warn(
-            "Removing {length(list2) - common_len} genes from {.field list2} not in {.field list1}"
+            "Removing {len2 - common_len} genes from {.field list2}"
         )
     }
     list1 <- list1[common_names]
