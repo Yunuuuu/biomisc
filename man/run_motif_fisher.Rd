@@ -9,7 +9,7 @@ run_motif_fisher(
   mut_data,
   ref_genome = NULL,
   signature_motif = c("TCA", "TCT"),
-  signature_mut_bases = NULL,
+  background_snv = c("C>T", "C>G"),
   bg_extension = 20L
 )
 }
@@ -29,12 +29,14 @@ Example: "BSgenome.Hsapiens.UCSC.hg19".}
 
 \item{signature_motif}{A character of the trinucleotide which will be used to
 calculate MUTATIONS(tCw) and CONTEXT(tCw) to test for enrichment. Defaul is
-APOBEC signature motif: c("TCA", TCT"). All reverseComplemented motif will
-also be included.}
+APOBEC signature motif: c("TCA", TCT"). The second base will define
+background MUTATIONS(CorG) and CONTEXT(CorG). All reverseComplemented motif
+will also be included.}
 
-\item{signature_mut_bases}{A character of the mutated DNA bases, which will
-be used to calculate MUTATIONS(CorG) and CONTEXT(CorG). If NULL, will get
-from the second base of signature_motif.}
+\item{background_snv}{A character specifying the mutation type to restrict
+the calculation of MUTATIONS(CorG). If NULL, all mutations found in the
+second base of \code{signature_motif} will be included. All Complemented
+substitution will also be included. Default: c("C>T", "C>G").}
 
 \item{bg_extension}{The number of bases around the variable base to define
 the background. Default 20L.}

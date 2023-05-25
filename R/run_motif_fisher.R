@@ -28,11 +28,13 @@
 #'  Example: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param signature_motif A character of the trinucleotide which will be used to
 #' calculate MUTATIONS(tCw) and CONTEXT(tCw) to test for enrichment. Defaul is
-#' APOBEC signature motif: c("TCA", TCT"). All reverseComplemented motif will
-#' also be included.
-#' @param signature_mut_bases A character of the mutated DNA bases, which will
-#' be used to calculate MUTATIONS(CorG) and CONTEXT(CorG). If NULL, will get
-#' from the second base of signature_motif.
+#' APOBEC signature motif: c("TCA", TCT"). The second base will define
+#' background MUTATIONS(CorG) and CONTEXT(CorG). All reverseComplemented motif
+#' will also be included.
+#' @param background_snv A character specifying the mutation type to restrict
+#' the calculation of MUTATIONS(CorG). If NULL, all mutations found in the
+#' second base of `signature_motif` will be included. All Complemented
+#' substitution will also be included. Default: c("C>T", "C>G").
 #' @param bg_extension The number of bases around the variable base to define
 #' the background. Default 20L.
 #' @return A [data.table][data.table::data.table] describing enrichment per
@@ -45,11 +47,12 @@
 #' @export
 run_motif_fisher <- function(
     mut_data, ref_genome = NULL, signature_motif = c("TCA", "TCT"),
-    signature_mut_bases = NULL, bg_extension = 20L) {
+    background_snv = c("C>T", "C>G"), bg_extension = 20L) {
     assert_pkg("BSgenome")
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_pkg("Biostrings")
+
     assert_class(
         mut_data, function(x) {
             inherits(x, "data.frame") && ncol(x) >= 5L
@@ -65,10 +68,11 @@ run_motif_fisher <- function(
         cross_msg = NULL
     )
     assert_class(
-        signature_mut_bases, function(x) {
-            is.character(x) && all(x %chin% Biostrings::DNA_BASES)
+        background_snv, function(x) {
+            is.character(x) && all(x %chin% names(substitution_pairs))
         },
-        msg = "{.cls character} (among {.value {Biostrings::DNA_BASES}})", cross_msg = NULL, null_ok = TRUE
+        msg = "{.cls character} (among {.value {unique(names(substitution_pairs))}})",
+        cross_msg = NULL, null_ok = TRUE
     )
 
     mut_data <- data.table::as.data.table(mut_data)[, .SD, .SDcols = 1:5]
@@ -78,20 +82,41 @@ run_motif_fisher <- function(
             Biostrings::DNAStringSet(signature_motif)
         ))
     )
-    signature_mut_bases <- signature_mut_bases %||%
-        substring(signature_motif, 2L, 2L)
-    signature_mut_bases <- union(
-        signature_mut_bases,
+    signature_mut_bases <- unique(substring(signature_motif, 2L, 2L))
+    background_snv_type <- background_snv %||%
+        grep(
+            sprintf("^(%s)", paste0(signature_mut_bases, collapse = "|")),
+            names(substitution_pairs),
+            value = TRUE, perl = TRUE
+        )
+    background_snv_type <- unique(standardize_substitution(background_snv_type))
+
+    # check signature_motif, background_snv, signature_mut_bases are compipable
+    signature_motif_mut_bases <- unique(substring(signature_motif, 2L, 2L))
+    background_snv_mut_bases <- unique(substring(background_snv_type, 1L, 1L))
+    background_snv_mut_bases <- union(
+        background_snv_mut_bases,
         as.character(Biostrings::complement(
-            Biostrings::DNAStringSet(signature_mut_bases)
+            Biostrings::DNAStringSet(background_snv_mut_bases)
         ))
     )
+    if (!setequal(signature_motif_mut_bases, background_snv_mut_bases)) {
+        cli::cli_abort(c(
+            "None-compatible bases found",
+            i = "{.arg signature_motif} variant bases: {.value {signature_motif_mut_bases}}",
+            i = "{.arg background_snv} variant bases: {.value {background_snv_mut_bases}}"
+        ))
+    }
+
+
     ref_genome <- BSgenome::getBSgenome(ref_genome)
     data.table::setnames(
         mut_data, c("sample", "chr", "start", "ref", "alt")
     )
-    mut_data <- mut_data[!is.na(start)]
-
+    mut_data <- mut_data[
+        !is.na(start) & ref != alt &
+            nchar(ref) == 1L & nchar(ref) == 1L
+    ]
     if (nrow(mut_data) == 0L) {
         cli::cli_abort("No SNPs to analyze!")
     }
@@ -116,7 +141,7 @@ run_motif_fisher <- function(
     # match seqlevelstyle between mut_data and ref_genome
     ref_genome_style <- GenomeInfoDb::seqlevelsStyle(ref_genome)
     if (all(GenomeInfoDb::seqlevelsStyle(mut_gr) != ref_genome_style)) {
-        cli::cli_alert_info(
+        cli::cli_inform(
             "Mapping seqnames of {.arg mut_data} to {.arg ref_genome} ({.value {ref_genome_style}})"
         )
         GenomeInfoDb::seqlevelsStyle(mut_gr) <- ref_genome_style
@@ -145,29 +170,38 @@ run_motif_fisher <- function(
     )
 
     # define substitution and motif (add upstream and downstream bases)
-    cli::cli_alert_info("Defining signature motif frequency and background context")
+    ## This is nucleotide frequcny and motif frequency
+    cli::cli_inform("Defining signature motif frequency and background context")
     compile_data <- cbind(
         sample = mut_gr$sample,
         Biostrings::alphabetFrequency(bg)[, Biostrings::DNA_BASES],
         Biostrings::trinucleotideFrequency(bg),
         define_snv_motif(motif, mut_gr$ref, mut_gr$alt)
     )
-
+    cli::cli_inform(c(
+        i = "Using {.value {background_snv_type}} to define {.field background_mut_freq}",
+        i = "Using {.value {signature_motif}} to define {.field signature_mut_freq}"
+    ))
     compile_data[
         , c("background_mut_freq", "signature_mut_freq") := {
-            tmp <- mut_gr$ref %chin% signature_mut_bases # nolint
+            tmp <- as.character(SubstitutionType) %chin% background_snv_type # nolint
             list(tmp, tmp & as.character(motif) %chin% signature_motif)
         }
     ]
-    ## This is nucleotide frequcny and motif frequency
-    compile_data[, background_conetxt := rowSums(.SD), # nolint
+    cli::cli_inform(c(
+        i = "Using {.value {signature_mut_bases}} to define {.field background_context}",
+        i = "Using {.value {signature_motif}} to define {.field signature_context}"
+    ))
+    compile_data[, background_context := rowSums(.SD), # nolint
         .SDcols = signature_mut_bases
     ]
     compile_data[, signature_context := rowSums(.SD), # nolint
         .SDcols = signature_motif
     ]
+    # only include SNV in the background mutation?
     compile_data <- compile_data[
-        , c(lapply(.SD, sum), list(n_mutations = .N)),
+        (background_mut_freq),
+        c(lapply(.SD, sum), list(n_mutations = .N)),
         .SDcols = !c(
             "Substitution", "SubstitutionMotif", "SubstitutionType",
             "SubstitutionTypeMotif"
@@ -179,13 +213,13 @@ run_motif_fisher <- function(
     ]
     compile_data[
         , enrichment := (signature_mut_freq / background_mut_freq) / # nolint
-            (signature_context / background_conetxt) # nolint
+            (signature_context / background_context) # nolint
     ]
     ### One way Fisher test to estimate over representation og APOBEC associated tcw mutations
-    cli::cli_alert_info("Performing one-way Fisher's test")
+    cli::cli_inform("Performing one-way Fisher's test")
     compile_data[
         ,
-        c("fisher_pvalue", "OR", "ci.up", "ci.low") := {
+        c("fisher.pvalue", "OR", "ci.up", "ci.low") := {
             tmp <- stats::fisher.test(
                 matrix(
                     c(
@@ -202,7 +236,14 @@ run_motif_fisher <- function(
         },
         by = .I
     ]
-    compile_data[]
+    compile_data[, .SD,
+        .SDcols = c(
+            "sample", "signature_mut_freq", "background_mut_freq",
+            "signature_context", "background_context", "non_signature_mut_freq",
+            "n_mutations", "enrichment", "fisher.pvalue",
+            "OR", "ci.low", "ci.up"
+        )
+    ]
 }
 
 gr_extend <- function(x, extension = 1L, use.names = TRUE) {
@@ -270,6 +311,7 @@ snv_type_motif <- c(
 
 define_snv_motif <- function(motif, ref, alt, motif_extension = 1L) {
     substitution <- paste0(ref, ">", alt)
+
     substitution_motif <- combine_snv_motif(
         substitution, motif, motif_extension
     )
@@ -302,7 +344,7 @@ define_snv_motif <- function(motif, ref, alt, motif_extension = 1L) {
 }
 
 utils::globalVariables(c(
-    "background_conetxt", "signature_context",
+    "background_context", "signature_context",
     "non_signature_mut_freq", "n_mutations",
     "signature_mut_freq", "background_mut_freq",
     "start", "end", "enrichment"
