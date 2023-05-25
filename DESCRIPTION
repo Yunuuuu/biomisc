@@ -36,7 +36,9 @@ Suggests:
     curl,
     ggplot2,
     magick,
-    SummarizedExperiment
+    SummarizedExperiment,
+    BSgenome,
+    Biostrings
 Remotes:
     Yunuuuu/ABSOLUTE,
     Rdatatable/data.table
