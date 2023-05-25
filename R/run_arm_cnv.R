@@ -72,7 +72,7 @@ run_arm_cnv <- function(
 
     if (all(GenomeInfoDb::seqlevelsStyle(seg_cnv) != "UCSC")) {
         cli::cli_inform("Mapping seqnames of {.arg seg_cnv} to UCSC style")
-        GenomeInfoDb::seqlevels(seg_cnv) <- "UCSC"
+        GenomeInfoDb::seqlevelsStyle(seg_cnv) <- "UCSC"
     }
 
     if (rlang::is_scalar_character(ref_cytoband) &&
