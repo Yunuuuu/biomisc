@@ -64,8 +64,8 @@
                       <num>                  <int>       <int>      <num>
       1:               5520                    279         312  0.5909374
       2:               4770                    238         266  0.5942074
-         fisher.pvalue        OR ci.low     ci.up
-                 <num>     <num>  <num>     <num>
-      1:     0.9998297 0.5426123    Inf 0.3881218
-      2:     0.9994671 0.5465323    Inf 0.3789297
+         fisher.pvalue        or    ci.low ci.up
+                 <num>     <num>     <num> <num>
+      1:     0.9998297 0.5426123 0.3881218   Inf
+      2:     0.9994671 0.5465323 0.3789297   Inf
 

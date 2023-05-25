@@ -219,7 +219,7 @@ run_motif_fisher <- function(
     cli::cli_inform("Performing one-way Fisher's test")
     compile_data[
         ,
-        c("fisher.pvalue", "OR", "ci.up", "ci.low") := {
+        c("fisher.pvalue", "or", "ci.low", "ci.up") := {
             tmp <- stats::fisher.test(
                 matrix(
                     c(
@@ -241,7 +241,7 @@ run_motif_fisher <- function(
             "sample", "signature_mut_freq", "background_mut_freq",
             "signature_context", "background_context", "non_signature_mut_freq",
             "n_mutations", "enrichment", "fisher.pvalue",
-            "OR", "ci.low", "ci.up"
+            "or", "ci.low", "ci.up"
         )
     ]
 }
