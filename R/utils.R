@@ -9,7 +9,7 @@ NULL
 #'
 #' @keywords internal
 #' @noRd
-assert_class <- function(x, is_class, msg, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+assert_class <- function(x, is_class, msg, cross_msg = "{.cls {class(x)}} object", null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
     if (rlang::is_scalar_character(is_class)) {
         class <- is_class
         is_class <- function(x) {
@@ -32,9 +32,11 @@ assert_class <- function(x, is_class, msg, null_ok = FALSE, arg = rlang::caller_
             ), call = call)
         }
     } else if (!is_right_class) {
-        cli::cli_abort(c(msg,
-            "x" = "You've supplied a {.cls {class(x)}} object"
-        ), call = call)
+        if (!is.null(cross_msg)) {
+            cross_msg <- sprintf("You've supplied a ", cross_msg)
+            msg <- c(msg, x = cross_msg)
+        }
+        cli::cli_abort(msg, call = call)
     }
 }
 
