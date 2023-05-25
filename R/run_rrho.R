@@ -978,11 +978,11 @@ rrho_summary_stats <- function(quadrant, quadrant_idx_list, quadrant_sign, hyper
 }
 
 rrho_metrics <- function(hyper_res, log_base = 10L) {
-    define_metrics(hyper_res$signs, hyper_res$metrics, log_base = log_base)
+    define_rrho_metrics(hyper_res$signs, hyper_res$metrics, log_base = log_base)
 }
 
 # metrics should be ln(P-value)
-define_metrics <- function(signs, metrics, log_base) {
+define_rrho_metrics <- function(signs, metrics, log_base) {
     signs * abs(metrics) * log(exp(1L), base = log_base)
 }
 
