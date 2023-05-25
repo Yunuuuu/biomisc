@@ -10,6 +10,7 @@ run_motif_fisher(
   ref_genome = NULL,
   signature_motif = c("TCA", "TCT"),
   background_snv = c("C>T", "C>G"),
+  remove_non_background_snv = TRUE,
   bg_extension = 20L
 )
 }
@@ -37,6 +38,9 @@ will also be included.}
 the calculation of MUTATIONS(CorG). If NULL, all mutations found in the
 second base of \code{signature_motif} will be included. All Complemented
 substitution will also be included. Default: c("C>T", "C>G").}
+
+\item{remove_non_background_snv}{A scalar logical indicates whether mutations
+not in \code{background_snv} should be removed before analysis.}
 
 \item{bg_extension}{The number of bases around the variable base to define
 the background. Default 20L.}

@@ -37,6 +37,8 @@
 #' substitution will also be included. Default: c("C>T", "C>G").
 #' @param bg_extension The number of bases around the variable base to define
 #' the background. Default 20L.
+#' @param remove_non_background_snv A scalar logical indicates whether mutations
+#' not in `background_snv` should be removed before analysis.
 #' @return A [data.table][data.table::data.table] describing enrichment per
 #' sample.
 #' @seealso
@@ -47,7 +49,8 @@
 #' @export
 run_motif_fisher <- function(
     mut_data, ref_genome = NULL, signature_motif = c("TCA", "TCT"),
-    background_snv = c("C>T", "C>G"), bg_extension = 20L) {
+    background_snv = c("C>T", "C>G"), remove_non_background_snv = TRUE,
+    bg_extension = 20L) {
     assert_pkg("BSgenome")
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
@@ -199,8 +202,10 @@ run_motif_fisher <- function(
         .SDcols = signature_motif
     ]
     # only include SNV in the background mutation?
-    compile_data <- compile_data[
-        (background_mut_freq),
+    if (remove_non_background_snv) {
+        compile_data <- compile_data[(background_mut_freq)]
+    }
+    compile_data <- compile_data[,
         c(lapply(.SD, sum), list(n_mutations = .N)),
         .SDcols = !c(
             "Substitution", "SubstitutionMotif", "SubstitutionType",
@@ -226,7 +231,7 @@ run_motif_fisher <- function(
                         .SD$signature_mut_freq,
                         .SD$signature_context,
                         .SD$background_mut_freq - .SD$signature_mut_freq,
-                        .SD$C + .SD$G - .SD$signature_context
+                        .SD$background_context - .SD$signature_context
                     ),
                     nrow = 2L
                 ),
@@ -347,7 +352,8 @@ utils::globalVariables(c(
     "background_context", "signature_context",
     "non_signature_mut_freq", "n_mutations",
     "signature_mut_freq", "background_mut_freq",
-    "start", "end", "enrichment"
+    "start", "end", "enrichment", "SubstitutionType",
+    "ref", "alt"
 ))
 
 standardize_substitution <- function(x) {
