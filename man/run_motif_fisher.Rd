@@ -26,7 +26,8 @@ names doesn't matter).
 }}
 
 \item{ref_genome}{BSgenome object or name of the installed BSgenome package.
-Example: "BSgenome.Hsapiens.UCSC.hg19".}
+Example: "BSgenome.Hsapiens.UCSC.hg19". Details see "genome" argument of
+\link[BSgenome:available.genomes]{getBSgenome}.}
 
 \item{signature_motif}{A character of the trinucleotide which will be used to
 calculate MUTATIONS(tCw) and CONTEXT(tCw) to test for enrichment. Defaul is
@@ -71,11 +72,28 @@ context. (W -> A or T)
 
 One-sided Fisher's Exact test is performed to determine the enrichment of
 signature motif over background.
+
+APOBEC_enrich mean the enrichment over random of APOBEC pattern mutations.
+This is calculated as: {\link{(TCW to TGW) + (TCW to TTW)}/\link[=(C to G) + (C to
+T)]{(C to G) + (C to T)}}/\link{TCW/C}. The enrichment value > 2, which implies that in such samples at
+least 50\% of APOBEC signature mutations have been in fact made by APOBEC
+enzyme(s). APOBEC_MutLoad_MinEstimate is the minimum estimate of number of
+APOBEC induced mutations in a sample. This estimate is calculated using the
+formula: \link{TCW to TGW + TCW to TTW}×\link{(APOBEC_enrich-1)/APOBEC_enrich} to
+determine the number of APOBEC signature mutations in excess of what would be
+expected by random mutagenesis. Calculated values are rounded to the nearest
+whole number.
 }
 \references{
-Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine
-Deaminase Mutagenesis Pattern is Widespread in Human Cancers. Nature
-genetics. 2013;45(9):970-976. doi:10.1038/ng.2702.
+\itemize{
+\item Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine Deaminase
+Mutagenesis Pattern is Widespread in Human Cancers. Nature genetics.
+2013;45(9):970-976. doi:10.1038/ng.2702.
+\item Wang, S., Jia, M., He, Z. et al. APOBEC3B and APOBEC mutational signature
+as potential predictive markers for immunotherapy response in non-small
+cell lung cancer. Oncogene 37, 3924–3936 (2018).
+https://doi.org/10.1038/s41388-018-0245-9
+}
 }
 \seealso{
 \url{https://github.com/PoisonAlien/maftools/blob/master/R/TrinucleotideMatrix.R}

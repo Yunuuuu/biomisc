@@ -16,6 +16,18 @@
 #'
 #' One-sided Fisher's Exact test is performed to determine the enrichment of
 #' signature motif over background.
+#' 
+#' APOBEC_enrich mean the enrichment over random of APOBEC pattern mutations.
+#' This is calculated as: {[(TCW to TGW) + (TCW to TTW)]/[(C to G) + (C to
+#' T)]}/[TCW/C]. The enrichment value > 2, which implies that in such samples at
+#' least 50% of APOBEC signature mutations have been in fact made by APOBEC
+#' enzyme(s). APOBEC_MutLoad_MinEstimate is the minimum estimate of number of
+#' APOBEC induced mutations in a sample. This estimate is calculated using the
+#' formula: [TCW to TGW + TCW to TTW]×[(APOBEC_enrich-1)/APOBEC_enrich] to
+#' determine the number of APOBEC signature mutations in excess of what would be
+#' expected by random mutagenesis. Calculated values are rounded to the nearest
+#' whole number.
+#' 
 #'
 #' @param mut_data An data.frame with 5 columns in the following order (column
 #' names doesn't matter).
@@ -25,7 +37,8 @@
 #'  - ref: The plus strand reference allele at this position.
 #'  - alt: Tumor variant allele at this position.
 #' @param ref_genome BSgenome object or name of the installed BSgenome package.
-#'  Example: "BSgenome.Hsapiens.UCSC.hg19".
+#'  Example: "BSgenome.Hsapiens.UCSC.hg19". Details see "genome" argument of
+#'  [getBSgenome][BSgenome::getBSgenome].
 #' @param signature_motif A character of the trinucleotide which will be used to
 #' calculate MUTATIONS(tCw) and CONTEXT(tCw) to test for enrichment. Defaul is
 #' APOBEC signature motif: c("TCA", TCT"). The second base will define
@@ -43,9 +56,14 @@
 #' sample.
 #' @seealso
 #' <https://github.com/PoisonAlien/maftools/blob/master/R/TrinucleotideMatrix.R>
-#' @references Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine
-#' Deaminase Mutagenesis Pattern is Widespread in Human Cancers. Nature
-#' genetics. 2013;45(9):970-976. doi:10.1038/ng.2702.
+#' @references 
+#' - Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine Deaminase
+#'   Mutagenesis Pattern is Widespread in Human Cancers. Nature genetics.
+#'   2013;45(9):970-976. doi:10.1038/ng.2702.
+#' - Wang, S., Jia, M., He, Z. et al. APOBEC3B and APOBEC mutational signature
+#'   as potential predictive markers for immunotherapy response in non-small
+#'   cell lung cancer. Oncogene 37, 3924–3936 (2018).
+#'   https://doi.org/10.1038/s41388-018-0245-9 
 #' @export
 run_motif_fisher <- function(
     mut_data, ref_genome = NULL, signature_motif = c("TCA", "TCT"),
@@ -110,7 +128,6 @@ run_motif_fisher <- function(
             i = "{.arg background_snv} variant bases: {.value {background_snv_mut_bases}}"
         ))
     }
-
 
     ref_genome <- BSgenome::getBSgenome(ref_genome)
     data.table::setnames(
