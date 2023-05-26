@@ -7,7 +7,7 @@ signature analysis. Also estimates APOBEC enrichment scores.}
 \usage{
 run_motif_fisher(
   mut_data,
-  ref_genome = NULL,
+  ref_genome,
   signature_motif = c("TCA", "TCT"),
   background_snv = c("C>T", "C>G"),
   remove_non_background_snv = TRUE,
@@ -26,7 +26,7 @@ names doesn't matter).
 }}
 
 \item{ref_genome}{BSgenome object or name of the installed BSgenome package.
-Example: "BSgenome.Hsapiens.UCSC.hg19". Details see "genome" argument of
+Example: "hg38". Details see "genome" argument of
 \link[BSgenome:available.genomes]{getBSgenome}.}
 
 \item{signature_motif}{A character of the trinucleotide which will be used to
@@ -74,12 +74,12 @@ One-sided Fisher's Exact test is performed to determine the enrichment of
 signature motif over background.
 
 APOBEC_enrich mean the enrichment over random of APOBEC pattern mutations.
-This is calculated as: {\link{(TCW to TGW) + (TCW to TTW)}/\link[=(C to G) + (C to
-T)]{(C to G) + (C to T)}}/\link{TCW/C}. The enrichment value > 2, which implies that in such samples at
-least 50\% of APOBEC signature mutations have been in fact made by APOBEC
+This is calculated as: {[(TCW to TGW) + (TCW to TTW)]/[(C to G) + (C to
+T)]}/[TCW/C]. The enrichment value > 2, which implies that in such samples
+at least 50\% of APOBEC signature mutations have been in fact made by APOBEC
 enzyme(s). APOBEC_MutLoad_MinEstimate is the minimum estimate of number of
 APOBEC induced mutations in a sample. This estimate is calculated using the
-formula: \link{TCW to TGW + TCW to TTW}×\link{(APOBEC_enrich-1)/APOBEC_enrich} to
+formula: [TCW to TGW + TCW to TTW]×[(APOBEC_enrich-1)/APOBEC_enrich] to
 determine the number of APOBEC signature mutations in excess of what would be
 expected by random mutagenesis. Calculated values are rounded to the nearest
 whole number.

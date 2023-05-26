@@ -38,7 +38,9 @@ Suggests:
     magick,
     SummarizedExperiment,
     BSgenome,
-    Biostrings
+    Biostrings,
+    BiocManager,
+    BSgenome.Hsapiens.UCSC.hg38
 Remotes:
     Yunuuuu/ABSOLUTE,
     Rdatatable/data.table
