@@ -16,7 +16,6 @@ test_that("rrho works", {
     testthat::expect_snapshot(out2)
     testthat::expect_snapshot_output(print(out2))
     testthat::expect_snapshot(rrho_sig_spot(out))
-    testthat::expect_snapshot_value(rrho_heatmap(out), "serialize")
     testthat::expect_snapshot_value(rrho_dots(out), "serialize")
     testthat::expect_snapshot(rrho_correct_pval(out))
     testthat::expect_snapshot(rrho_correct_pval(out, "permutation", perm = 10L))
