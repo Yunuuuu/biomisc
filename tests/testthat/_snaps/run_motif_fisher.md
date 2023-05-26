@@ -38,7 +38,7 @@
       
           strsplit
       
-      Mapping seqnames of `mut_data` to `ref_genome` (UCSC)
+      Mapping seqnames of `mut_data` to `ref_genome` ("UCSC")
     Condition
       Warning in `valid.GenomicRanges.seqinfo()`:
       GRanges object contains 7 out-of-bound ranges located on sequences
@@ -50,10 +50,10 @@
         information.
     Message
       Defining signature motif frequency and background context
-      i Using C>T and C>G to define background_mut_freq
-      i Using TCA, TCT, TGA, and AGA to define signature_mut_freq
-      i Using C and G to define background_context
-      i Using TCA, TCT, TGA, and AGA to define signature_context
+      i Using "C>T" and "C>G" to define background_mut_freq
+      i Using "TCA", "TCT", "TGA", and "AGA" to define signature_mut_freq
+      i Using "C" and "G" to define background_context
+      i Using "TCA", "TCT", "TGA", and "AGA" to define signature_context
       Performing one-way Fisher's test
     Output
                   sample signature_mut_freq background_mut_freq signature_context

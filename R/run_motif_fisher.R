@@ -85,14 +85,14 @@ run_motif_fisher <- function(
         signature_motif, function(x) {
             is.character(x) && all(nchar(x) == 3L)
         },
-        msg = "{.cls character} and all elements must have size {.value 3L}",
+        msg = "{.cls character} and all elements must have size {.val 3L}",
         cross_msg = NULL
     )
     assert_class(
         background_snv, function(x) {
             is.character(x) && all(x %chin% names(substitution_pairs))
         },
-        msg = "{.cls character} (among {.value {unique(names(substitution_pairs))}})",
+        msg = "{.cls character} (among {.val {unique(names(substitution_pairs))}})",
         cross_msg = NULL, null_ok = TRUE
     )
 
@@ -124,8 +124,8 @@ run_motif_fisher <- function(
     if (!setequal(signature_motif_mut_bases, background_snv_mut_bases)) {
         cli::cli_abort(c(
             "None-compatible bases found",
-            i = "{.arg signature_motif} variant bases: {.value {signature_motif_mut_bases}}",
-            i = "{.arg background_snv} variant bases: {.value {background_snv_mut_bases}}"
+            i = "{.arg signature_motif} variant bases: {.val {signature_motif_mut_bases}}",
+            i = "{.arg background_snv} variant bases: {.val {background_snv_mut_bases}}"
         ))
     }
 
@@ -133,6 +133,9 @@ run_motif_fisher <- function(
     data.table::setnames(
         mut_data, c("sample", "chr", "start", "ref", "alt")
     )
+    mut_data[, c("ref", "alt") := lapply(.SD, as.character),
+        .SDcols = c("ref", "alt")
+    ]
     mut_data <- mut_data[
         !is.na(start) & ref != alt &
             nchar(ref) == 1L & nchar(ref) == 1L
@@ -140,9 +143,6 @@ run_motif_fisher <- function(
     if (nrow(mut_data) == 0L) {
         cli::cli_abort("No SNPs to analyze!")
     }
-    mut_data[, c("ref", "alt") := lapply(.SD, as.character),
-        .SDcols = c("ref", "alt")
-    ]
     mut_data[, start := as.numeric(start)]
     mut_data[, end := start]
 
@@ -162,7 +162,7 @@ run_motif_fisher <- function(
     ref_genome_style <- GenomeInfoDb::seqlevelsStyle(ref_genome)
     if (all(GenomeInfoDb::seqlevelsStyle(mut_gr) != ref_genome_style)) {
         cli::cli_inform(
-            "Mapping seqnames of {.arg mut_data} to {.arg ref_genome} ({.value {ref_genome_style}})"
+            "Mapping seqnames of {.arg mut_data} to {.arg ref_genome} ({.val {ref_genome_style}})"
         )
         GenomeInfoDb::seqlevelsStyle(mut_gr) <- ref_genome_style
     }
@@ -199,8 +199,8 @@ run_motif_fisher <- function(
         define_snv_motif(motif, mut_gr$ref, mut_gr$alt)
     )
     cli::cli_inform(c(
-        i = "Using {.value {background_snv_type}} to define {.field background_mut_freq}",
-        i = "Using {.value {signature_motif}} to define {.field signature_mut_freq}"
+        i = "Using {.val {background_snv_type}} to define {.field background_mut_freq}",
+        i = "Using {.val {signature_motif}} to define {.field signature_mut_freq}"
     ))
     compile_data[
         , c("background_mut_freq", "signature_mut_freq") := {
@@ -209,8 +209,8 @@ run_motif_fisher <- function(
         }
     ]
     cli::cli_inform(c(
-        i = "Using {.value {signature_mut_bases}} to define {.field background_context}",
-        i = "Using {.value {signature_motif}} to define {.field signature_context}"
+        i = "Using {.val {signature_mut_bases}} to define {.field background_context}",
+        i = "Using {.val {signature_motif}} to define {.field signature_context}"
     ))
     compile_data[, background_context := rowSums(.SD), # nolint
         .SDcols = signature_mut_bases
