@@ -1,8 +1,8 @@
 # multiplication works
 
     Code
-      run_motif_fisher(maf[, c("Tumor_Sample_Barcode", "Chromosome", "Start_position",
-        "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = "hg38")
+      suppressWarnings(run_motif_fisher(maf[, c("Tumor_Sample_Barcode", "Chromosome",
+        "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = "hg38"))
     Message
       
       Attaching package: 'BiocGenerics'
@@ -39,16 +39,6 @@
           strsplit
       
       Mapping seqnames of `mut_data` to `ref_genome` ("UCSC")
-    Condition
-      Warning in `valid.GenomicRanges.seqinfo()`:
-      GRanges object contains 7 out-of-bound ranges located on sequences
-        chr9, chr21, chr22, chr6, and chr19. Note that ranges located on a
-        sequence whose length is unknown (NA) or on a circular sequence are not
-        considered out-of-bound (use seqlengths() and isCircular() to get the
-        lengths and circularity flags of the underlying sequences). You can use
-        trim() to trim these ranges. See ?`trim,GenomicRanges-method` for more
-        information.
-    Message
       Defining signature motif frequency and background context
       i Using "C>T" and "C>G" to define background_mut_freq
       i Using "TCA", "TCT", "TGA", and "AGA" to define signature_mut_freq
