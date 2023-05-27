@@ -94,6 +94,7 @@ run_hdp <- function(
         assert_class(prior_pseudoc, is.numeric, "numeric", null_ok = TRUE)
         assert_length(prior_pseudoc, nps, scalar_ok = TRUE, null_ok = TRUE)
         initial <- nps + 2L
+        initcc <- initcc + nps
         hdp_data <- hdp::hdp_prior_init(
             prior_distn = priors,
             prior_pseudoc = prior_pseudoc %||% rep_len(1000L, nps),
