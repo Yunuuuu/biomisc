@@ -43,17 +43,28 @@ assert_class <- function(x, is_class, msg, cross_msg = "{.cls {class(x)}} object
 #' Report if an argument has specific length
 #' @keywords internal
 #' @noRd
-assert_length <- function(x, length, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
-    length <- as.integer(length)
-    if (length == 1L) {
-        msg <- "{.field scalar} object"
-    } else {
-        msg <- "length {.val {length}} object"
+assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+    if (missing(length)) {
+        length <- as.integer(length)
+        if (missing(msg)) {
+            if (length > 1L) {
+                msg <- "length {.field {length}}"
+            } else if (length == 1L) {
+                msg <- "a {.field scalar}"
+            }
+        }
+    }
+    if (scalar_ok) {
+        if (missing(msg)) {
+            msg <- "a {.field scalar}"
+        } else if (!missing(length) && length > 1L) {
+            msg <- paste(msg, "or a {.field scalar}", sep = " ")
+        }
     }
     if (null_ok) {
         msg <- paste(msg, "or {.code NULL}", sep = " ")
     }
-    msg <- sprintf("{.arg {arg}} must be a %s", msg)
+    msg <- sprintf("{.arg {arg}} must be of %s", msg)
     is_right_length <- length(x) == length
     if (is.null(x) && !is_right_length) {
         if (!null_ok) {

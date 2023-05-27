@@ -40,9 +40,11 @@ Suggests:
     BSgenome,
     Biostrings,
     BiocManager,
-    BSgenome.Hsapiens.UCSC.hg38
+    BSgenome.Hsapiens.UCSC.hg38,
+    hdp
 Remotes:
     Yunuuuu/ABSOLUTE,
+    Yunuuuu/hdp,
     Rdatatable/data.table
 Depends: 
     R (>= 3.5.0)
