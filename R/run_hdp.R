@@ -93,6 +93,8 @@ run_hdp <- function(
         nps <- ncol(priors)
         assert_class(prior_pseudoc, is.numeric, "numeric", null_ok = TRUE)
         assert_length(prior_pseudoc, nps, scalar_ok = TRUE, null_ok = TRUE)
+        # (don’t activate the frozen pseudo-count nodes for the prior
+        # signatures) 
         initial <- nps + 2L
         initcc <- initcc + nps
         hdp_data <- hdp::hdp_prior_init(
