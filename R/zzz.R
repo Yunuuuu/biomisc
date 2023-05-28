@@ -22,7 +22,9 @@ if (getRversion() >= "2.15.1") {
             "mutation_id", "position", "chromosome", "tumour_content",
             "major_cn",
             # cellmarker
-            "targeted", "targeted_size", "targeted_prop", "gene_list"
+            "targeted", "targeted_size", "targeted_prop", "gene_list",
+            # run_hdp
+            "n"
         )
     )
 }

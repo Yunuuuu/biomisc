@@ -8,7 +8,7 @@ run_hdp(
   matrix,
   priors = NULL,
   prior_pseudoc = NULL,
-  dp_tree_layer = NULL,
+  dp_tree = NULL,
   initcc = 10L,
   ...,
   n_posterior = 15L,
@@ -30,7 +30,7 @@ these pseudocounts to specify the relative weighting of each prior
 component compared to the volume of observed data. If NULL, will be
 \code{rep_len(1000L, ncol(priors))}.}
 
-\item{dp_tree_layer}{A data.frame specifying the children-parent
+\item{dp_tree}{A data.frame specifying the children-parent
 relationships. The first column must contain all the samples specified in
 \code{matrix} (rownames), and the second define the parent, the third difine the
 grandparent and more ancestors et.al.}
