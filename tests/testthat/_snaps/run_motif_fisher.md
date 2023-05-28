@@ -2,7 +2,7 @@
 
     Code
       suppressWarnings(run_motif_fisher(maf[, c("Tumor_Sample_Barcode", "Chromosome",
-        "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = "hg38"))
+        "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = "hg19"))
     Message
       
       Attaching package: 'BiocGenerics'
@@ -48,14 +48,14 @@
     Output
                   sample signature_mut_freq background_mut_freq signature_context
                   <char>              <int>               <int>             <num>
-      1: TCGA-DK-A1A6-01                 33                 312               988
-      2: TCGA-DK-A1A6-06                 28                 266               845
+      1: TCGA-DK-A1A6-01                164                 314              1023
+      2: TCGA-DK-A1A6-06                141                 267               861
          background_context non_signature_mut_freq n_mutations enrichment
                       <num>                  <int>       <int>      <num>
-      1:               5520                    279         312  0.5909374
-      2:               4770                    238         266  0.5942074
-         fisher.pvalue        or    ci.low ci.up
-                 <num>     <num>     <num> <num>
-      1:     0.9998297 0.5426123 0.3881218   Inf
-      2:     0.9994671 0.5465323 0.3789297   Inf
+      1:               6537                    150         314   3.337468
+      2:               5503                    126         267   3.375237
+         fisher.pvalue       or   ci.low ci.up
+                 <num>    <num>    <num> <num>
+      1:  1.097903e-47 5.890841 4.819058   Inf
+      2:  6.539577e-42 6.030437 4.846212   Inf
 

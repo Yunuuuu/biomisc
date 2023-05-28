@@ -40,7 +40,7 @@ Suggests:
     BSgenome,
     Biostrings,
     BiocManager,
-    BSgenome.Hsapiens.UCSC.hg38,
+    BSgenome.Hsapiens.UCSC.hg19,
     hdp
 Remotes:
     Yunuuuu/ABSOLUTE,

@@ -6,7 +6,7 @@ testthat::test_that("multiplication works", {
     testthat::expect_snapshot(
         suppressWarnings(run_motif_fisher(
             maf[, c("Tumor_Sample_Barcode", "Chromosome", "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")],
-            ref_genome = "hg38"
+            ref_genome = "hg19"
         ))
     )
 })

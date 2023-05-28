@@ -185,16 +185,17 @@ run_motif_fisher <- function(
     bg <- suppressWarnings(gr_extend(mut_gr, extension = bg_extension))
 
     # omit out-of-bound ranges
-    good_ranges <- GenomicRanges::trim(motif) == motif &
-        GenomicRanges::trim(bg) == bg
+    good_ranges <- GenomicRanges::trim(bg) == bg
+
     mut_gr <- mut_gr[good_ranges]
     motif <- BSgenome::getSeq(
         x = ref_genome, motif[good_ranges],
         as.character = FALSE
     )
     # check mutation reference allele match the second base in motif
-    matched_ranges <- Biostrings::DNAStringSet(mut_gr$ref) ==
+    matched_ranges <- mut_gr$ref == as.character(
         Biostrings::subseq(motif, 2L, 2L)
+    )
 
     if (any(!matched_ranges)) {
         cli::cli_warn("Removing {.val {sum(!matched_ranges)}} ({format_percent(mean(!matched_ranges))}) mutations whose reference allele cannot match the {.arg ref_genome}")
