@@ -95,3 +95,7 @@ assert_pkg <- function(pkg, fun = NULL, call = parent.frame()) {
 is_scalar_numeric <- function(x) {
     length(x) == 1L && is.numeric(x)
 }
+
+format_percent <- function(x, digits = 2L, format = "f", ...) { 
+    sprintf("%s%%", formatC(x * 100L, format = format, digits = digits, ...))
+}

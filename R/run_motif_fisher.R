@@ -16,7 +16,7 @@
 #'
 #' One-sided Fisher's Exact test is performed to determine the enrichment of
 #' signature motif over background.
-#' 
+#'
 #' APOBEC_enrich mean the enrichment over random of APOBEC pattern mutations.
 #' This is calculated as: {\[(TCW to TGW) + (TCW to TTW)\]/\[(C to G) + (C to
 #' T)\]}/\[TCW/C\]. The enrichment value > 2, which implies that in such samples
@@ -27,7 +27,7 @@
 #' determine the number of APOBEC signature mutations in excess of what would be
 #' expected by random mutagenesis. Calculated values are rounded to the nearest
 #' whole number.
-#' 
+#'
 #'
 #' @param mut_data An data.frame with 5 columns in the following order (column
 #' names doesn't matter).
@@ -56,14 +56,14 @@
 #' sample.
 #' @seealso
 #' <https://github.com/PoisonAlien/maftools/blob/master/R/TrinucleotideMatrix.R>
-#' @references 
+#' @references
 #' - Roberts SA, Lawrence MS, Klimczak LJ, et al. An APOBEC Cytidine Deaminase
 #'   Mutagenesis Pattern is Widespread in Human Cancers. Nature genetics.
 #'   2013;45(9):970-976. doi:10.1038/ng.2702.
 #' - Wang, S., Jia, M., He, Z. et al. APOBEC3B and APOBEC mutational signature
 #'   as potential predictive markers for immunotherapy response in non-small
 #'   cell lung cancer. Oncogene 37, 3924–3936 (2018).
-#'   https://doi.org/10.1038/s41388-018-0245-9 
+#'   https://doi.org/10.1038/s41388-018-0245-9
 #' @export
 run_motif_fisher <- function(
     mut_data, ref_genome, signature_motif = c("TCA", "TCT"),
@@ -167,16 +167,24 @@ run_motif_fisher <- function(
         GenomeInfoDb::seqlevelsStyle(mut_gr) <- ref_genome_style
     }
     GenomeInfoDb::seqlevels(mut_gr) <- GenomeInfoDb::seqlevels(ref_genome)
-    GenomeInfoDb::seqinfo(mut_gr) <- GenomeInfoDb::seqinfo(ref_genome)
+
+    suppressWarnings(
+        GenomeInfoDb::seqinfo(mut_gr) <- GenomeInfoDb::seqinfo(ref_genome)
+    )
 
     # Meaure nucleotide frequency and motifs within upstream and downstream of
     # mutated base;
-    mut_gr <- mut_gr[GenomicRanges::trim(mut_gr) == mut_gr]
+    out_ranges <- GenomicRanges::trim(mut_gr) != mut_gr
+    if (any(out_ranges)) {
+        cli::cli_warn("Removing {.val {sum(out_ranges)}} ({format_percent(mean(out_ranges))}) out-of-bound mutations compared to {.arg ref_genome}")
+    }
+    mut_gr <- mut_gr[!out_ranges]
 
+    # Get motif and background base sequencing
     motif <- suppressWarnings(gr_extend(mut_gr, extension = 1L))
     bg <- suppressWarnings(gr_extend(mut_gr, extension = bg_extension))
 
-    # omit ranges out-of-ranges
+    # omit out-of-bound ranges
     good_ranges <- GenomicRanges::trim(motif) == motif &
         GenomicRanges::trim(bg) == bg
     mut_gr <- mut_gr[good_ranges]
@@ -184,8 +192,19 @@ run_motif_fisher <- function(
         x = ref_genome, motif[good_ranges],
         as.character = FALSE
     )
+    # check mutation reference allele match the second base in motif
+    matched_ranges <- Biostrings::DNAStringSet(mut_gr$ref) ==
+        Biostrings::subseq(motif, 2L, 2L)
+
+    if (any(!matched_ranges)) {
+        cli::cli_warn("Removing {.val {sum(!matched_ranges)}} ({format_percent(mean(!matched_ranges))}) mutations whose reference allele cannot match the {.arg ref_genome}")
+    }
+
+    mut_gr <- mut_gr[matched_ranges]
+    motif <- motif[matched_ranges]
     bg <- BSgenome::getSeq(
-        x = ref_genome, bg[good_ranges],
+        x = ref_genome,
+        bg[good_ranges][matched_ranges],
         as.character = FALSE
     )
 
