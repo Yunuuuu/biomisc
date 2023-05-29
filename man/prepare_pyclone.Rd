@@ -7,30 +7,33 @@
 prepare_pyclone(
   mut_data,
   cnv_data,
+  sample_id = NULL,
   normal_cn = 2,
   pyclone_vi = FALSE,
-  sample_id = NULL,
   purity = 1L,
   error_rate = NULL
 )
 }
 \arguments{
-\item{mut_data}{a data.frame of mutation data with the top four columns
-containing "chromosome", "pos", "ref_counts" and "var_counts", other columns
-will be omited. Column names don't matter.}
+\item{mut_data}{A data.frame of mutation data with the top 4 columns (omit
+column specified in \code{sample_id}) containing "chromosome", "pos", "ref_counts"
+and "var_counts", other columns will be omited. Column names don't matter. If
+\code{sample_id} is not NULL, the column specified in \code{sample_id} will be matched
+in both mut_data and cnv_data.}
 
-\item{cnv_data}{a data.frame of allele-specific CNV data with the top five
+\item{cnv_data}{A data.frame of allele-specific CNV data with the top 5
 columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
-"minor_cn", other columns will be omited. Column names don't matter.}
+"minor_cn". "sample_id" is optional, details see mut_data. other columns will
+be omited. Column names don't matter.}
+
+\item{sample_id}{A string (can be named), specifying the column used to match
+mut_data and cnv_data.}
 
 \item{normal_cn}{The copy number of the locus in non-malignant cells. This
 should generally be 2 except for sex chromosomes in males.}
 
 \item{pyclone_vi}{a logical value indicates whether prepare data for the
 input of PyClone-vi. Details see \url{https://github.com/Roth-Lab/pyclone-vi}}
-
-\item{sample_id}{Only used for
-\href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, the sample names.}
 
 \item{purity}{Only used for
 \href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, the tumour content
