@@ -7,8 +7,8 @@
 prepare_pyclone(
   mut_data,
   cnv_data,
-  sample_id = NULL,
-  normal_cn = 2,
+  on_sample = NULL,
+  normal_cn = 2L,
   pyclone_vi = FALSE,
   purity = 1L,
   error_rate = NULL
@@ -26,8 +26,9 @@ columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
 "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 be omited. Column names don't matter.}
 
-\item{sample_id}{A string (can be named), specifying the column used to match
-mut_data and cnv_data.}
+\item{on_sample}{A string (can be named), specifying the sample column used
+to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
+regarded from the same sample.}
 
 \item{normal_cn}{The copy number of the locus in non-malignant cells. This
 should generally be 2 except for sex chromosomes in males.}

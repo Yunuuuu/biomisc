@@ -4,7 +4,15 @@
 \alias{identify_mut_cn}
 \title{Identify the copy number in mutation position}
 \usage{
-identify_mut_cn(mut_data, cnv_data, sample_id = NULL)
+identify_mut_cn(
+  mut_data,
+  cnv_data,
+  on_sample = NULL,
+  on_chr = "chr",
+  mut_pos = "pos",
+  start_field = "start",
+  end_field = "end"
+)
 }
 \arguments{
 \item{mut_data}{A data.frame of mutation data with the top 4 columns (omit
@@ -18,8 +26,22 @@ columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
 "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 be omited. Column names don't matter.}
 
-\item{sample_id}{A string (can be named), specifying the column used to match
-mut_data and cnv_data.}
+\item{on_sample}{A string (can be named), specifying the sample column used
+to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
+regarded from the same sample.}
+
+\item{on_chr}{A string (can be named), specifying the chromosome column used
+to match mut_data and cnv_data.}
+
+\item{mut_pos}{A string indicating the column names in \code{mut_data} that
+contains the variants positions in the chromosome.}
+
+\item{start_field, end_field}{A string indicating the column names in
+\code{cnv_data} that contains the start positions and end position of the genomic
+ranges.}
+}
+\value{
+A integrated
 }
 \description{
 Identify the copy number in mutation position

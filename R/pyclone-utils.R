@@ -14,14 +14,51 @@
 #'  - <https://github.com/Roth-Lab/pyclone-vi>
 #'  - <https://bitbucket.org/sequenzatools/sequenza/src/v2.1.1/R/next.R>
 #' @export
-prepare_pyclone <- function(mut_data, cnv_data, sample_id = NULL, normal_cn = 2, pyclone_vi = FALSE, purity = 1L, error_rate = NULL) {
+prepare_pyclone <- function(mut_data, cnv_data, on_sample = NULL, normal_cn = 2L, pyclone_vi = FALSE, purity = 1L, error_rate = NULL) {
+    assert_class(mut_data, function(x) {
+        inherits(x, "data.frame") && ncol(x) >= 4L
+    }, "{.cls data.frame} with at least 4 columns")
+    assert_class(cnv_data, function(x) {
+        inherits(x, "data.frame") && ncol(x) >= 5L
+    }, "{.cls data.frame} with at least 5 columns")
     if (pyclone_vi) {
         assert_class(purity, is_scalar_numeric,
             "scalar numeric",
             cross_msg = NULL
         )
     }
-    out <- identify_mut_cn(mut_data, cnv_data, sample_id = sample_id)
+    if (!is.null(on_sample)) {
+        cnv_sample_col <- unname(on_sample)
+        mut_sample_col <- names(on_sample) %||% cnv_sample_col
+        cnv_sample_id <- cnv_data[[cnv_sample_col]]
+        cnv_data[[cnv_sample_col]] <- NULL
+        mut_sample_id <- mut_data[[mut_sample_col]]
+        mut_data[[mut_sample_col]] <- NULL
+    } else {
+        cnv_sample_id <- rep_len("sample", nrow(cnv_data))
+        mut_sample_id <- rep_len("sample", nrow(mut_data))
+    }
+
+    mut_data <- data.table::as.data.table(mut_data)[, 1:4]
+    data.table::setnames(
+        mut_data,
+        c("chromosome", "pos", "ref_counts", "var_counts")
+    )
+    mut_data[, sample_id := mut_sample_id] # nolint
+
+    cnv_data <- data.table::as.data.table(cnv_data)[, 1:5]
+    data.table::setnames(
+        cnv_data,
+        c("chromosome", "start_pos", "end_pos", "major_cn", "minor_cn")
+    )
+    cnv_data[, sample_id := cnv_sample_id] # nolint
+
+    out <- identify_mut_cn(
+        mut_data, cnv_data,
+        on_chr = "chromosome",
+        start_field = "start_pos", end_field = "end_pos",
+        on_sample = "sample_id"
+    )
     out[, mutation_id := paste(chromosome, position, sep = ":")]
     out[, normal_cn := normal_cn]
 
@@ -56,7 +93,7 @@ prepare_pyclone <- function(mut_data, cnv_data, sample_id = NULL, normal_cn = 2,
             )
         }
     }
-    if (!is.null(sample_id)) data.table::setcolorder(out, "sample_id")
+    if (!is.null(on_sample)) data.table::setcolorder(out, "sample_id")
     out[major_cn > 0L]
 }
 
@@ -70,63 +107,54 @@ prepare_pyclone <- function(mut_data, cnv_data, sample_id = NULL, normal_cn = 2,
 #' columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
 #' "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 #' be omited. Column names don't matter.
-#' @param sample_id A string (can be named), specifying the column used to match
-#' mut_data and cnv_data.
+#' @param on_sample A string (can be named), specifying the sample column used
+#' to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
+#' regarded from the same sample.
+#' @param on_chr A string (can be named), specifying the chromosome column used
+#' to match mut_data and cnv_data.
+#' @param mut_pos A string indicating the column names in `mut_data` that
+#' contains the variants positions in the chromosome.
+#' @param start_field,end_field A string indicating the column names in
+#' `cnv_data` that contains the start positions and end position of the genomic
+#' ranges.
+#' @return A integrated
 #' @export
-identify_mut_cn <- function(mut_data, cnv_data, sample_id = NULL) {
-    assert_class(mut_data, function(x) {
-        inherits(x, "data.frame") && ncol(x) >= 4L
-    }, "{.cls data.frame} with at least 4 columns")
-    assert_class(cnv_data, function(x) {
-        inherits(x, "data.frame") && ncol(x) >= 5L
-    }, "{.cls data.frame} with at least 5 columns")
-    assert_class(sample_id, rlang::is_scalar_character,
+identify_mut_cn <- function(
+    mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
+    mut_pos = "pos", start_field = "start", end_field = "end") {
+    assert_class(on_sample, rlang::is_scalar_character,
         "scalar character",
         null_ok = TRUE
     )
-    if (!is.null(sample_id)) {
-        cnv_sample_col <- unname(sample_id)
-        mut_sample_col <- names(sample_id) %||% cnv_sample_col
-        cnv_sample_id <- cnv_data[[cnv_sample_col]]
-        cnv_data[[cnv_sample_col]] <- NULL
-        mut_sample_id <- mut_data[[mut_sample_col]]
-        mut_data[[mut_sample_col]] <- NULL
+    assert_class(on_chr, rlang::is_scalar_character, "scalar character")
+    assert_class(start_field, rlang::is_scalar_character, "scalar character")
+    assert_class(end_field, rlang::is_scalar_character, "scalar character")
+    if (!is.null(on_sample)) {
+        on_string <- paste(
+            names(on_sample) %||% on_sample,
+            on_sample,
+            sep = "=="
+        )
     } else {
-        cnv_sample_id <- rep_len("sample", nrow(cnv_data))
-        mut_sample_id <- rep_len("sample", nrow(mut_data))
+        on_string <- character()
     }
-
-    mut_data <- data.table::as.data.table(mut_data)[, 1:4]
-    data.table::setnames(
-        mut_data,
-        c("chromosome", "pos", "ref_counts", "var_counts")
+    on_string <- c(
+        on_string, paste(names(on_chr) %||% on_chr, on_chr, sep = "=="),
+        paste(start_field, mut_pos, sep = "<="),
+        paste(end_field, mut_pos, sep = ">=")
     )
-    mut_data[, sample_id := mut_sample_id]
-
-    cnv_data <- data.table::as.data.table(cnv_data)[, 1:5]
-    data.table::setnames(
-        cnv_data,
-        c("chromosome", "start_pos", "end_pos", "major_cn", "minor_cn")
-    )
-    cnv_data[, sample_id := cnv_sample_id]
-
-    mut_cn <- cnv_data[
-        mut_data,
-        list(
-            sample_id = i.sample_id,
-            ref_counts = i.ref_counts, var_counts = i.var_counts,
-            minor_cn = x.minor_cn, major_cn = x.major_cn,
-            chromosome = i.chromosome, position = i.pos,
-            start_pos = x.start_pos, end_pos = x.end_pos
-        ),
-        on = c("sample_id", "chromosome", "start_pos<=pos", "end_pos>=pos"),
-        nomatch = NULL
-    ][, .SD[rowSums(is.na(.SD)) == 0L]]
+    # Reduce the possibility of some columns in cnv_data named as mut_data
+    ..mut_data.. <- data.table::as.data.table(mut_data)
+    mut_cn <- data.table::as.data.table(cnv_data)[
+        ..mut_data..,
+        on = on_string, nomatch = NA
+    ]
+    # check the match works well
     failed_pos <- mut_cn[["pos"]] < mut_cn[["start_pos"]] |
         mut_cn[["pos"]] > mut_cn[["end_pos"]]
     if (any(failed_pos)) {
         cli::cli_abort("Something wrong when parsing CN of mutation")
     }
-    if (is.null(sample_id)) mut_cn$sample_id <- NULL
+    data.table::setDF(mut_cn)
     mut_cn
 }
