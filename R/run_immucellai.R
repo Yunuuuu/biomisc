@@ -27,16 +27,9 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     )
     data_type <- match.arg(data_type)
 
-    paper_marker <- readRDS(
-        system.file("extdata", "immucellai", "paper_marker.rds",
-            package = "biomisc"
-        )
-    )
-    marker_exp <- readRDS(
-        system.file("extdata", "immucellai", "marker_exp.rds",
-            package = "biomisc"
-        )
-    )
+    paper_marker <- read_internal_extdata("immucellai", "paper_marker.rds")
+    marker_exp <- read_internal_extdata("immucellai", "marker_exp.rds")
+
     # save the expression value of common genes
     common_genes <- intersect(unlist(paper_marker), rownames(marker_exp))
     common_genes <- intersect(common_genes, rownames(sample_exp))
@@ -72,10 +65,8 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     } else {
         result <- result - apply(result, 1L, min)
     }
-    compensation_matrix <- readRDS(
-        system.file("extdata", "immucellai", "compensation_matrix.rds",
-            package = "biomisc"
-        )
+    compensation_matrix <- read_internal_extdata(
+        "immucellai", "compensation_matrix.rds"
     )
     result_norm <- compensation(result, compensation_matrix)
     infiltrating_score <- colSums(
