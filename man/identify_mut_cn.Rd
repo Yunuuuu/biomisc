@@ -15,16 +15,9 @@ identify_mut_cn(
 )
 }
 \arguments{
-\item{mut_data}{A data.frame of mutation data with the top 4 columns (omit
-column specified in \code{sample_id}) containing "chromosome", "pos", "ref_counts"
-and "var_counts", other columns will be omited. Column names don't matter. If
-\code{sample_id} is not NULL, the column specified in \code{sample_id} will be matched
-in both mut_data and cnv_data.}
+\item{mut_data}{A data.frame of mutation data.}
 
-\item{cnv_data}{A data.frame of allele-specific CNV data with the top 5
-columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
-"minor_cn". "sample_id" is optional, details see mut_data. other columns will
-be omited. Column names don't matter.}
+\item{cnv_data}{A data.frame of allele-specific CNV data.}
 
 \item{on_sample}{A string (can be named), specifying the sample column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be

@@ -1,10 +1,3 @@
-#!/usr/bin/env Rscript
-
-################################################################################
-###    Run multiple posterior sampling chains for HDP  signature analysis    ###
-################################################################################
-#--> submit script  multiple times with wrapper to run in parallel
-
 #' Posterior sampling chain across activated DPs.
 #'
 #' Run a Gibbs sampler over the activated DP nodes of a Hierarchichal Dirichlet
