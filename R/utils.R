@@ -44,7 +44,7 @@ assert_class <- function(x, is_class, msg, cross_msg = "{.cls {class(x)}} object
 #' @keywords internal
 #' @noRd
 assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
-    if (missing(length)) {
+    if (!missing(length)) {
         length <- as.integer(length)
         if (missing(msg)) {
             if (length > 1L) {
