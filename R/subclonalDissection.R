@@ -445,18 +445,18 @@ calculate_best_cn_for_amp_mut <- function(
     A, B, C = NULL, D = NULL,
     fracA, fracB, fracC = NULL, fracD = NULL,
     var_counts, mutCopyNum, conipher) {
-    m_max_cn1 <- pmax(A, B) # nolint
+    m_max_cn1 <- pmax(A, B)
     m_frac1_mut <- data.table::fifelse(A < B, fracB, fracA)
-    m_max_cn2 <- pmin(A, B) # nolint
+    m_max_cn2 <- pmin(A, B)
     m_frac2_mut <- data.table::fifelse(A < B, fracA, fracB)
     arg_list <- list(
         max_cn1 = m_max_cn1, max_cn2 = m_max_cn2,
         frac1_mut = m_frac1_mut, frac2_mut = m_frac2_mut
     )
     if (!is.null(C)) {
-        m_max_cn3 <- pmax(C, D) # nolint
+        m_max_cn3 <- pmax(C, D)
         m_frac3_mut <- data.table::fifelse(C < D, fracD, fracC)
-        m_max_cn4 <- pmin(C, D) # nolint
+        m_max_cn4 <- pmin(C, D)
         m_frac4_mut <- data.table::fifelse(C < D, fracC, fracD)
         arg_list <- c(
             arg_list, list(
@@ -471,12 +471,12 @@ calculate_best_cn_for_amp_mut <- function(
                  max_cn3 = NULL, max_cn4 = NULL,
                  frac3_mut = NULL, frac4_mut = NULL,
                  mut_cn, var_count, conipher = FALSE) {
-            best_err <- mut_cn - 1L # nolint
+            best_err <- mut_cn - 1L
             allCNs <- best_cn <- 1L
             for (j in seq_len(max_cn1)) {
                 for (k in (j - 1):min(j, max_cn2)) {
                     potential_cn <- j * frac1_mut + k * frac2_mut
-                    err <- abs(mut_cn / potential_cn - 1L) # nolint
+                    err <- abs(mut_cn / potential_cn - 1L)
                     if (err < best_err) {
                         best_err <- err
                         best_cn <- potential_cn
@@ -488,7 +488,7 @@ calculate_best_cn_for_amp_mut <- function(
                 for (j in seq_len(max_cn3)) {
                     for (k in (j - 1):min(j, max_cn4)) {
                         potential_cn <- j * frac3_mut + k * frac4_mut
-                        err <- abs(mut_cn / potential_cn - 1L) # nolint
+                        err <- abs(mut_cn / potential_cn - 1L)
                         if (err < best_err) {
                             best_err <- err
                             best_cn <- potential_cn
@@ -497,11 +497,10 @@ calculate_best_cn_for_amp_mut <- function(
                     }
                 }
             }
-            browser()
             out <- best_cn # for no.chrs.bearing.mut
             if (conipher) {
                 # copied from
-                # https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1030 # nolint
+                # https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1030  # nolint
                 # let's just make sure we haven't created a subclonal mutation
                 if (mut_cn / best_cn < 1L) {
                     if (best_cn > 1L) {

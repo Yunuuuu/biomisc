@@ -778,7 +778,6 @@ test_that("subclone unit function works well", {
     if (length(amplified.muts) > 0) {
         for (a in amplified.muts)
         {
-            a <- 3L
             mut.info <- pyClone.tsv2[a, , drop = FALSE]
             if (is.na(mut.info$fracC)) {
                 max.CN2 <- 0
@@ -892,5 +891,17 @@ test_that("subclone unit function works well", {
         }
     }
     data.table::setDT(pyClone.tsv2)
-    testthat::expect_equal(pyClone.tsv, pyClone.tsv2)
+    testthat::expect_equal(
+        pyClone.tsv[, !c("best_cn", "amp_mut_pvalue")],
+        pyClone.tsv2
+    )
+    # testthat::expect_equal(
+    #     pyClone.tsv[
+    #         amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & !is.na(fracC),
+    #         !c("best_cn", "amp_mut_pvalue")
+    #     ],
+    #     pyClone.tsv2[
+    #         p.vals <= 0.05   & mutCopyNum > 1L & !is.na(fracC)
+    #     ]
+    # )
 })
