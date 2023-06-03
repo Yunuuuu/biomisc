@@ -1,0 +1,524 @@
+run_subclonal_dissection <- function(
+    mut_cn_data, purity,
+    order.by.pos = TRUE,
+    min_subclonal = 0.1,
+    min.vaf.to.explain = 0.05,
+    conipher = FALSE) {
+
+    pyClone.tsv <- data.table::as.data.table(mut_cn_data)
+
+    # In order to estimate whether mutations were clonal or subclonal, and the
+    # clonal structure of each tumor, a modified version of PyClone was used.
+    # For each mutation, two values were calculated, obsCCF and phyloCCF. obsCCF
+    # corresponds to the observed cancer cell fraction (CCF) of each mutation.
+    # Conversely, phyloCCF corresponds to the phylogenetic CCF of a mutation. To
+    # clarify the difference between these two values, consider a mutation
+    # present in every cancer cell within a tumor. A subclonal copy number event
+    # in one tumor region may lead to loss of this mutation in a subset of
+    # cancer cells.  While, the obsCCF of this mutation is therefore below 1,
+    # from a phylogenetic perspective the mutation can be considered ‘clonal’ as
+    # it occurred on the trunk of the tumor’s phylogenetic tree, and, as such,
+    # the phyloCCF may be 1.
+
+    # Get the table ready, with only information for specific patient
+
+    pyClone.tsv$expVAF <- calculate_vaf(
+        1L, purity, pyClone.tsv$major_raw + pyClone.tsv$minor_raw
+    )
+
+    pyClone.tsv$obsVAF <- as.integer(pyClone.tsv$var_counts) /
+        (as.integer(pyClone.tsv$var_counts) +
+            as.integer(pyClone.tsv$ref_counts))
+
+    absolute_ccfs <- calculate_abs_ccf(
+        pyClone.tsv$var_counts, pyClone.tsv$ref_counts,
+        CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
+        purity = purity
+    )
+
+    pyClone.tsv$absCCF <- absolute_ccfs$est
+    pyClone.tsv$absCCF_lower <- absolute_ccfs$lower
+    pyClone.tsv$absCCF_higher <- absolute_ccfs$higher
+
+    phylo.ccfs <- calculate_phylo_ccf(
+        pyClone.tsv$var_counts, pyClone.tsv$ref_counts,
+        CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
+        purity, observed_vafs = pyClone.tsv$obsVAF,
+        expected_vafs = pyClone.tsv$expVAF
+    )
+    pyClone.tsv$mutCopyNum <- phylo.ccfs$phyloCCF
+    pyClone.tsv <- cbind(pyClone.tsv, phylo.ccfs)
+
+    # pre-allocate column for downstream analysis
+    pyClone.tsv$no.chrs.bearing.mut <- 1
+    pyClone.tsv$whichFrac <- NA_character_
+    # pyClone.tsv$CPNChange <- 0L
+    # pyClone.tsv2 <- as.data.frame(pyClone.tsv)
+
+    # Identification of subclonal mutations  -----------------------
+    pyClone.tsv[, is_subclone := mutCopyNum > 0.01 & # nolint
+        # pyClone.tsv$absCCF_higher < 1L
+        absolute_ccfs$prob.subclonal > 0.5]
+    pyClone.tsv[is_subclone & fracA == 1L, whichFrac := "A,B"] # nolint
+
+    # define best CN -----------------------------------------------
+    # nolint start
+    pyClone.tsv[
+        is_subclone & fracA != 1L & is.na(fracC),
+        best_cn := calculate_best_cn_for_loss_mut(
+            nMaj_A, nMaj_B, nMin_A, nMin_B,
+            fracA, fracB, fracA, fracB, mutCopyNum
+        )
+    ]
+    pyClone.tsv[
+        is_subclone & fracA != 1L & !is.na(fracC),
+        best_cn := calculate_best_cn_for_loss_mut(
+            nMaj_A + nMaj_B, nMaj_C + nMaj_D,
+            nMin_A + nMin_D, nMin_C + nMin_B,
+            fracA + fracB, fracC + fracD,
+            fracA + fracD, fracC + fracB, mutCopyNum
+        )
+    ]
+    # nolint end
+
+    pyClone.tsv[
+        best_cn == 1L, # nolint
+        whichFrac := data.table::fcase( # nolint
+            is.na(fracC), "A,B", !is.na(fracC), "A,B,C,D" # nolint
+        )
+    ] # nolint
+
+    # check whether subclonal CN results in clonal mutation
+    # otherwise subclonal CN doesn't explain subclonal MCN
+    pyClone.tsv[
+        best_cn != 1L, # nolint
+        explained_by_cn_pvalue := prop_test_pvalues( # nolint
+            var_counts, (var_counts + ref_counts) * purity, # nolint
+            prop = expVAF * best_cn / purity, # nolint
+            alternative = "less",
+            correction = NULL
+        )
+    ]
+
+    pyClone.tsv[
+        explained_by_cn_pvalue > 0.01, # nolint
+        c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "no.chrs.bearing.mut", "expVAF") := {
+            tmp_expected_prop <- expVAF * best_cn # nolint
+            tmp_vafs <- prop_test_ci(
+                var_counts, var_counts + ref_counts, # nolint
+                tmp_expected_prop
+            ) # nolint
+            tmp_CNts <- major_raw + minor_raw # nolint
+            list(
+                mutCopyNum / best_cn, # nolint
+                calculate_obs_mut(
+                    CNts = tmp_CNts,
+                    vafs = tmp_vafs[[1L]],
+                    purity = purity
+                ) / best_cn,
+                calculate_obs_mut(
+                    CNts = tmp_CNts,
+                    vafs = tmp_vafs[[2]],
+                    purity = purity,
+                ) / best_cn,
+                best_cn, tmp_expected_prop
+            )
+        }
+    ]
+    pyClone.tsv[, explained_by_cn_pvalue := NULL] # nolint
+    pyClone.tsv[, is_subclone := NULL] # nolint
+    pyClone.tsv[, best_cn := NULL] # nolint
+
+    # Next, let's deal with potentially amplified mutations
+    # convert MCN to subclonal fraction - tricky for amplified mutations test
+    # for mutations in more than 1 copy
+    pyClone.tsv[
+        ,
+        amp_mut_pvalue := prop_test_pvalues( # nolint
+            var_counts, var_counts + ref_counts, expVAF, # nolint
+            alternative = "greater", # nolint
+            correction = NULL
+        )
+    ]
+
+    # copy numbers of subclones can only differ by 1 or 0 (as assumed when
+    # calling subclones)
+    # nolint start
+    pyClone.tsv[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
+        calculate_best_cn_for_amp_mut(
+            nMaj_A, nMaj_B,
+            fracA = fracA, fracB = fracB,
+            var_counts = var_counts, mutCopyNum = mutCopyNum,
+            conipher = conipher
+        )
+    }]
+    pyClone.tsv[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & !is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
+        calculate_best_cn_for_amp_mut(
+            nMaj_A, nMaj_C, nMin_A, nMin_B,
+            fracA + fracB, fracC + fracD,
+            fracA + fracD, fracC + fracB,
+            var_counts = var_counts, mutCopyNum = mutCopyNum,
+            conipher = conipher
+        )
+    }]
+    pyClone.tsv[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L, c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "expVAF") := {
+        list(
+            mutCopyNum / best_cn,
+            phyloCCF_lower / best_cn,
+            phyloCCF_higher / best_cn,
+            expVAF * best_cn
+        )
+    }]
+    # nolint end
+
+    # finally, let's sort out 'missing' ones
+    pyClone.tsv[
+        var_counts == 0L, # nolint
+        c("no.chrs.bearing.mut", "expVAF", "absCCF") := list(0L, 0L, 0L)
+    ][]
+}
+
+utils::globalVariables(c(
+    "SampleID", "amp_mut_pvalue", "best_cn", "expVAF",
+    "explained_by_cn_pvalue",
+    "fracA", "fracB", "fracC", "fracD",
+    "fracMaj1", "fracMaj2", "fracMin1", "fracMin2", "is_subclone",
+    "major_raw", "minor_raw", "mutCopyNum", "nAraw", "nBraw",
+    "nMaj1", "nMaj2", "nMaj_A", "nMaj_B",
+    "nMaj_C", "nMaj_D", "nMin1", "nMin2",
+    "nMin_A", "nMin_B", "nMin_C", "nMin_D",
+    "phyloCCF_higher", "phyloCCF_lower",
+    "ref_counts", "sample_id", "startpos", "var_counts", "whichFrac"
+))
+
+#' min.subclonal was set to 0.1 in
+#' https://bitbucket.org/nmcgranahan/clonalneoantigenanalysispipeline/src/master/
+#' @return A data.table
+#' @keywords validated
+#' @noRd
+define_subclone_cn <- function(seg.out, min.subclonal = 0.01) {
+    seg.out <- data.table::as.data.table(seg.out)
+    seg.out[, c("nMaj1", "nMin1") := lapply(.SD, floor),
+        .SDcols = c("nAraw", "nBraw")
+    ]
+    seg.out[, c("nMaj2", "nMin2") := lapply(.SD, ceiling),
+        .SDcols = c("nAraw", "nBraw")
+    ]
+    seg.out[, fracMaj1 := nMaj2 - nAraw] # nolint
+    seg.out[, fracMin1 := nMin2 - nBraw] # nolint
+    seg.out[, c("fracMaj2", "fracMin2") := lapply(.SD, function(x) {
+        1L - x
+    }), .SDcols = c("fracMaj1", "fracMin1")]
+
+    # how much of the genome for each tumour region is subject to subclonal copy
+    # number
+    # prop.aber <- seg.out[, # nolint
+    #     {
+    #         prop_maj1 <- fracMaj1 < min.subclonal | # nolint
+    #             fracMaj1 > 1 - min.subclonal
+    #         prop_min1 <- fracMin1 < min.subclonal | # nolint
+    #             fracMin1 > 1 - min.subclonal
+    #         sum(prop_maj1 & prop_min1, na.rm = TRUE) / .N
+    #     },
+    #     by = c(names(seg.out)[[1L]])
+    # ] # the original function return a atomic vector
+
+    # next, let's deal with the minimum subclonal
+    seg.out[, c("fracMaj1", "fracMaj2", "fracMin1", "fracMin2") := lapply(.SD, function(x) {
+        data.table::fcase(
+            x < min.subclonal, 0,
+            x > 1 - min.subclonal, 1,
+            rep_len(TRUE, length(x)), x
+        )
+    }), .SDcols = c("fracMaj1", "fracMaj2", "fracMin1", "fracMin2")]
+
+    # which ones work?
+    sorted_idx <- (seg.out$fracMaj1 == seg.out$fracMin1 |
+        seg.out$fracMaj1 == seg.out$fracMin2) |
+        seg.out$fracMaj1 == 1L |
+        seg.out$fracMaj1 == 0L |
+        seg.out$fracMin1 == 1L |
+        seg.out$fracMin1 == 0L
+    seg.sorted <- seg.out[sorted_idx]
+    seg.problem <- seg.out[!sorted_idx]
+
+    # let's divide the problem further
+    seg.problem[, fracA := fracMaj1 * fracMin1] # nolint
+    seg.problem[, fracB := fracMaj1 - fracA] # nolint
+    seg.problem[, fracC := fracMaj2 * fracMin2] # nolint
+    seg.problem[, fracD := fracMaj2 - fracC] # nolint
+    seg.problem[, c("nMaj_A", "nMin_A", "nMaj_B", "nMin_B", "nMaj_C", "nMin_C", "nMaj_D", "nMin_D") := list(
+        nMaj1, nMin1, nMaj1, nMin2, nMaj2, nMin2, nMaj2, nMin1 # nolint
+    )]
+
+    # let's make the sorted easier to read
+    # seg.sorted2 <- data.table::copy(seg.sorted)
+
+    seg.sorted[, c("fracA", "fracB", "fracC", "fracD", "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D", "nMin_A", "nMin_B", "nMin_C", "nMin_D") := {
+        fracA.major <- pmax(fracMaj1, fracMaj2, na.rm = TRUE) # nolint
+        fracB.major <- pmin(fracMaj1, fracMaj2, na.rm = TRUE) # nolint
+        fracA.minor <- pmax(fracMin1, fracMin2, na.rm = TRUE) # nolint
+        fracB.minor <- pmin(fracMin1, fracMin2, na.rm = TRUE) # nolint
+
+        nMaj_A <- data.table::fifelse(
+            fracA.major == fracMaj1, nMaj1, nMaj2 # nolint
+        )
+        nMaj_B <- data.table::fifelse(
+            fracA.major == fracMaj1, nMaj2, nMaj1 # nolint
+        )
+        nMin_A <- data.table::fifelse(
+            fracA.minor == fracMin1, nMin1, nMin2 # nolint
+        )
+        nMin_B <- data.table::fifelse(
+            fracA.minor == fracMin1, nMin2, nMin1 # nolint
+        )
+        fracA <- data.table::fcase(
+            fracA.minor == 1L, fracA.major,
+            fracA.major == 1L, fracA.minor,
+            rep_len(TRUE, .N), fracA.major
+        )
+        fracB <- data.table::fcase(
+            fracA.minor == 1L, fracB.major,
+            fracA.major == 1L, fracB.minor,
+            rep_len(TRUE, .N), fracB.major
+        )
+        nMaj_B <- data.table::fifelse(fracA.major == 1L, nMaj_A, nMaj_B)
+        nMin_B <- data.table::fifelse(fracA.minor == 1L, nMin_A, nMin_B)
+        tmp <- rep_len(NA, .N)
+        list(
+            fracA, fracB, tmp, tmp,
+            nMaj_A, nMaj_B, tmp, tmp,
+            nMin_A, nMin_B, tmp, tmp
+        )
+    }]
+
+    seg.final <- data.table::rbindlist(
+        list(seg.problem, seg.sorted),
+        use.names = TRUE, fill = TRUE
+    )
+
+    # finally, let's choose the columns we want and the order we want
+    columns <- c(
+        "SampleID", "chr", "startpos", "endpos", "n.het", "cnTotal", "nMajor", "nMinor", "Ploidy",
+        "ACF", "nAraw", "nBraw",
+        "fracA", "nMaj_A", "nMin_A",
+        "fracB", "nMaj_B", "nMin_B",
+        "fracC", "nMaj_C", "nMin_C",
+        "fracD", "nMaj_D", "nMin_D"
+    )
+    # let's order this correctly
+    seg.final[order(SampleID, chr, startpos), .SD, .SDcols = columns] # nolint
+}
+
+# Multiplicity of a mutation: the number of DNA copies bearing a mutation m.
+calculate_obs_mut <- function(CNts, vafs, purity, CNns = 2L) {
+    (vafs / purity) * ((purity * CNts) + CNns * (1L - purity))
+}
+
+# purity: The purity is the fraction of cancer cells in the tumor sample.
+# local.copy.number: CNt
+# threshold was set to 1 - 1e-6 in
+# https://github.com/McGranahanLab/CONIPHER-wrapper/blob/main/src/run_clustering.R
+# Multiplicity (m): The number of DNA copies bearing a mutation m
+calculate_vaf <- function(m, purity, CNts, CNns = 2L, threshold = 1L) {
+    out <- (purity * m) / (CNns * (1L - purity) + purity * CNts)
+    out[out >= threshold] <- threshold
+    out
+}
+
+calculate_abs_ccf <- function(
+    alt_counts, ref_counts, CNts, purity,
+    CNns = 2L, candidate_mut_multi = seq(0.01, 1, length.out = 100L),
+    alpha = 0.05) {
+    assert_length(purity, length(alt_counts), scalar_ok = TRUE)
+    # use maximum likelihood method to define absCCF
+    out_list <- .mapply(
+        function(alt_count, ref_count, CNt, p) {
+            x <- stats::dbinom(alt_count, alt_count + ref_count,
+                prob = calculate_vaf(candidate_mut_multi,
+                    purity = p, CNt, CNns = CNns
+                )
+            )
+            if (min(x) == 0L) {
+                x[length(x)] <- 1L
+            }
+            xnorm <- x / sum(x)
+            xsort <- sort(xnorm, decreasing = TRUE)
+            xcumLik <- cumsum(xsort)
+            idx <- xnorm >= xsort[sum(xcumLik < 1 - alpha) + 1L]
+            cint <- x[idx]
+            mut_multi <- candidate_mut_multi[idx]
+            data.table::data.table(
+                lower = mut_multi[[1L]],
+                est = mut_multi[[which.max(cint)]],
+                higher = mut_multi[[length(mut_multi)]],
+                prob.subclonal = sum(xnorm[1:90]),
+                prob.clonal = sum(xnorm[91:100])
+            )
+        },
+        list(
+            alt_count = alt_counts, ref_count = ref_counts,
+            CNt = CNts, p = rep_len(purity, length(alt_counts))
+        ),
+        NULL
+    )
+    data.table::rbindlist(out_list)
+}
+
+calculate_phylo_ccf <- function(alt_counts, ref_counts, CNts, purity, observed_vafs = NULL, expected_vafs = NULL, CNns = 2L) {
+    depths <- alt_counts + ref_counts
+    obs_vafs <- observed_vafs %||% (alt_counts / depths)
+    expected_vafs <- expected_vafs %||%
+        calculate_vaf(1L, purity, CNts, CNns = CNns)
+    vafs <- prop_test_ci(alt_counts, depths, expected_vafs)
+    out_list <- lapply(
+        list(
+            phyloCCF = obs_vafs, phyloCCF_lower = vafs[[1L]],
+            phyloCCF_higher = vafs[[2L]]
+        ), function(vcf) {
+            calculate_obs_mut(
+                CNts = CNts, vafs = vcf,
+                purity = purity, CNns = CNns
+            )
+        }
+    )
+    data.table::setDT(out_list)
+}
+
+# check which subclonal mutations can be explained by copy number
+prop_test_pvalues <- function(counts, totals, prop, alternative = "two.sided", conf.level = 0.95, correction = NULL) {
+    pvalues <- prop_test(counts, totals, prop,
+        alternative = alternative,
+        conf.level = conf.level
+    )[[1L]]
+    if (!is.null(correction)) {
+        correction <- match.arg(correction, stats::p.adjust.methods)
+        pvalues <- stats::p.adjust(pvalues, method = correction)
+    }
+    pvalues
+}
+
+prop_test_ci <- function(counts, totals, prop, alternative = "two.sided", conf.level = 0.95) {
+    prop_test(counts, totals, prop,
+        alternative = alternative,
+        conf.level = conf.level
+    )[2:3]
+}
+
+prop_test <- function(counts, totals, prop, alternative = "two.sided", conf.level = 0.95) {
+    out_list <- .mapply(
+        function(count, total, prop) {
+            out <- stats::prop.test(
+                count, total, prop,
+                alternative = alternative,
+                conf.level = conf.level
+            )
+            c(out$p.value, out$conf.int)
+        },
+        list(count = counts, total = totals, prop = prop), NULL
+    )
+    data.table::transpose(out_list)
+}
+
+calculate_best_cn_for_loss_mut <- function(
+    A, B, C = A, D = B,
+    fracA, fracB, fracC = fracA, fracD = fracB,
+    mutCopyNum) {
+    x <- data.table::fcase(
+        A > B, fracA,
+        A < B, fracB
+    )
+    y <- data.table::fcase(
+        C > D, fracC,
+        C < D, fracD
+    )
+    possible_frac <- matrix(c(rep_len(1L, length(A)), x, y), ncol = 3L)
+    col_idx <- apply(
+        abs(mutCopyNum / possible_frac - 1L),
+        1L, which.min,
+        simplify = TRUE
+    )
+    possible_frac[cbind(seq_len(nrow(possible_frac)), col_idx)]
+}
+
+calculate_best_cn_for_amp_mut <- function(
+    A, B, C = NULL, D = NULL,
+    fracA, fracB, fracC = NULL, fracD = NULL,
+    var_counts, mutCopyNum, conipher) {
+    m_max_cn1 <- pmax(A, B) # nolint
+    m_frac1_mut <- data.table::fifelse(A < B, fracB, fracA)
+    m_max_cn2 <- pmin(A, B) # nolint
+    m_frac2_mut <- data.table::fifelse(A < B, fracA, fracB)
+    arg_list <- list(
+        max_cn1 = m_max_cn1, max_cn2 = m_max_cn2,
+        frac1_mut = m_frac1_mut, frac2_mut = m_frac2_mut
+    )
+    if (!is.null(C)) {
+        m_max_cn3 <- pmax(C, D) # nolint
+        m_frac3_mut <- data.table::fifelse(C < D, fracD, fracC)
+        m_max_cn4 <- pmin(C, D) # nolint
+        m_frac4_mut <- data.table::fifelse(C < D, fracC, fracD)
+        arg_list <- c(
+            arg_list, list(
+                max_cn3 = m_max_cn3, max_cn4 = m_max_cn4,
+                frac3_mut = m_frac3_mut, frac4_mut = m_frac4_mut
+            )
+        )
+    }
+    # I don't know what this does?
+    out_list <- .mapply(
+        function(max_cn1, max_cn2, frac1_mut, frac2_mut,
+                 max_cn3 = NULL, max_cn4 = NULL,
+                 frac3_mut = NULL, frac4_mut = NULL,
+                 mut_cn, var_count, conipher = FALSE) {
+            best_err <- mut_cn - 1L # nolint
+            allCNs <- best_cn <- 1L
+            for (j in seq_len(max_cn1)) {
+                for (k in (j - 1):min(j, max_cn2)) {
+                    potential_cn <- j * frac1_mut + k * frac2_mut
+                    err <- abs(mut_cn / potential_cn - 1L) # nolint
+                    if (err < best_err) {
+                        best_err <- err
+                        best_cn <- potential_cn
+                        allCNs <- c(allCNs, best_cn)
+                    }
+                }
+            }
+            if (!is.null(max_cn3)) {
+                for (j in seq_len(max_cn3)) {
+                    for (k in (j - 1):min(j, max_cn4)) {
+                        potential_cn <- j * frac3_mut + k * frac4_mut
+                        err <- abs(mut_cn / potential_cn - 1L) # nolint
+                        if (err < best_err) {
+                            best_err <- err
+                            best_cn <- potential_cn
+                            allCNs <- c(allCNs, best_cn)
+                        }
+                    }
+                }
+            }
+            browser()
+            out <- best_cn # for no.chrs.bearing.mut
+            if (conipher) {
+                # copied from
+                # https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1030 # nolint
+                # let's just make sure we haven't created a subclonal mutation
+                if (mut_cn / best_cn < 1L) {
+                    if (best_cn > 1L) {
+                        p <- prop_test_pvalues(
+                            var_count / 2L,
+                            round(var_count / mut_cn / best_cn),
+                            0.5
+                        )
+                        if (p < 0.05) {
+                            best_cn <- max(setdiff(best_cn, allCNs))
+                        }
+                    }
+                }
+            }
+            c(out, best_cn)
+        }, c(arg_list, list(var_count = var_counts, mut_cn = mutCopyNum)),
+        MoreArgs = list(conipher = conipher)
+    )
+    data.table::transpose(out_list)
+}
