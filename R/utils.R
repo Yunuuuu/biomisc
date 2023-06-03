@@ -48,7 +48,7 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
         length <- as.integer(length)
         if (missing(msg)) {
             if (length > 1L) {
-                msg <- "length {.field {length}}"
+                msg <- "of length {.val {length}}"
             } else if (length == 1L) {
                 msg <- "a {.field scalar}"
             }
@@ -58,14 +58,21 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
         if (missing(msg)) {
             msg <- "a {.field scalar}"
         } else if (!missing(length) && length > 1L) {
-            msg <- paste(msg, "or a {.field scalar}", sep = " ")
+            msg <- paste("a {.field scalar} or", msg, sep = " ")
         }
     }
     if (null_ok) {
         msg <- paste(msg, "or {.code NULL}", sep = " ")
     }
-    msg <- sprintf("{.arg {arg}} must be of %s", msg)
-    is_right_length <- length(x) == length
+    msg <- sprintf("{.arg {arg}} must be %s", msg)
+    is_right_length <- FALSE
+    if (!missing(length)) {
+        is_right_length <- length(x) == length
+    }
+    if (scalar_ok) {
+        is_right_length <- is_right_length || length(x) == 1L
+    }
+
     if (is.null(x) && !is_right_length) {
         if (!null_ok) {
             cli::cli_abort(c(msg,
