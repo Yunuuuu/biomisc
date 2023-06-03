@@ -62,9 +62,9 @@ prepare_pyclone <- function(mut_data, cnv_data, on_sample = NULL, normal_cn = 2L
     )
     cnv_data[, sample_id := cnv_sample_id] # nolint
 
-    out <- identify_mut_cn(
+    out <- mut_match_cn(
         mut_data, cnv_data,
-        on_chr = "chromosome",
+        on_chr = "chromosome", mut_pos = "pos",
         start_field = "start_pos", end_field = "end_pos",
         on_sample = "sample_id"
     )
@@ -131,6 +131,22 @@ identify_mut_cn <- function(
     assert_class(on_chr, rlang::is_scalar_character, "scalar character")
     assert_class(start_field, rlang::is_scalar_character, "scalar character")
     assert_class(end_field, rlang::is_scalar_character, "scalar character")
+    mut_cn <- mut_match_cn(
+        mut_data = mut_data, cnv_data = cnv_data,
+        on_sample = on_sample, on_chr = on_chr,
+        mut_pos = mut_pos, start_field = start_field,
+        end_field = end_field
+    )
+    data.table::setDF(mut_cn)
+    mut_cn
+}
+
+#' @return A data.table
+#' @keywords internal
+#' @noRd
+mut_match_cn <- function(
+    mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
+    mut_pos = "pos", start_field = "start", end_field = "end") {
     if (!is.null(on_sample)) {
         on_string <- paste(
             names(on_sample) %||% on_sample,
@@ -157,6 +173,5 @@ identify_mut_cn <- function(
     if (any(failed_pos)) {
         cli::cli_abort("Something wrong when parsing CN of mutation")
     }
-    data.table::setDF(mut_cn)
     mut_cn
 }
