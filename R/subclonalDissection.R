@@ -344,7 +344,7 @@ utils::globalVariables(c(
     "nMin_A", "nMin_B", "nMin_C", "nMin_D",
     "phyloCCF_higher", "phyloCCF_lower", "absCCF_higher", "expProp",
     "ref_counts", "sample_id", "startpos", "var_counts", "whichFrac",
-    "..operated_rows..", "normal_cn", "tmp_mut_multi"
+    "..operated_rows..", "..matched_rows..", "normal_cn", "tmp_mut_multi"
 ))
 
 define_normal_cn <- function(gender, chr) {
