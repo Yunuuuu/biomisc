@@ -102,7 +102,11 @@ prepare_pyclone <- function(mut_data, cnv_data, on_sample = NULL, normal_cn = 2L
             )
         }
     }
-    if (!is.null(on_sample)) data.table::setcolorder(out, "sample_id")
+    if (!is.null(on_sample)) {
+        data.table::setcolorder(out, "sample_id")
+    } else {
+        out[, sample_id := NULL] # nolint
+    }
     out[major_cn > 0L]
 }
 
