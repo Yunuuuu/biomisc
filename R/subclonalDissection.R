@@ -1,11 +1,5 @@
-run_subclonal_dissection <- function(
-    mut_cn_data, purity,
-    order.by.pos = TRUE,
-    min_subclonal = 0.1,
-    min.vaf.to.explain = 0.05,
-    conipher = FALSE) {
-
-    pyClone.tsv <- data.table::as.data.table(mut_cn_data)
+run_subclonal_dissection <- function(mut_cn_data, min_subclonal = 0.1, conipher = FALSE) {
+    out <- data.table::as.data.table(mut_cn_data)
 
     # In order to estimate whether mutations were clonal or subclonal, and the
     # clonal structure of each tumor, a modified version of PyClone was used.
@@ -22,55 +16,53 @@ run_subclonal_dissection <- function(
 
     # Get the table ready, with only information for specific patient
 
-    pyClone.tsv$expVAF <- calculate_vaf(
-        1L, purity, pyClone.tsv$major_raw + pyClone.tsv$minor_raw
+    out$expVAF <- calculate_vaf(
+        1L, out$purity, out$major_raw + out$minor_raw
     )
 
-    pyClone.tsv$obsVAF <- as.integer(pyClone.tsv$var_counts) /
-        (as.integer(pyClone.tsv$var_counts) +
-            as.integer(pyClone.tsv$ref_counts))
+    out$obsVAF <- out$var_counts /
+        (out$var_counts + out$ref_counts)
 
     absolute_ccfs <- calculate_abs_ccf(
-        pyClone.tsv$var_counts, pyClone.tsv$ref_counts,
-        CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
-        purity = purity
+        out$var_counts, out$ref_counts,
+        CNts = out$major_raw + out$minor_raw,
+        purity = out$purity
     )
 
-    pyClone.tsv$absCCF <- absolute_ccfs$est
-    pyClone.tsv$absCCF_lower <- absolute_ccfs$lower
-    pyClone.tsv$absCCF_higher <- absolute_ccfs$higher
+    out$absCCF <- absolute_ccfs$est
+    out$absCCF_lower <- absolute_ccfs$lower
+    out$absCCF_higher <- absolute_ccfs$higher
 
     phylo.ccfs <- calculate_phylo_ccf(
-        pyClone.tsv$var_counts, pyClone.tsv$ref_counts,
-        CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
-        purity, observed_vafs = pyClone.tsv$obsVAF,
-        expected_vafs = pyClone.tsv$expVAF
+        out$var_counts, out$ref_counts,
+        CNts = out$major_raw + out$minor_raw,
+        out$purity, observed_vafs = out$obsVAF,
+        expected_vafs = out$expVAF
     )
-    pyClone.tsv$mutCopyNum <- phylo.ccfs$phyloCCF
-    pyClone.tsv <- cbind(pyClone.tsv, phylo.ccfs)
+    out$mutCopyNum <- phylo.ccfs$phyloCCF
+    out <- cbind(out, phylo.ccfs)
 
     # pre-allocate column for downstream analysis
-    pyClone.tsv$no.chrs.bearing.mut <- 1
-    pyClone.tsv$whichFrac <- NA_character_
-    # pyClone.tsv$CPNChange <- 0L
-    # pyClone.tsv2 <- as.data.frame(pyClone.tsv)
+    out$no.chrs.bearing.mut <- 1
+    out$whichFrac <- NA_character_
+    out$CPNChange <- 0L
 
     # Identification of subclonal mutations  -----------------------
-    pyClone.tsv[, is_subclone := mutCopyNum > 0.01 & # nolint
-        # pyClone.tsv$absCCF_higher < 1L
+    out[, is_subclone := mutCopyNum > 0.01 & # nolint
+        # out$absCCF_higher < 1L
         absolute_ccfs$prob.subclonal > 0.5]
-    pyClone.tsv[is_subclone & fracA == 1L, whichFrac := "A,B"] # nolint
+    out[is_subclone & fracA == 1L, whichFrac := "A,B"] # nolint
 
     # define best CN -----------------------------------------------
     # nolint start
-    pyClone.tsv[
+    out[
         is_subclone & fracA != 1L & is.na(fracC),
         best_cn := calculate_best_cn_for_loss_mut(
             nMaj_A, nMaj_B, nMin_A, nMin_B,
             fracA, fracB, fracA, fracB, mutCopyNum
         )
     ]
-    pyClone.tsv[
+    out[
         is_subclone & fracA != 1L & !is.na(fracC),
         best_cn := calculate_best_cn_for_loss_mut(
             nMaj_A + nMaj_B, nMaj_C + nMaj_D,
@@ -81,7 +73,7 @@ run_subclonal_dissection <- function(
     ]
     # nolint end
 
-    pyClone.tsv[
+    out[
         best_cn == 1L, # nolint
         whichFrac := data.table::fcase( # nolint
             is.na(fracC), "A,B", !is.na(fracC), "A,B,C,D" # nolint
@@ -90,7 +82,7 @@ run_subclonal_dissection <- function(
 
     # check whether subclonal CN results in clonal mutation
     # otherwise subclonal CN doesn't explain subclonal MCN
-    pyClone.tsv[
+    out[
         best_cn != 1L, # nolint
         explained_by_cn_pvalue := prop_test_pvalues( # nolint
             var_counts, (var_counts + ref_counts) * purity, # nolint
@@ -100,7 +92,7 @@ run_subclonal_dissection <- function(
         )
     ]
 
-    pyClone.tsv[
+    out[
         explained_by_cn_pvalue > 0.01, # nolint
         c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "no.chrs.bearing.mut", "expVAF") := {
             tmp_expected_prop <- expVAF * best_cn # nolint
@@ -114,7 +106,7 @@ run_subclonal_dissection <- function(
                 calculate_obs_mut(
                     CNts = tmp_CNts,
                     vafs = tmp_vafs[[1L]],
-                    purity = purity
+                    purity = purity # nolint
                 ) / best_cn,
                 calculate_obs_mut(
                     CNts = tmp_CNts,
@@ -125,14 +117,14 @@ run_subclonal_dissection <- function(
             )
         }
     ]
-    pyClone.tsv[, explained_by_cn_pvalue := NULL] # nolint
-    pyClone.tsv[, is_subclone := NULL] # nolint
-    pyClone.tsv[, best_cn := NULL] # nolint
+    out[, explained_by_cn_pvalue := NULL] # nolint
+    out[, is_subclone := NULL] # nolint
+    out[, best_cn := NULL] # nolint
 
     # Next, let's deal with potentially amplified mutations
     # convert MCN to subclonal fraction - tricky for amplified mutations test
     # for mutations in more than 1 copy
-    pyClone.tsv[
+    out[
         ,
         amp_mut_pvalue := prop_test_pvalues( # nolint
             var_counts, var_counts + ref_counts, expVAF, # nolint
@@ -144,7 +136,7 @@ run_subclonal_dissection <- function(
     # copy numbers of subclones can only differ by 1 or 0 (as assumed when
     # calling subclones)
     # nolint start
-    pyClone.tsv[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
+    out[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
         calculate_best_cn_for_amp_mut(
             nMaj_A, nMaj_B,
             fracA = fracA, fracB = fracB,
@@ -152,7 +144,7 @@ run_subclonal_dissection <- function(
             conipher = conipher
         )
     }]
-    pyClone.tsv[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & !is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
+    out[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & !is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
         calculate_best_cn_for_amp_mut(
             nMaj_A, nMaj_C, nMin_A, nMin_B,
             fracA + fracB, fracC + fracD,
@@ -161,7 +153,7 @@ run_subclonal_dissection <- function(
             conipher = conipher
         )
     }]
-    pyClone.tsv[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L, c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "expVAF") := {
+    out[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L, c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "expVAF") := {
         list(
             mutCopyNum / best_cn,
             phyloCCF_lower / best_cn,
@@ -169,10 +161,12 @@ run_subclonal_dissection <- function(
             expVAF * best_cn
         )
     }]
+    out[, amp_mut_pvalue := NULL]
+    out[, best_cn := NULL]
     # nolint end
 
     # finally, let's sort out 'missing' ones
-    pyClone.tsv[
+    out[
         var_counts == 0L, # nolint
         c("no.chrs.bearing.mut", "expVAF", "absCCF") := list(0L, 0L, 0L)
     ][]
@@ -196,65 +190,65 @@ utils::globalVariables(c(
 #' @return A data.table
 #' @keywords validated
 #' @noRd
-define_subclone_cn <- function(seg.out, min.subclonal = 0.01) {
-    seg.out <- data.table::as.data.table(seg.out)
-    seg.out[, c("nMaj1", "nMin1") := lapply(.SD, floor),
+define_subclone_cn <- function(seg, min_subclonal = 0.01) {
+    seg <- data.table::as.data.table(seg)
+    seg[, c("nMaj1", "nMin1") := lapply(.SD, floor),
         .SDcols = c("nAraw", "nBraw")
     ]
-    seg.out[, c("nMaj2", "nMin2") := lapply(.SD, ceiling),
+    seg[, c("nMaj2", "nMin2") := lapply(.SD, ceiling),
         .SDcols = c("nAraw", "nBraw")
     ]
-    seg.out[, fracMaj1 := nMaj2 - nAraw] # nolint
-    seg.out[, fracMin1 := nMin2 - nBraw] # nolint
-    seg.out[, c("fracMaj2", "fracMin2") := lapply(.SD, function(x) {
+    seg[, fracMaj1 := nMaj2 - nAraw] # nolint
+    seg[, fracMin1 := nMin2 - nBraw] # nolint
+    seg[, c("fracMaj2", "fracMin2") := lapply(.SD, function(x) {
         1L - x
     }), .SDcols = c("fracMaj1", "fracMin1")]
 
     # how much of the genome for each tumour region is subject to subclonal copy
     # number
-    # prop.aber <- seg.out[, # nolint
+    # prop.aber <- seg[, # nolint
     #     {
-    #         prop_maj1 <- fracMaj1 < min.subclonal | # nolint
-    #             fracMaj1 > 1 - min.subclonal
-    #         prop_min1 <- fracMin1 < min.subclonal | # nolint
-    #             fracMin1 > 1 - min.subclonal
+    #         prop_maj1 <- fracMaj1 < min_subclonal | # nolint
+    #             fracMaj1 > 1 - min_subclonal
+    #         prop_min1 <- fracMin1 < min_subclonal | # nolint
+    #             fracMin1 > 1 - min_subclonal
     #         sum(prop_maj1 & prop_min1, na.rm = TRUE) / .N
     #     },
-    #     by = c(names(seg.out)[[1L]])
+    #     by = c(names(seg)[[1L]])
     # ] # the original function return a atomic vector
 
     # next, let's deal with the minimum subclonal
-    seg.out[, c("fracMaj1", "fracMaj2", "fracMin1", "fracMin2") := lapply(.SD, function(x) {
+    seg[, c("fracMaj1", "fracMaj2", "fracMin1", "fracMin2") := lapply(.SD, function(x) {
         data.table::fcase(
-            x < min.subclonal, 0,
-            x > 1 - min.subclonal, 1,
+            x < min_subclonal, 0,
+            x > 1 - min_subclonal, 1,
             rep_len(TRUE, length(x)), x
         )
     }), .SDcols = c("fracMaj1", "fracMaj2", "fracMin1", "fracMin2")]
 
     # which ones work?
-    sorted_idx <- (seg.out$fracMaj1 == seg.out$fracMin1 |
-        seg.out$fracMaj1 == seg.out$fracMin2) |
-        seg.out$fracMaj1 == 1L |
-        seg.out$fracMaj1 == 0L |
-        seg.out$fracMin1 == 1L |
-        seg.out$fracMin1 == 0L
-    seg.sorted <- seg.out[sorted_idx]
-    seg.problem <- seg.out[!sorted_idx]
+    sorted_idx <- (seg$fracMaj1 == seg$fracMin1 |
+        seg$fracMaj1 == seg$fracMin2) |
+        seg$fracMaj1 == 1L |
+        seg$fracMaj1 == 0L |
+        seg$fracMin1 == 1L |
+        seg$fracMin1 == 0L
+    seg_sorted <- seg[sorted_idx]
+    seg_problem <- seg[!sorted_idx]
 
     # let's divide the problem further
-    seg.problem[, fracA := fracMaj1 * fracMin1] # nolint
-    seg.problem[, fracB := fracMaj1 - fracA] # nolint
-    seg.problem[, fracC := fracMaj2 * fracMin2] # nolint
-    seg.problem[, fracD := fracMaj2 - fracC] # nolint
-    seg.problem[, c("nMaj_A", "nMin_A", "nMaj_B", "nMin_B", "nMaj_C", "nMin_C", "nMaj_D", "nMin_D") := list(
+    seg_problem[, fracA := fracMaj1 * fracMin1] # nolint
+    seg_problem[, fracB := fracMaj1 - fracA] # nolint
+    seg_problem[, fracC := fracMaj2 * fracMin2] # nolint
+    seg_problem[, fracD := fracMaj2 - fracC] # nolint
+    seg_problem[, c("nMaj_A", "nMin_A", "nMaj_B", "nMin_B", "nMaj_C", "nMin_C", "nMaj_D", "nMin_D") := list(
         nMaj1, nMin1, nMaj1, nMin2, nMaj2, nMin2, nMaj2, nMin1 # nolint
     )]
 
     # let's make the sorted easier to read
-    # seg.sorted2 <- data.table::copy(seg.sorted)
+    # seg_sorted2 <- data.table::copy(seg_sorted)
 
-    seg.sorted[, c("fracA", "fracB", "fracC", "fracD", "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D", "nMin_A", "nMin_B", "nMin_C", "nMin_D") := {
+    seg_sorted[, c("fracA", "fracB", "fracC", "fracD", "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D", "nMin_A", "nMin_B", "nMin_C", "nMin_D") := {
         fracA.major <- pmax(fracMaj1, fracMaj2, na.rm = TRUE) # nolint
         fracB.major <- pmin(fracMaj1, fracMaj2, na.rm = TRUE) # nolint
         fracA.minor <- pmax(fracMin1, fracMin2, na.rm = TRUE) # nolint
@@ -292,8 +286,8 @@ define_subclone_cn <- function(seg.out, min.subclonal = 0.01) {
         )
     }]
 
-    seg.final <- data.table::rbindlist(
-        list(seg.problem, seg.sorted),
+    seg_out <- data.table::rbindlist(
+        list(seg_problem, seg_sorted),
         use.names = TRUE, fill = TRUE
     )
 
@@ -307,7 +301,7 @@ define_subclone_cn <- function(seg.out, min.subclonal = 0.01) {
         "fracD", "nMaj_D", "nMin_D"
     )
     # let's order this correctly
-    seg.final[order(SampleID, chr, startpos), .SD, .SDcols = columns] # nolint
+    seg_out[order(SampleID, chr, startpos), .SD, .SDcols = columns] # nolint
 }
 
 # Multiplicity of a mutation: the number of DNA copies bearing a mutation m.
@@ -330,7 +324,6 @@ calculate_abs_ccf <- function(
     alt_counts, ref_counts, CNts, purity,
     CNns = 2L, candidate_mut_multi = seq(0.01, 1, length.out = 100L),
     alpha = 0.05) {
-    assert_length(purity, length(alt_counts), scalar_ok = TRUE)
     # use maximum likelihood method to define absCCF
     out_list <- .mapply(
         function(alt_count, ref_count, CNt, p) {

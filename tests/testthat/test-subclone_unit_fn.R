@@ -45,7 +45,7 @@ test_that("subclone unit function works well", {
     # test define_subclone_cn works -----------------------------
     # define subclone copy number
     seg.mat.phylo <- define_subclone_cn(
-        seg.out = seg.mat.copy, min.subclonal = 0.01
+        seg.mat.copy, min_subclonal = 0.01
     )
 
     create.subclonal.copy.number <- function(seg.mat.copy,
