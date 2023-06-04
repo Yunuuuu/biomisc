@@ -30753,7 +30753,7 @@
     Output
       $ecdf
       Empirical CDF 
-      Call: pecdf <- stats::ecdf(summary_stats)
+      Call: stats::ecdf(summary_stats)
        x[1:10] =  1.759, 2.4133, 2.7148,  ..., 4.2512, 4.5262
       
       $statistic
