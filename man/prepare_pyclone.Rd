@@ -8,18 +8,22 @@ prepare_pyclone(
   mut_data,
   cnv_data,
   on_sample = NULL,
+  on_chr = "chr",
+  mut_pos = "pos",
+  start_field = "start",
+  end_field = "end",
+  major_cn_field = "major_cn",
+  minor_cn_field = "minor_cn",
+  ref_counts_field = "ref_counts",
+  var_counts_field = "var_counts",
+  purity_field = "purity",
   normal_cn = 2L,
   pyclone_vi = FALSE,
-  purity = 1L,
   error_rate = NULL
 )
 }
 \arguments{
-\item{mut_data}{A data.frame of mutation data with the top 4 columns (omit
-column specified in \code{sample_id}) containing "chromosome", "pos", "ref_counts"
-and "var_counts", other columns will be omited. Column names don't matter. If
-\code{sample_id} is not NULL, the column specified in \code{sample_id} will be matched
-in both mut_data and cnv_data.}
+\item{mut_data}{A data.frame of mutation data.}
 
 \item{cnv_data}{A data.frame of allele-specific CNV data with the top 5
 columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
@@ -30,15 +34,26 @@ be omited. Column names don't matter.}
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
 regarded from the same sample.}
 
+\item{on_chr}{A string (can be named), specifying the chromosome column used
+to match mut_data and cnv_data.}
+
+\item{mut_pos}{A string indicating the column names in \code{mut_data} that
+contains the variants positions in the chromosome.}
+
+\item{start_field, end_field}{A string indicating the column names in
+\code{cnv_data} that contains the start positions and end position of the genomic
+ranges.}
+
+\item{purity_field}{Only used for
+\href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, a string specifying the
+tumour content (cellularity) column (can in \code{mut_data} or \code{cnv_data}) of the
+sample. Default value is 1.0 if column is not present.}
+
 \item{normal_cn}{The copy number of the locus in non-malignant cells. This
 should generally be 2 except for sex chromosomes in males.}
 
 \item{pyclone_vi}{a logical value indicates whether prepare data for the
 input of PyClone-vi. Details see \url{https://github.com/Roth-Lab/pyclone-vi}}
-
-\item{purity}{Only used for
-\href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, the tumour content
-(cellularity) of the sample. Default value is 1.0 if column is not present.}
 
 \item{error_rate}{Only used for
 \href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, sequencing error rate.}

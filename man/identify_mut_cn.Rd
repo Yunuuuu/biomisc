@@ -34,7 +34,8 @@ contains the variants positions in the chromosome.}
 ranges.}
 }
 \value{
-A integrated
+A integrated data.frame with data column from both mut_data and
+cnv_data.
 }
 \description{
 Identify the copy number in mutation position
