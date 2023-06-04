@@ -30746,20 +30746,3 @@
         RRHO metrix list length: 200
         Analysis with stepsize: 1
 
----
-
-    Code
-      rrho_correct_pval(out, "permutation", perm = 10L)
-    Output
-      $ecdf
-      Empirical CDF 
-      Call: stats::ecdf(summary_stats)
-       x[1:10] =  1.759, 2.4133, 2.7148,  ..., 4.2512, 4.5262
-      
-      $statistic
-      [1] 3.640403
-      
-      $pvalue_perm
-      [1] 0.2
-      
-

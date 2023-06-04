@@ -16,7 +16,7 @@ test_that("subclone unit function works well", {
             "D_LMS025_T1.ref_count",
             "D_LMS025_T1.var_count", "D_LMS025_T1.VAF"
         ),
-        c("ref_counts", "var_counts", "vaf")
+        c("ref_counts", "alt_counts", "vaf")
     )
     data.table::setcolorder(
         mut.table,
@@ -38,7 +38,7 @@ test_that("subclone unit function works well", {
     # define subclone copy number
     seg.mat.phylo <- define_subclone_cn(
         seg.mat.copy, min_subclonal = 0.01
-    )
+    )[order(SampleID, chr, startpos)]
 
     create.subclonal.copy.number <- function(seg.mat.copy,
                                              min.subclonal = 0.1) {
@@ -194,7 +194,9 @@ test_that("subclone unit function works well", {
     )
     data.table::setDT(seg.mat.phylo2)
     seg.mat.phylo2 <- seg.mat.phylo2[order(SampleID, chr, startpos)]
-    testthat::expect_equal(seg.mat.phylo, seg.mat.phylo2)
+    testthat::expect_equal(seg.mat.phylo[
+        , .SD, .SDcols = names(seg.mat.phylo2)
+    ], seg.mat.phylo2)
 
     # test mut_match_cn works well ------------------------------
     # let's run PyClone, but correct for copy number before running
@@ -215,7 +217,7 @@ test_that("subclone unit function works well", {
         SampleID,
         mutation_id,
         ref_counts = ref_counts,
-        var_counts = var_counts,
+        alt_counts = alt_counts,
         normal_cn = 2L,
         major_cn = pmax(nMinor, nMajor),
         minor_cn = pmin(nMinor, nMajor),
@@ -238,7 +240,7 @@ test_that("subclone unit function works well", {
 
         mutation_id <- paste(sample, mut$chr, mut$start, mut$ref, sep = ":")
         ref_counts <- mut[, "ref_counts"]
-        var_counts <- mut[, "var_counts"]
+        alt_counts <- mut[, "alt_counts"]
 
 
         normal_cn <- 2
@@ -266,7 +268,7 @@ test_that("subclone unit function works well", {
 
             output <- data.frame(mutation_id,
                 ref_counts,
-                var_counts,
+                alt_counts,
                 normal_cn,
                 minor_cn,
                 major_cn,
@@ -311,7 +313,7 @@ test_that("subclone unit function works well", {
 
         output <- data.frame(mutation_id,
             ref_counts,
-            var_counts,
+            alt_counts,
             normal_cn,
             minor_cn,
             major_cn,
@@ -362,7 +364,7 @@ test_that("subclone unit function works well", {
     pyclone.table <- pyclone.table[!is.na(pyclone.table$minor_cn)]
     pyclone.table <- pyclone.table[!is.na(pyclone.table$ref_counts)]
     pyclone.table <- pyclone.table[!duplicated(pyclone.table$mutation_id)]
-    pyclone.table <- pyclone.table[ref_counts + var_counts >= 1L]
+    pyclone.table <- pyclone.table[ref_counts + alt_counts >= 1L]
 
     # let's load the purity estimate from VAF purity
     sample.purity <- region.seg.copy$ACF[1]
@@ -417,7 +419,7 @@ test_that("subclone unit function works well", {
             }
             return(sub.cint(x, n.alt = n.alt, depth = depth))
         }
-        absolute.calc <- absolute.cancer.cell.fraction(n.alt = unlist(pyClone.tsv$var_counts)[i], depth = (as.numeric(pyClone.tsv$ref_counts[i]) + as.numeric(pyClone.tsv$var_counts[i])), purity = cellularity, local.copy.number = (as.numeric(pyClone.tsv$major_raw[i]) + as.numeric(pyClone.tsv$minor_raw[i])))
+        absolute.calc <- absolute.cancer.cell.fraction(n.alt = unlist(pyClone.tsv$alt_counts)[i], depth = (as.numeric(pyClone.tsv$ref_counts[i]) + as.numeric(pyClone.tsv$alt_counts[i])), purity = cellularity, local.copy.number = (as.numeric(pyClone.tsv$major_raw[i]) + as.numeric(pyClone.tsv$minor_raw[i])))
         absolute.ccf.0.05 <- absolute.calc[1]
         absolute.ccf.0.95 <- absolute.calc[3]
         absolute.ccf <- absolute.calc[2]
@@ -442,13 +444,13 @@ test_that("subclone unit function works well", {
         )
     )
 
-    pyClone.tsv$obsVAF <- as.integer(pyClone.tsv$var_counts) /
-        (as.integer(pyClone.tsv$var_counts) +
+    pyClone.tsv$obsVAF <- as.integer(pyClone.tsv$alt_counts) /
+        (as.integer(pyClone.tsv$alt_counts) +
             as.integer(pyClone.tsv$ref_counts))
 
     ## test calculate_abs_ccf --------------------------------
     absolute_ccfs <- calculate_abs_ccf(
-        pyClone.tsv$var_counts, pyClone.tsv$ref_counts,
+        pyClone.tsv$alt_counts, pyClone.tsv$ref_counts,
         CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
         purity = purity
     )
@@ -472,7 +474,7 @@ test_that("subclone unit function works well", {
 
     ## test calculate_abs_ccf --------------------------------
     phylo.ccfs <- suppressWarnings(calculate_phylo_ccf(
-        pyClone.tsv$var_counts, pyClone.tsv$ref_counts,
+        pyClone.tsv$alt_counts, pyClone.tsv$ref_counts,
         CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
         purity, observed_vafs = pyClone.tsv$obsVAF,
         expected_vafs = pyClone.tsv$expVAF
@@ -496,8 +498,8 @@ test_that("subclone unit function works well", {
                 Vaf = VAF, cellularity = cellularity, CNn = CNn
             ))
         },
-        var.count = as.numeric(pyClone.tsv$var_counts),
-        depth = as.numeric(pyClone.tsv$var_counts) + as.numeric(pyClone.tsv$ref_counts),
+        var.count = as.numeric(pyClone.tsv$alt_counts),
+        depth = as.numeric(pyClone.tsv$alt_counts) + as.numeric(pyClone.tsv$ref_counts),
         e = as.numeric(pyClone.tsv$expVAF),
         CNtumor = as.numeric(pyClone.tsv$major_raw) + as.numeric(pyClone.tsv$minor_raw),
         cellularity = cellularity,
@@ -515,8 +517,8 @@ test_that("subclone unit function works well", {
                 )$conf.int[2])
                 return(get.mut.mult(CNt = CNtumor[i], Vaf = VAF, cellularity = cellularity, CNn = CNn))
             },
-            var.count = as.numeric(pyClone.tsv$var_counts),
-            depth = as.numeric(pyClone.tsv$var_counts) + as.numeric(pyClone.tsv$ref_counts),
+            var.count = as.numeric(pyClone.tsv$alt_counts),
+            depth = as.numeric(pyClone.tsv$alt_counts) + as.numeric(pyClone.tsv$ref_counts),
             e = as.numeric(pyClone.tsv$expVAF),
             CNtumor = as.numeric(pyClone.tsv$major_raw) + as.numeric(pyClone.tsv$minor_raw),
             cellularity = cellularity,
@@ -567,7 +569,7 @@ test_that("subclone unit function works well", {
     pyClone.tsv[
         best_cn != 1L, # nolint
         explained_by_cn_pvalue := prop_test_pvalues( # nolint
-            var_counts, (var_counts + ref_counts) * purity, # nolint
+            alt_counts, (alt_counts + ref_counts) * purity, # nolint
             prop = expVAF * best_cn / purity, # nolint
             alternative = "less",
             correction = NULL
@@ -579,7 +581,7 @@ test_that("subclone unit function works well", {
         c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "no.chrs.bearing.mut", "expVAF") := {
             tmp_expected_prop <- expVAF * best_cn # nolint
             tmp_vafs <- prop_test_ci(
-                var_counts, var_counts + ref_counts, # nolint
+                alt_counts, alt_counts + ref_counts, # nolint
                 tmp_expected_prop
             ) # nolint
             tmp_CNts <- major_raw + minor_raw # nolint
@@ -645,8 +647,8 @@ test_that("subclone unit function works well", {
                     pyClone.tsv2$whichFrac[a] <- c("A,B")
                     next
                 }
-                var.count <- as.numeric(mut.info$var_counts)
-                depth.count <- as.numeric(mut.info$var_counts) + as.numeric(mut.info$ref_counts)
+                var.count <- as.numeric(mut.info$alt_counts)
+                depth.count <- as.numeric(mut.info$alt_counts) + as.numeric(mut.info$ref_counts)
                 expected.prop <- pyClone.tsv2$expVAF[a] * best.CN
 
                 # check whether subclonal CN results in clonal mutation
@@ -687,8 +689,8 @@ test_that("subclone unit function works well", {
                     pyClone.tsv2$whichFrac[a] <- c("A,B,C,D")
                     next
                 }
-                var.count <- as.numeric(mut.info$var_counts)
-                depth.count <- as.numeric(mut.info$var_counts) + as.numeric(mut.info$ref_counts)
+                var.count <- as.numeric(mut.info$alt_counts)
+                depth.count <- as.numeric(mut.info$alt_counts) + as.numeric(mut.info$ref_counts)
                 expected.prop <- pyClone.tsv2$expVAF[a] * best.CN
 
                 # check whether subclonal CN results in clonal mutation
@@ -713,7 +715,7 @@ test_that("subclone unit function works well", {
     pyClone.tsv[
         ,
         amp_mut_pvalue := suppressWarnings(prop_test_pvalues( # nolint
-            var_counts, var_counts + ref_counts, expVAF, # nolint
+            alt_counts, alt_counts + ref_counts, expVAF, # nolint
             alternative = "greater", # nolint
             correction = NULL
         ))
@@ -727,8 +729,8 @@ test_that("subclone unit function works well", {
                 alternative = "greater"
             )$p.value)
         },
-        var.count = as.numeric(pyClone.tsv2$var_counts),
-        depth = pyClone.tsv2$var_counts + pyClone.tsv2$ref_counts,
+        var.count = as.numeric(pyClone.tsv2$alt_counts),
+        depth = pyClone.tsv2$alt_counts + pyClone.tsv2$ref_counts,
         e = as.numeric(pyClone.tsv2$expVAF)
     )
     data.table::setDF(pyClone.tsv2)
@@ -741,7 +743,7 @@ test_that("subclone unit function works well", {
         suppressWarnings(calculate_best_cn_for_amp_mut(
             nMaj_A, nMaj_B,
             fracA = fracA, fracB = fracB,
-            var_counts = var_counts, mutCopyNum = mutCopyNum,
+            alt_counts = alt_counts, mutCopyNum = mutCopyNum,
             subclone_correction = FALSE
         ))
     }]
@@ -750,7 +752,7 @@ test_that("subclone unit function works well", {
             nMaj_A, nMaj_C, nMin_A, nMin_B,
             fracA + fracB, fracC + fracD,
             fracA + fracD, fracC + fracB,
-            var_counts = var_counts, mutCopyNum = mutCopyNum,
+            alt_counts = alt_counts, mutCopyNum = mutCopyNum,
             subclone_correction = FALSE
         ))
     }]

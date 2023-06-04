@@ -16,7 +16,7 @@ test_that("estimate_ccf function works well", {
             "D_LMS025_T1.ref_count",
             "D_LMS025_T1.var_count", "D_LMS025_T1.VAF"
         ),
-        c("ref_counts", "var_counts", "vaf")
+        c("ref_counts", "alt_counts", "vaf")
     )
     data.table::setcolorder(
         mut.table,
@@ -59,7 +59,7 @@ test_that("estimate_ccf function works well", {
         gender = "male", mutation_id, chr,
         pos = startpos,
         ref_counts = ref_counts,
-        var_counts = var_counts,
+        alt_counts = alt_counts,
         normal_cn = 2L,
         major_cn = pmax(nMinor, nMajor),
         minor_cn = pmin(nMinor, nMajor),
@@ -75,7 +75,7 @@ test_that("estimate_ccf function works well", {
     pyclone.table <- pyclone.table[!is.na(pyclone.table$minor_cn)]
     pyclone.table <- pyclone.table[!is.na(pyclone.table$ref_counts)]
     pyclone.table <- pyclone.table[!duplicated(pyclone.table$mutation_id)]
-    pyclone.table <- pyclone.table[ref_counts + var_counts >= 1L]
+    pyclone.table <- pyclone.table[ref_counts + alt_counts >= 1L]
 
     # let's load the purity estimate from VAF purity
     sample.purity <- region.seg.copy$ACF[1]
@@ -107,7 +107,7 @@ test_that("estimate_ccf function works well", {
 
         # let's put it back together
         rownames(pyClone.tsv) <- pyClone.tsv$mutation_id
-        pyClone.tsv$obs.VAF <- as.numeric(pyClone.tsv$var_counts) / (as.numeric(pyClone.tsv$var_counts) + as.numeric(pyClone.tsv$ref_counts))
+        pyClone.tsv$obs.VAF <- as.numeric(pyClone.tsv$alt_counts) / (as.numeric(pyClone.tsv$alt_counts) + as.numeric(pyClone.tsv$ref_counts))
 
         get.mutCopyNum <- function(i) {
             # let's simplify things, and assume there are max two subclonal populations
@@ -149,7 +149,7 @@ test_that("estimate_ccf function works well", {
                 return(sub.cint(x, n.alt = n.alt, depth = depth))
             }
 
-            absolute.calc <- absolute.cancer.cell.fraction(n.alt = unlist(pyClone.tsv$var_counts)[i], depth = (as.numeric(pyClone.tsv$ref_counts[i]) + as.numeric(pyClone.tsv$var_counts[i])), purity = cellularity, local.copy.number = (as.numeric(pyClone.tsv$major_raw[i]) + as.numeric(pyClone.tsv$minor_raw[i])))
+            absolute.calc <- absolute.cancer.cell.fraction(n.alt = unlist(pyClone.tsv$alt_counts)[i], depth = (as.numeric(pyClone.tsv$ref_counts[i]) + as.numeric(pyClone.tsv$alt_counts[i])), purity = cellularity, local.copy.number = (as.numeric(pyClone.tsv$major_raw[i]) + as.numeric(pyClone.tsv$minor_raw[i])))
             absolute.ccf.0.05 <- absolute.calc[1]
             absolute.ccf.0.95 <- absolute.calc[3]
             absolute.ccf <- absolute.calc[2]
@@ -174,8 +174,8 @@ test_that("estimate_ccf function works well", {
             )$conf.int[1]
             return(get.mut.mult(CNt = CNtumor[i], Vaf = VAF, cellularity = cellularity, CNn = CNn))
         },
-        var.count = as.numeric(pyClone.tsv$var_counts),
-        depth = as.numeric(pyClone.tsv$var_counts) + as.numeric(pyClone.tsv$ref_counts),
+        var.count = as.numeric(pyClone.tsv$alt_counts),
+        depth = as.numeric(pyClone.tsv$alt_counts) + as.numeric(pyClone.tsv$ref_counts),
         e = as.numeric(pyClone.tsv$expected.VAF),
         CNtumor = as.numeric(pyClone.tsv$major_raw) + as.numeric(pyClone.tsv$minor_raw),
         cellularity = cellularity,
@@ -189,8 +189,8 @@ test_that("estimate_ccf function works well", {
             )$conf.int[2]
             return(get.mut.mult(CNt = CNtumor[i], Vaf = VAF, cellularity = cellularity, CNn = CNn))
         },
-        var.count = as.numeric(pyClone.tsv$var_counts),
-        depth = as.numeric(pyClone.tsv$var_counts) + as.numeric(pyClone.tsv$ref_counts),
+        var.count = as.numeric(pyClone.tsv$alt_counts),
+        depth = as.numeric(pyClone.tsv$alt_counts) + as.numeric(pyClone.tsv$ref_counts),
         e = as.numeric(pyClone.tsv$expected.VAF),
         CNtumor = as.numeric(pyClone.tsv$major_raw) + as.numeric(pyClone.tsv$minor_raw),
         cellularity = cellularity,
@@ -246,8 +246,8 @@ test_that("estimate_ccf function works well", {
                         pyClone.tsv$whichFrac[a] <- c("A,B")
                         next
                     }
-                    var.count <- as.numeric(mut.info$var_counts)
-                    depth.count <- as.numeric(mut.info$var_counts) + as.numeric(mut.info$ref_counts)
+                    var.count <- as.numeric(mut.info$alt_counts)
+                    depth.count <- as.numeric(mut.info$alt_counts) + as.numeric(mut.info$ref_counts)
                     expected.prop <- pyClone.tsv$expected.VAF[a] * best.CN
 
                     # check whether subclonal CN results in clonal mutation
@@ -286,8 +286,8 @@ test_that("estimate_ccf function works well", {
                         pyClone.tsv$whichFrac[a] <- c("A,B,C,D")
                         next
                     }
-                    var.count <- as.numeric(mut.info$var_counts)
-                    depth.count <- as.numeric(mut.info$var_counts) + as.numeric(mut.info$ref_counts)
+                    var.count <- as.numeric(mut.info$alt_counts)
+                    depth.count <- as.numeric(mut.info$alt_counts) + as.numeric(mut.info$ref_counts)
                     expected.prop <- pyClone.tsv$expected.VAF[a] * best.CN
 
                     # check whether subclonal CN results in clonal mutation
@@ -315,8 +315,8 @@ test_that("estimate_ccf function works well", {
                 alternative = "greater"
             )$p.value
         },
-        var.count = as.numeric(pyClone.tsv$var_counts),
-        depth = as.numeric(pyClone.tsv$var_counts) + as.numeric(pyClone.tsv$ref_counts),
+        var.count = as.numeric(pyClone.tsv$alt_counts),
+        depth = as.numeric(pyClone.tsv$alt_counts) + as.numeric(pyClone.tsv$ref_counts),
         e = as.numeric(pyClone.tsv$expected.VAF)
         )
 
@@ -439,9 +439,9 @@ test_that("estimate_ccf function works well", {
         }
 
         # finally, let's sort out 'missing' ones
-        pyClone.tsv[pyClone.tsv$var_counts == 0, "no.chrs.bearing.mut"] <- 0
-        pyClone.tsv[pyClone.tsv$var_counts == 0, "expected.VAF"] <- 0
-        pyClone.tsv[pyClone.tsv$var_counts == 0, "absolute.ccf"] <- 0
+        pyClone.tsv[pyClone.tsv$alt_counts == 0, "no.chrs.bearing.mut"] <- 0
+        pyClone.tsv[pyClone.tsv$alt_counts == 0, "expected.VAF"] <- 0
+        pyClone.tsv[pyClone.tsv$alt_counts == 0, "absolute.ccf"] <- 0
         return(pyClone.tsv)
     }
 
