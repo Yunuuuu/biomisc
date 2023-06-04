@@ -89,31 +89,35 @@ estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_sub
             fracA + fracD, fracC + fracB, mutCopyNum
         )
     ]
-    # nolint end
-    if (is.null(min_subclonal)) {
-        ..matched_rows.. <- out$best_cn == 1L
-    } else {
-        ..matched_rows.. <- out$best_cn == 1L |
-            out$best_cn >= (1 - min_subclonal)
+    out[, ..matched_rows.. := best_cn == 1L]
+    if (!is.null(min_subclonal)) {
+        out[
+            ,
+            ..matched_rows.. := ..matched_rows.. |
+                best_cn >= (1 - min_subclonal)
+        ]
     }
     out[
-        ..matched_rows..,
+        (..matched_rows..),
         whichFrac := data.table::fifelse( # nolint
             is.na(fracC), "A,B", "A,B,C,D" # nolint
         )
     ]
+    # nolint end
+
     # check whether subclonal CN results in clonal mutation
     # otherwise subclonal CN doesn't explain subclonal MCN
     # nolint start
     out[, expProp := expVAF * best_cn]
     out[
-        !..matched_rows.., # nolint
+        !(..matched_rows..), # nolint
         explained_by_cn_pvalue := prop_test_pvalues( # nolint
             var_counts, (var_counts + ref_counts) * purity, # nolint
             prop = expProp / purity, # nolint
             alternative = "less"
         )
     ]
+    out[, ..matched_rows.. := NULL] # nolint
     if (subclone_correction) {
         out[
             explained_by_cn_pvalue > 0.01,
@@ -156,6 +160,7 @@ estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_sub
     out[, explained_by_cn_pvalue := NULL] # nolint
     out[, tmp_mut_multi := NULL] # nolint
     out[, expProp := NULL] # nolint
+    out[, ..operated_rows.. := NULL] # nolint
     out[, is_subclone := NULL] # nolint
     out[, best_cn := NULL] # nolint
 
