@@ -103,13 +103,20 @@ assert_pkg <- function(pkg, fun = NULL, call = parent.frame()) {
 }
 
 assert_df_columns <- function(x, cols, ..., arg = rlang::caller_arg(x), call = parent.frame()) {
-    assert_class(x, "data.frame", ..., arg = arg, call = call)
-    missing_cols <- setdiff(cols, names(x))
-    if (length(missing_cols)) {
-        cli::cli_abort(c(
-            x = "Missing column{?s}: {.val {missing_cols}}"
-        ))
+    is_right <- inherits(x, "data.frame")
+    arg_style <- cli::cli_vec(arg, style = list("vec-last" = " or ")) # nolint
+    msg <- c(
+        "{.arg {arg}} must be a {.cls data.frame}",
+        i = "{.arg {arg_style}} must contatin {.val {cols}} columns"
+    )
+    if (is_right) {
+        missing_cols <- setdiff(cols, names(x))
+        if (length(missing_cols)) {
+            is_right <- FALSE
+            msg <- c(msg, x = "Cannot find column{?s}: {.val {missing_cols}}")
+        }
     }
+    if (!is_right) cli::cli_abort(msg)
 }
 
 is_scalar_numeric <- function(x) {
