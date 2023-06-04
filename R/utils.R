@@ -9,7 +9,11 @@ NULL
 #'
 #' @keywords internal
 #' @noRd
-assert_class <- function(x, is_class, msg, cross_msg = "{.cls {class(x)}} object", null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+assert_class <- function(
+    x, is_class, msg,
+    cross_msg = "You've supplied a {.cls {class(x)}} object",
+    null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(),
+    .env = environment()) {
     if (rlang::is_scalar_character(is_class)) {
         class <- is_class
         is_class <- function(x) {
@@ -29,21 +33,20 @@ assert_class <- function(x, is_class, msg, cross_msg = "{.cls {class(x)}} object
         if (!null_ok) {
             cli::cli_abort(c(msg,
                 "x" = "You've supplied a {.code NULL}"
-            ), call = call)
+            ), call = call, .envir = .env)
         }
     } else if (!is_right_class) {
         if (!is.null(cross_msg)) {
-            cross_msg <- sprintf("You've supplied a ", cross_msg)
             msg <- c(msg, x = cross_msg)
         }
-        cli::cli_abort(msg, call = call)
+        cli::cli_abort(msg, call = call, .envir = .env)
     }
 }
 
 #' Report if an argument has specific length
 #' @keywords internal
 #' @noRd
-assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame()) {
+assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(), .env = environment()) {
     if (!missing(length)) {
         length <- as.integer(length)
         if (missing(msg)) {
@@ -77,12 +80,12 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
         if (!null_ok) {
             cli::cli_abort(c(msg,
                 "x" = "You've supplied a {.code NULL}"
-            ), call = call)
+            ), call = call, .envir = .env)
         }
     } else if (!is_right_length) {
         cli::cli_abort(c(msg,
             "x" = "You've supplied a length {.val {length(x)}} object"
-        ), call = call)
+        ), call = call, .envir = .env)
     }
 }
 
@@ -96,6 +99,16 @@ assert_pkg <- function(pkg, fun = NULL, call = parent.frame()) {
             "{.pkg {pkg}} must be installed to use {.fn {fun}}.",
             call = call
         )
+    }
+}
+
+assert_df_columns <- function(x, cols, ..., arg = rlang::caller_arg(x), call = parent.frame()) {
+    assert_class(x, "data.frame", ..., arg = arg, call = call)
+    missing_cols <- setdiff(cols, names(x))
+    if (length(missing_cols)) {
+        cli::cli_abort(c(
+            x = "Missing column{?s}: {.val {missing_cols}}"
+        ))
     }
 }
 

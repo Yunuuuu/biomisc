@@ -16,7 +16,7 @@ prepare_pyclone(
   minor_cn_field = "minor_cn",
   ref_counts_field = "ref_counts",
   var_counts_field = "var_counts",
-  purity_field = "purity",
+  purity_field = NULL,
   normal_cn = 2L,
   pyclone_vi = FALSE,
   error_rate = NULL
@@ -47,7 +47,7 @@ ranges.}
 \item{purity_field}{Only used for
 \href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, a string specifying the
 tumour content (cellularity) column (can in \code{mut_data} or \code{cnv_data}) of the
-sample. Default value is 1.0 if column is not present.}
+sample. Default value is 1.0 if NULL.}
 
 \item{normal_cn}{The copy number of the locus in non-malignant cells. This
 should generally be 2 except for sex chromosomes in males.}

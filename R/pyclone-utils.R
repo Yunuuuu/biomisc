@@ -160,18 +160,12 @@ mut_match_cn <- function(
         arg = end_field_arg,
         call = call
     )
-    mut_column <- c(
+    assert_df_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
         mut_pos
-    )
-    assert_class(mut_data, function(x) {
-        inherits(x, "data.frame") && all(mut_column %chin% names(mut_data))
-    }, msg = "{data.frame} with column {.val {mut_column}}")
-    cnv_column <- c(on_sample, on_chr, start_field, end_field)
-    assert_class(cnv_data, function(x) {
-        inherits(x, "data.frame") && all(cnv_column %chin% names(cnv_data))
-    }, msg = "{data.frame} with column {.val {cnv_column}}")
+    ))
+    assert_df_columns(cnv_data, c(on_sample, on_chr, start_field, end_field))
     if (!is.null(on_sample)) {
         on_string <- paste(
             names(on_sample) %||% on_sample,
