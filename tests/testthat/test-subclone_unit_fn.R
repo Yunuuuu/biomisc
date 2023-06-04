@@ -34,14 +34,6 @@ test_that("subclone unit function works well", {
     # create mutation ID ----------------------------------------
     mut.table[, mutation_id := paste(SampleID, chr, start, ref, sep = ":")]
 
-    # at present we can only reliably use autosomal mutations
-    # restrict to chromosomes 1 to 22 ####
-    mut.table <- mut.table[chr %in% 1:22]
-    if (nrow(mut.table) == 0) {
-        stop("No mutations passed filtering, stopping PyClone phylo clustering")
-    }
-    seg.mat.copy <- seg.mat.copy[seg.mat.copy$chr %in% 1:22]
-
     # test define_subclone_cn works -----------------------------
     # define subclone copy number
     seg.mat.phylo <- define_subclone_cn(
@@ -485,6 +477,7 @@ test_that("subclone unit function works well", {
         purity, observed_vafs = pyClone.tsv$obsVAF,
         expected_vafs = pyClone.tsv$expVAF
     ))
+    data.table::setDT(phylo.ccfs)
     pyClone.tsv$mutCopyNum <- phylo.ccfs$phyloCCF
 
     testthat::expect_equal(
@@ -744,13 +737,12 @@ test_that("subclone unit function works well", {
     # copy numbers of subclones can only differ by 1 or 0 (as assumed when
     # calling subclones)
     # nolint start
-    conipher <- FALSE
     pyClone.tsv[amp_mut_pvalue < 0.05 & mutCopyNum > 1L & is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
         suppressWarnings(calculate_best_cn_for_amp_mut(
             nMaj_A, nMaj_B,
             fracA = fracA, fracB = fracB,
             var_counts = var_counts, mutCopyNum = mutCopyNum,
-            conipher = conipher
+            subclone_correction = FALSE
         ))
     }]
     pyClone.tsv[amp_mut_pvalue < 0.05 & mutCopyNum > 1L & !is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
@@ -759,7 +751,7 @@ test_that("subclone unit function works well", {
             fracA + fracB, fracC + fracD,
             fracA + fracD, fracC + fracB,
             var_counts = var_counts, mutCopyNum = mutCopyNum,
-            conipher = conipher
+            subclone_correction = FALSE
         ))
     }]
     pyClone.tsv[amp_mut_pvalue < 0.05 & mutCopyNum > 1L, c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "expVAF") := {
