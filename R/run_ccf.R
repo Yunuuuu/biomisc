@@ -1,27 +1,18 @@
 #' Matching  mutation Copy number and Estimating CCF (absolute and phylogenetic)
 #' @inheritParams identify_mut_cn
 #' @inheritDotParams estimate_ccf -mut_cn_data
-#' @export 
+#' @export
 run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
                     mut_pos = "pos", start_field = "startpos",
                     end_field = "endpos", ...) {
-    assert_class(mut_data, function(x) {
-        inherits(x, "data.frame")
-    }, "{.cls data.frame}")
-    assert_class(cnv_data, function(x) {
-        inherits(x, "data.frame")
-    }, "{.cls data.frame}")
-    if (!is.null(on_sample)) {
-        cnv_sample_col <- unname(on_sample)
-        mut_sample_col <- names(on_sample) %||% cnv_sample_col
-        cnv_sample_id <- cnv_data[[cnv_sample_col]]
-        cnv_data[[cnv_sample_col]] <- NULL
-        mut_sample_id <- mut_data[[mut_sample_col]]
-        mut_data[[mut_sample_col]] <- NULL
-    } else {
-        cnv_sample_id <- rep_len("sample", nrow(cnv_data))
-        mut_sample_id <- rep_len("sample", nrow(mut_data))
-    }
+    assert_df_columns(mut_data, c(
+        names(on_sample) %||% on_sample,
+        names(on_chr) %||% on_chr,
+        mut_pos, "ref_counts", "alt_counts"
+    ))
+    assert_df_columns(cnv_data, c(
+        on_chr, start_field, end_field, "nMajor", "nMinor", "nAraw", "nBraw"
+    ))
 
     mut_data <- data.table::as.data.table(mut_data)
     mut_data[, sample_id := mut_sample_id] # nolint
@@ -30,17 +21,20 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
     cnv_data[, sample_id := cnv_sample_id] # nolint
 
     # define subclone copy number
-    phylo_data <- define_subclone_cn(
-        cnv_data, min_subclonal = 0.01
+    cnv_data <- define_subclone_cn(
+        cnv_data,
+        min_subclonal = 0.01
     )
 
     # just extract the segmented CNV for this sample
-    out <- mut_match_cn(mut_data, phylo_data,
-        on_sample = "sample_id", on_chr = on_chr,
+    out <- mut_match_cn(mut_data, cnv_data,
+        on_sample = on_sample, on_chr = on_chr,
         mut_pos = mut_pos, start_field = start_field,
         end_field = end_field
     )
-    data.table::setDT(out)
+    assert_df_columns(out, c("gender", "purity"),
+        arg = c("mut_data", "cnv_data")
+    )
     out[, c("major_cn", "minor_cn") := list(
         major_cn = pmax(nMinor, nMajor), # nolint
         minor_cn = pmin(nMinor, nMajor) # nolint
@@ -52,15 +46,13 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
     out <- estimate_ccf(out, ...)
     if (!is.null(on_sample)) {
         data.table::setcolorder(out, "sample_id")
-    } else {
-        out[, sample_id := NULL] # nolint
     }
     data.table::setDF(out)
     out
 }
 
 #' Estimating CCF (absolute and phylogenetic)
-#' 
+#'
 #' For CONIPHER anlayis, use subclone_metric = "ccf", min_subclonal = 0.05,
 #' subclone_correction = TRUE, pvalue_correction = "BH", min_vaf_to_explain =
 #' 0.05.
@@ -74,8 +66,8 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
 #'  for the copy number correcting mutations. If NULL, no multiple testing
 #'  correction will be used.
 #' @param min_vaf_to_explain A numeric, the minimal vaf value to define
-#'  subclone. 
-#' @export 
+#'  subclone.
+#' @export
 estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_subclonal = NULL, subclone_correction = FALSE, pvalue_correction = NULL, min_vaf_to_explain = NULL) {
     out <- data.table::as.data.table(mut_cn_data)
     subclone_metric <- match.arg(subclone_metric, c("ccf", "subclone_prop"))
