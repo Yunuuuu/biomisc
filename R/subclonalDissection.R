@@ -3,12 +3,6 @@
 #' min_vaf_to_explain = 0.05
 #' @noRd
 estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_subclonal = NULL, subclone_correction = FALSE, pvalue_correction = NULL, min_vaf_to_explain = NULL) {
-    # mut_cn_data <- pyclone.table
-    # subclone_metric <- "subclone_prop"
-    # min_subclonal <- 0.05
-    # subclone_correction <- TRUE
-    # pvalue_correction <- "BH"
-    # min_vaf_to_explain <- 0.05
     out <- data.table::as.data.table(mut_cn_data)
     subclone_metric <- match.arg(subclone_metric, c("ccf", "subclone_prop"))
     # In order to estimate whether mutations were clonal or subclonal, and the
@@ -120,20 +114,24 @@ estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_sub
             alternative = "less"
         )
     ]
-    out[
-        explained_by_cn_pvalue > 0.01,
-        tmp_mut_multi := calculate_obs_mut(
-            major_raw + minor_raw,
-            prop_test_ci(
-                var_counts, var_counts + ref_counts,
-                expProp
-            )[[1L]],
-            purity
-        )
-    ]
+    if (subclone_correction) {
+        out[
+            explained_by_cn_pvalue > 0.01,
+            ..operated_rows.. := calculate_obs_mut(
+                major_raw + minor_raw,
+                prop_test_ci(
+                    var_counts, var_counts + ref_counts,
+                    expProp
+                )[[1L]],
+                purity
+            ) / best_cn <= 1L
+        ]
+    } else {
+        out[, ..operated_rows.. := explained_by_cn_pvalue > 0.01]
+    }
     # nolint end
     out[
-        tmp_mut_multi <= 1L, # nolint
+        (..operated_rows..), # nolint
         c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "no.chrs.bearing.mut", "expVAF", "CPNChange") := {
             tmp_vafs <- prop_test_ci(
                 var_counts, var_counts + ref_counts, expProp # nolint
@@ -331,7 +329,7 @@ define_subclone_cn <- function(seg, min_subclonal = 0.01) {
 }
 
 utils::globalVariables(c(
-    "SampleID", "amp_mut_pvalue", "best_cn", "expVAF",
+    "SampleID", "amp_mut_pvalue", "best_cn", "expVAF", "obsVAF", "purity",
     "explained_by_cn_pvalue",
     "fracA", "fracB", "fracC", "fracD",
     "fracMaj1", "fracMaj2", "fracMin1", "fracMin2", "is_subclone",
@@ -339,8 +337,9 @@ utils::globalVariables(c(
     "nMaj1", "nMaj2", "nMaj_A", "nMaj_B",
     "nMaj_C", "nMaj_D", "nMin1", "nMin2",
     "nMin_A", "nMin_B", "nMin_C", "nMin_D",
-    "phyloCCF_higher", "phyloCCF_lower",
-    "ref_counts", "sample_id", "startpos", "var_counts", "whichFrac"
+    "phyloCCF_higher", "phyloCCF_lower", "absCCF_higher", "expProp",
+    "ref_counts", "sample_id", "startpos", "var_counts", "whichFrac",
+    "..operated_rows..", "normal_cn", "tmp_mut_multi"
 ))
 
 define_normal_cn <- function(gender, chr) {
@@ -359,7 +358,7 @@ calculate_obs_mut <- function(CNts, vafs, purity, CNns = 2L) {
 # purity: The purity is the fraction of cancer cells in the tumor sample.
 # local.copy.number: CNt
 # threshold was set to 1 - 1e-6 in
-# https://github.com/McGranahanLab/CONIPHER-wrapper/blob/main/src/run_clustering.R
+# https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/run_clustering.R#L530
 # Multiplicity (m): The number of DNA copies bearing a mutation m
 calculate_vaf <- function(m, purity, CNts, CNns = 2L, threshold = 1L) {
     out <- (purity * m) / (CNns * (1L - purity) + purity * CNts)
@@ -387,7 +386,7 @@ calculate_abs_ccf <- function(
             xnorm <- x / sum(x)
             xsort <- sort(xnorm, decreasing = TRUE)
             xcumLik <- cumsum(xsort)
-            idx <- xnorm >= xsort[sum(xcumLik < 1 - alpha) + 1L]
+            idx <- xnorm >= xsort[sum(xcumLik < 1L - alpha) + 1L]
             cint <- x[idx]
             mut_multi <- candidate_mut_multi[idx]
             data.table::data.table(
