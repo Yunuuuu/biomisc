@@ -202,13 +202,14 @@ mut_match_cn <- function(
     } else {
         on_string <- character()
     }
+    # Reduce the possibility of some columns in cnv_data named as mut_data
     on_string <- c(
         on_string, paste(on_chr, mut_chr_col, sep = "=="),
-        paste(start_field, mut_pos, sep = "<="),
-        paste(end_field, mut_pos, sep = ">=")
+        paste(start_field, "...mut_pos...", sep = "<="),
+        paste(end_field, "...mut_pos...", sep = ">=")
     )
-    # Reduce the possibility of some columns in cnv_data named as mut_data
     ..mut_data.. <- data.table::as.data.table(mut_data)
+    ..mut_data..$...mut_pos... <- ..mut_data..[[mut_pos]]
     mut_cn <- data.table::as.data.table(cnv_data)[
         ..mut_data..,
         on = on_string, nomatch = nomatch
