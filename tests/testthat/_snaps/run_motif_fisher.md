@@ -1,43 +1,9 @@
-# multiplication works
+# run_motif_fisher works
 
     Code
       suppressWarnings(run_motif_fisher(maf[, c("Tumor_Sample_Barcode", "Chromosome",
-        "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = "hg19"))
+        "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = ref_genome))
     Message
-      
-      Attaching package: 'BiocGenerics'
-      
-      The following objects are masked from 'package:stats':
-      
-          IQR, mad, sd, var, xtabs
-      
-      The following objects are masked from 'package:base':
-      
-          Filter, Find, Map, Position, Reduce, anyDuplicated, aperm, append,
-          as.data.frame, basename, cbind, colnames, dirname, do.call,
-          duplicated, eval, evalq, get, grep, grepl, intersect, is.unsorted,
-          lapply, mapply, match, mget, order, paste, pmax, pmax.int, pmin,
-          pmin.int, rank, rbind, rownames, sapply, setdiff, sort, table,
-          tapply, union, unique, unsplit, which.max, which.min
-      
-      
-      Attaching package: 'S4Vectors'
-      
-      The following object is masked from 'package:utils':
-      
-          findMatches
-      
-      The following objects are masked from 'package:base':
-      
-          I, expand.grid, unname
-      
-      
-      Attaching package: 'Biostrings'
-      
-      The following object is masked from 'package:base':
-      
-          strsplit
-      
       Mapping seqnames of `mut_data` to `ref_genome` ("UCSC")
       Defining signature motif frequency and background context
       i Using "C>T" and "C>G" to define background_mut_freq
