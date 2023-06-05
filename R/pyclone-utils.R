@@ -184,6 +184,11 @@ mut_match_cn <- function(
         cnv_data,
         c(on_sample, on_chr, start_field, end_field)
     )
+    for (i in c(on_chr, start_field, end_field)) {
+        if (anyNA(cnv_data[[i]])) {
+            cli::cli_abort("{.val {NA}} is not allowed in {.code cnv_data[[{i}]]}")
+        }
+    }
     if (!is.null(on_sample)) {
         samples_in_mut_not_in_cnv <- setdiff(
             mut_data[[mut_sample_col]], cnv_data[[on_sample]]
@@ -202,23 +207,34 @@ mut_match_cn <- function(
     } else {
         on_string <- character()
     }
-    # Reduce the possibility of some columns in cnv_data named as mut_data
     on_string <- c(
         on_string, paste(on_chr, mut_chr_col, sep = "=="),
-        paste(start_field, "...mut_pos...", sep = "<="),
-        paste(end_field, "...mut_pos...", sep = ">=")
+        paste("...start..___..pos...", "...mut..___..pos...", sep = "<="),
+        paste("...end..___..pos...", "...mut..___..pos...", sep = ">=")
     )
-    ..mut_data.. <- data.table::as.data.table(mut_data)
-    ..mut_data..$...mut_pos... <- ..mut_data..[[mut_pos]]
-    mut_cn <- data.table::as.data.table(cnv_data)[
-        ..mut_data..,
-        on = on_string, nomatch = nomatch
-    ]
+    # Reduce the possibility of some columns in cnv_data named as mut_data
+    # Also keep the original column mut_pos, start_field and end_field
+    cnv_data <- data.table::as.data.table(cnv_data)
+    cnv_data$...start..___..pos... <- cnv_data[[start_field]]
+    cnv_data$...end..___..pos... <- cnv_data[[end_field]]
+    mut_data <- data.table::as.data.table(mut_data)
+    mut_data$...mut..___..pos... <- mut_data[[mut_pos]]
+    out <- cnv_data[mut_data, on = on_string, nomatch = nomatch]
+
+    # remove the created columns
+    out[, c("...start..___..pos...", "...end..___..pos...") := list(NULL, NULL)]
+    if (anyNA(out[[start_field]])) {
+        nfailed <- sum(is.na(out[[start_field]])) # nolint
+        ntotal <- nrow(out) # nolint
+        cli::cli_warn(
+            "Cannot match copy number for {.val {nfailed}} / {.val {ntotal}} mutations"
+        )
+    }
     # check the match works well
-    failed_pos <- mut_cn[[mut_pos]] < mut_cn[[start_field]] |
-        mut_cn[[mut_pos]] > mut_cn[[end_field]]
-    if (any(failed_pos)) {
+    failed_pos <- out[[mut_pos]] < out[[start_field]] |
+        out[[mut_pos]] > out[[end_field]]
+    if (any(failed_pos, na.rm = TRUE)) {
         cli::cli_abort("Something wrong when parsing CN of mutation")
     }
-    mut_cn
+    out
 }
