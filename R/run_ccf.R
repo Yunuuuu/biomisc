@@ -36,6 +36,10 @@ run_ccf <- function(
         end_field, rlang::is_scalar_character,
         "scalar {.cls character}"
     )
+    assert_df_with_columns(mut_data, c(
+        names(on_sample) %||% on_sample, 
+        names(on_chr) %||% on_chr, mut_pos
+    ))
     assert_df_with_columns(cnv_data, c(
         on_sample, on_chr, start_field, end_field,
         "nMajor", "nMinor", "nAraw", "nBraw"

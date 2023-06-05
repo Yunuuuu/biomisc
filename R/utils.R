@@ -123,7 +123,7 @@ assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg
     }
     missing_cols <- setdiff(cols, names(x))
     is_right <- length(missing_cols) == 0L
-    if (is_right) {
+    if (!is_right) {
         msg <- c(msg, x = "Cannot find column{?s}: {.val {missing_cols}}")
     }
     if (!is_right) cli::cli_abort(msg, call = call)
