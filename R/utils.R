@@ -140,3 +140,8 @@ format_percent <- function(x, digits = 2L, format = "f", ...) {
 read_internal_extdata <- function(...) {
     readRDS(system.file("extdata", ..., package = "biomisc"))
 }
+
+trim_value <- function(x, threshold = 1 - .Machine$double.neg.eps) {
+    x[x >= threshold] <- threshold
+    x
+}
