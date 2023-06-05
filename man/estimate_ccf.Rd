@@ -14,7 +14,9 @@ estimate_ccf(
 )
 }
 \arguments{
-\item{mut_cn_data}{A data.frame with mutation and copy number data.}
+\item{mut_cn_data}{A data.frame with mutation and copy number data. Copy
+number often contain subclonal copy number as described in
+\href{https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1}{CONIPHER}.}
 
 \item{subclone_metric}{A string, "ccf" or "subclone_prop" specifying how to
 choose subclone.}

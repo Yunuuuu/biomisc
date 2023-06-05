@@ -39,9 +39,10 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
 
     out <- estimate_ccf(out, ...)
     if (!is.null(on_sample)) {
+        data.table::setDT(out)
         data.table::setcolorder(out, "sample_id")
+        data.table::setDF(out)
     }
-    data.table::setDF(out)
     out
 }
 
@@ -50,7 +51,9 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
 #' For CONIPHER anlayis, use subclone_metric = "ccf", min_subclonal = 0.05,
 #' subclone_correction = TRUE, pvalue_correction = "BH", min_vaf_to_explain =
 #' 0.05.
-#' @param mut_cn_data A data.frame with mutation and copy number data.
+#' @param mut_cn_data A data.frame with mutation and copy number data. Copy
+#'  number often contain subclonal copy number as described in
+#'  [CONIPHER](https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1).
 #' @param subclone_metric A string, "ccf" or "subclone_prop" specifying how to
 #'  choose subclone.
 #' @param min_subclonal Minimal copy number to define subclone.
@@ -271,7 +274,9 @@ estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_sub
     out[
         alt_counts == 0L, # nolint
         c("no.chrs.bearing.mut", "expVAF", "absCCF") := list(0L, 0L, 0L)
-    ][]
+    ]
+    data.table::setDF(out)
+    out
 }
 
 #' min.subclonal was set to 0.1 in
