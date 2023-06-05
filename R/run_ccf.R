@@ -37,8 +37,9 @@ run_ccf <- function(
         "scalar {.cls character}"
     )
     assert_df_with_columns(mut_data, c(
-        names(on_sample) %||% on_sample, 
-        names(on_chr) %||% on_chr, mut_pos
+        names(on_sample) %||% on_sample,
+        names(on_chr) %||% on_chr, mut_pos,
+        "ref_counts", "alt_counts"
     ))
     assert_df_with_columns(cnv_data, c(
         on_sample, on_chr, start_field, end_field,
@@ -279,7 +280,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     }
     if (!is.null(pvalue_correction)) {
         out[, is_subclone := is_subclone & prop_test_pvalues(
-            alt_counts, alt_counts + ref_counts, expVAF,
+            alt_counts, alt_counts + ref_counts, trim_value(expVAF),
             alternative = "less",
             correction = pvalue_correction
         ) < 0.01]
@@ -347,7 +348,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
                 major_raw + minor_raw,
                 prop_test_ci(
                     alt_counts, alt_counts + ref_counts,
-                    expProp
+                    trim_value(expProp)
                 )[[1L]],
                 purity
             ) / best_cn <= 1L
@@ -360,7 +361,8 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         (..operated_rows..), # nolint
         c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "no.chrs.bearing.mut", "expVAF", "CPNChange") := {
             tmp_vafs <- prop_test_ci(
-                alt_counts, alt_counts + ref_counts, expProp # nolint
+                alt_counts, alt_counts + ref_counts, # nolint
+                trim_value(expProp) # nolint
             )
             tmp_CNts <- major_raw + minor_raw # nolint
             list(
@@ -392,7 +394,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     out[
         ,
         amp_mut_pvalue := prop_test_pvalues( # nolint
-            alt_counts, alt_counts + ref_counts, expVAF, # nolint
+            alt_counts, alt_counts + ref_counts, trim_value(expVAF), # nolint
             alternative = "greater"
         )
     ]
@@ -598,8 +600,7 @@ calculate_obs_mut <- function(CNts, vafs, purity, CNns = 2L) {
 # Multiplicity (m): The number of DNA copies bearing a mutation m
 calculate_vaf <- function(m, purity, CNts, CNns = 2L, threshold = 1L) {
     out <- (purity * m) / (CNns * (1L - purity) + purity * CNts)
-    out[out >= threshold] <- threshold
-    out
+    trim_value(out, threshold = threshold)
 }
 
 calculate_abs_ccf <- function(
@@ -648,7 +649,7 @@ calculate_phylo_ccf <- function(alt_counts, ref_counts, CNts, purity, observed_v
     obs_vafs <- observed_vafs %||% (alt_counts / depths)
     expected_vafs <- expected_vafs %||%
         calculate_vaf(1L, purity, CNts, CNns = CNns)
-    vafs <- prop_test_ci(alt_counts, depths, expected_vafs)
+    vafs <- prop_test_ci(alt_counts, depths, trim_value(expected_vafs))
     lapply(list(
         phyloCCF = obs_vafs, phyloCCF_lower = vafs[[1L]],
         phyloCCF_higher = vafs[[2L]]
