@@ -522,6 +522,7 @@ test_that("estimate_ccf function works well", {
         pyClone.tsv[pyClone.tsv$alt_counts == 0, "absolute.ccf"] <- 0
         return(pyClone.tsv)
     }
+    data.table::setDT(out)
     region.phyloCCF2 <- suppressWarnings(calculate_phylo_ccf_withBH(region,
         complete.mutation.table = as.data.frame(pyclone.table),
         purity = sample.purity

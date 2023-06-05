@@ -8,11 +8,13 @@ run_ccf(
   mut_data,
   cnv_data,
   on_sample = NULL,
+  purity_field = NULL,
   on_chr = "chr",
   mut_pos = "pos",
   start_field = "startpos",
   end_field = "endpos",
-  ...
+  ...,
+  nomatch = NA
 )
 }
 \arguments{
@@ -23,6 +25,9 @@ run_ccf(
 \item{on_sample}{A string (can be named), specifying the sample column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
 regarded from the same sample.}
+
+\item{purity_field}{A string specifying the purity column (in \code{mut_data} or
+\code{cnv_data}). Default is "purity".}
 
 \item{on_chr}{A string (can be named), specifying the chromosome column used
 to match mut_data and cnv_data.}
@@ -37,6 +42,15 @@ ranges.}
 \item{...}{
   Arguments passed on to \code{\link[=estimate_ccf]{estimate_ccf}}
   \describe{
+    \item{\code{contigs}}{An atomic vector specifying the chromosome to analyze.}
+    \item{\code{normal_cn}}{A scalar number specifying the normal.copy number or a
+string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
+if you only analyze autosomes. Or you should use \code{gender_field} to define
+the \code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
+otherwise, 2L will be used.}
+    \item{\code{gender_field}}{A string specifying the chromosome column. Only used when
+normal_cn is NULL. Default is "gender". Only "female" and "male" are
+supported in this column.}
     \item{\code{subclone_metric}}{A string, "ccf" or "subclone_prop" specifying how to
 choose subclone.}
     \item{\code{min_subclonal}}{Minimal copy number to define subclone.}
@@ -48,6 +62,11 @@ correction will be used.}
     \item{\code{min_vaf_to_explain}}{A numeric, the minimal vaf value to define
 subclone.}
   }}
+
+\item{nomatch}{When a row in \code{mut_data} has no match to \code{cnv_data},
+nomatch=NA (default) means NA is returned. NULL (or 0 for backward
+compatibility) means no rows will be returned for that row of \code{mut_data}.
+Note: To do}
 }
 \description{
 Matching  mutation Copy number and Estimating CCF (absolute and phylogenetic)

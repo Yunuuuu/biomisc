@@ -445,6 +445,7 @@ test_that("estimate_ccf function works well", {
         return(pyClone.tsv)
     }
 
+    data.table::setDT(region.phyloCCF)
     region.phyloCCF2 <- suppressWarnings(subclonalDissection(region,
         complete.mutation.table = as.data.frame(pyclone.table),
         purity = sample.purity

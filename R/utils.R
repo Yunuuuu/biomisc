@@ -68,9 +68,10 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
         msg <- paste(msg, "or {.code NULL}", sep = " ")
     }
     msg <- sprintf("{.arg {arg}} must be %s", msg)
-    is_right_length <- FALSE
     if (!missing(length)) {
         is_right_length <- length(x) == length
+    } else {
+        is_right_length <- FALSE
     }
     if (scalar_ok) {
         is_right_length <- is_right_length || length(x) == 1L
@@ -106,17 +107,23 @@ assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg
     if (check_class) {
         is_right <- inherits(x, "data.frame")
         msg <- c(i = "{.arg {arg}} must be a {.cls data.frame}")
+    } else {
+        is_right <- TRUE
+        msg <- character()
     }
-    arg_style <- cli::cli_vec(arg, style = list("vec-last" = " or ")) # nolint
+    arg_style <- cli::cli_vec(arg, style = list( # nolint
+        "vec-last" = " or ", "vec-trunc" = 10L
+    ))
+    cols_style <- cli::cli_vec(cols, style = list("vec-trunc" = 10L)) # nolint
     msg <- c(msg,
-        i = "{.arg {arg_style}} must contatin {.val {cols}} columns"
+        i = "{.arg {arg_style}} must contatin {.val {cols_style}} column{?s}"
     )
     if (!is_right) {
         msg <- c(msg, x = "You've supplied a {.cls {class(x)}} object")
     }
     missing_cols <- setdiff(cols, names(x))
-    if (length(missing_cols)) {
-        is_right <- FALSE
+    is_right <- length(missing_cols) == 0L
+    if (is_right) {
         msg <- c(msg, x = "Cannot find column{?s}: {.val {missing_cols}}")
     }
     if (!is_right) cli::cli_abort(msg, call = call)

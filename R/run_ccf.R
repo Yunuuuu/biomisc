@@ -1,17 +1,41 @@
 #' Matching  mutation Copy number and Estimating CCF (absolute and phylogenetic)
 #' @inheritParams identify_mut_cn
-#' @inheritDotParams estimate_ccf -mut_cn_data
+#' @param purity_field A string specifying the purity column (in `mut_data` or
+#'  `cnv_data`). Default is "purity".
+#' @inheritDotParams estimate_ccf -mut_cn_data -sample_field -chr_field
+#' @param nomatch When a row in `mut_data` has no match to `cnv_data`,
+#' nomatch=NA (default) means NA is returned. NULL (or 0 for backward
+#' compatibility) means no rows will be returned for that row of `mut_data`.
+#' Note: To do
 #' @export
-run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
-                    mut_pos = "pos", start_field = "startpos",
-                    end_field = "endpos", ...) {
-    assert_df_with_columns(mut_data, c(
-        names(on_sample) %||% on_sample,
-        names(on_chr) %||% on_chr,
-        mut_pos, "ref_counts", "alt_counts"
-    ))
+run_ccf <- function(
+    mut_data, cnv_data, on_sample = NULL, purity_field = NULL,
+    on_chr = "chr",
+    mut_pos = "pos", start_field = "startpos",
+    end_field = "endpos", ..., nomatch = NA) {
+    assert_class(on_sample, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        null_ok = TRUE
+    )
+    assert_class(
+        on_chr, rlang::is_scalar_character,
+        "scalar {.cls character}"
+    )
+    assert_class(
+        mut_pos, rlang::is_scalar_character,
+        "scalar {.cls character}"
+    )
+    assert_class(
+        start_field, rlang::is_scalar_character,
+        "scalar {.cls character}"
+    )
+    assert_class(
+        end_field, rlang::is_scalar_character,
+        "scalar {.cls character}"
+    )
     assert_df_with_columns(cnv_data, c(
-        on_chr, start_field, end_field, "nMajor", "nMinor", "nAraw", "nBraw"
+        on_sample, on_chr, start_field, end_field,
+        "nMajor", "nMinor", "nAraw", "nBraw"
     ))
 
     mut_data <- data.table::as.data.table(mut_data)
@@ -24,23 +48,26 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
     out <- mut_match_cn(mut_data, cnv_data,
         on_sample = on_sample, on_chr = on_chr,
         mut_pos = mut_pos, start_field = start_field,
-        end_field = end_field
+        end_field = end_field, nomatch = nomatch
     )
-    assert_df_with_columns(out, c("gender", "purity"),
+    purity_field <- purity_field %||% "purity"
+    assert_df_with_columns(out, purity_field,
+        check_class = FALSE,
         arg = c("mut_data", "cnv_data")
     )
+    data.table::setnames(out, c("nAraw", "nBraw"), c("major_raw", "minor_raw"))
     out[, c("major_cn", "minor_cn") := list(
         major_cn = pmax(nMinor, nMajor), # nolint
         minor_cn = pmin(nMinor, nMajor) # nolint
     )]
-
-    # let's load the purity estimate from VAF purity
-    out$normal_cn <- define_normal_cn(out$gender, out[[on_chr]])
-
-    out <- estimate_ccf(out, ...)
+    out <- estimate_ccf(out,
+        sample_field = on_sample,
+        purity_field = purity_field,
+        chr_field = on_chr, ...
+    )
     if (!is.null(on_sample)) {
         data.table::setDT(out)
-        data.table::setcolorder(out, "sample_id")
+        data.table::setcolorder(out, on_sample)
         data.table::setDF(out)
     }
     out
@@ -54,6 +81,22 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
 #' @param mut_cn_data A data.frame with mutation and copy number data. Copy
 #'  number often contain subclonal copy number as described in
 #'  [CONIPHER](https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1).
+#' @param sample_field A string specifying the sample column. If NULL, all data
+#'  will be regarded from the same sample. This is used to confirm every sample
+#'  have the same `purity` or `gender`.
+#' @param purity_field A string specifying the purity column. Default is
+#'  "purity".
+#' @param contigs An atomic vector specifying the chromosome to analyze.
+#' @param chr_field A string specifying the chromosome column. Only used when
+#'   `contigs` is not NULL or `normal_cn` is NULL. Default is "chr".
+#' @param normal_cn A scalar number specifying the normal.copy number or a
+#'  string indicating the normal_cn column in `mut_cn_data`.  It's save to use 2
+#'  if you only analyze autosomes. Or you should use `gender_field` to define
+#'  the `normal_cn`. For sex chromosomes and gender is "male", 1L will be used,
+#'  otherwise, 2L will be used.
+#' @param gender_field A string specifying the chromosome column. Only used when
+#'   normal_cn is NULL. Default is "gender". Only "female" and "male" are
+#'   supported in this column.
 #' @param subclone_metric A string, "ccf" or "subclone_prop" specifying how to
 #'  choose subclone.
 #' @param min_subclonal Minimal copy number to define subclone.
@@ -64,10 +107,118 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
 #'  correction will be used.
 #' @param min_vaf_to_explain A numeric, the minimal vaf value to define
 #'  subclone.
+#' @seealso [run_ccf]
 #' @export
-estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_subclonal = NULL, subclone_correction = FALSE, pvalue_correction = NULL, min_vaf_to_explain = NULL) {
-    out <- data.table::as.data.table(mut_cn_data)
+estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender_field = NULL, subclone_metric = "subclone_prop", min_subclonal = NULL, subclone_correction = FALSE, pvalue_correction = NULL, min_vaf_to_explain = NULL) {
+    # check arguments firstly
+    assert_class(purity_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        null_ok = TRUE,
+        cross_msg = NULL
+    )
+    purity_field <- unname(purity_field %||% "purity")
+    assert_df_with_columns(mut_cn_data, c(
+        sample_field, purity_field,
+        "major_raw", "minor_raw", "alt_counts", "ref_counts",
+        "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D",
+        "nMin_A", "nMin_D", "nMin_C", "nMin_B",
+        "fracA", "fracB", "fracC", "fracD"
+    ))
+    assert_class(sample_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        null_ok = TRUE,
+        cross_msg = NULL
+    )
+    sample_field <- unname(sample_field)
+    assert_class(chr_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        null_ok = TRUE,
+        cross_msg = NULL
+    )
+    chr_field <- unname(chr_field)
+    assert_class(normal_cn,
+        function(x) {
+            is_scalar_numeric(x) || rlang::is_scalar_character(x)
+        }, "scalar {.cls numeric} or {.cls character}",
+        null_ok = TRUE, cross_msg = NULL
+    )
+    assert_class(gender_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        null_ok = TRUE,
+        cross_msg = NULL
+    )
+    gender_field <- unname(gender_field)
+    mut_cn_data <- data.table::as.data.table(mut_cn_data)
+    if (!is.null(contigs) || is.null(normal_cn)) {
+        chr_field <- chr_field %||% "chr"
+        assert_df_with_columns(mut_cn_data, chr_field, check_class = FALSE)
+    }
+    if (!is.null(contigs)) {
+        # filter contigs
+        matched_contigs <- mut_cn_data[[chr_field]] %chin% as.character(contigs)
+        mut_cn_data <- mut_cn_data[matched_contigs]
+    }
+    if (is.null(normal_cn)) {
+        # assert every samples provided only one gender value
+        gender_field <- gender_field %||% "gender"
+        assert_df_with_columns(mut_cn_data, gender_field, check_class = FALSE)
+        if (!is.null(sample_field)) {
+            gender_data <- mut_cn_data[, unique(.SD),
+                .SDcols = c(sample_field, gender_field)
+            ][, .SD[.N > 1L], by = sample_field]
+            if (nrow(gender_data)) {
+                cli::cli_abort(c(
+                    "All samples must have the same gender",
+                    x = "samples with multiple gender value: {.val {unique(gender_data[[sample_field]])}}",
+                    i = "try to set {.arg normal_cn}"
+                ))
+            }
+        } else {
+            gender_data <- unique(mut_cn_data[[gender_field]])
+            if (length(gender_data) > 1L) {
+                cli::cli_abort(c(
+                    "All samples must have the same gender",
+                    i = "try to set {.arg sample_field} or {.arg normal_cn}"
+                ))
+            }
+        }
+        if (!mut_cn_data[[gender_field]] %in% c("male", "female")) {
+            cli::cli_abort("Only {.val male} and {.val female} are supported in {.field {gender_field}} column")
+        }
+        mut_cn_data$normal_cn <- define_normal_cn(
+            mut_cn_data[[gender_field]], mut_cn_data[[chr_field]]
+        )
+    } else {
+        if (is_scalar_numeric(normal_cn)) {
+            mut_cn_data[, normal_cn := normal_cn]
+        } else {
+            assert_df_with_columns(mut_cn_data, normal_cn, check_class = FALSE)
+            data.table::setnames(mut_cn_data, normal_cn, "normal_cn")
+        }
+    }
+    # assert every samples provided only one purity value
+    if (!is.null(sample_field)) {
+        purity_data <- mut_cn_data[, unique(.SD),
+            .SDcols = c(sample_field, purity_field)
+        ][, .SD[.N > 1L], by = sample_field]
+        if (nrow(purity_data)) {
+            cli::cli_abort(c(
+                "All samples must have the same purity value",
+                x = "samples with multiple purity: {.val {unique(purity_data[[sample_field]])}}"
+            ))
+        }
+    } else {
+        purity_data <- unique(mut_cn_data[[purity_field]])
+        if (length(purity_data) > 1L) {
+            cli::cli_abort(c(
+                "All samples must have the same purity value",
+                x = "duplicated purity: {.val {purity_data}}",
+                i = "try to set {.arg sample_field}"
+            ))
+        }
+    }
     subclone_metric <- match.arg(subclone_metric, c("ccf", "subclone_prop"))
+
     # In order to estimate whether mutations were clonal or subclonal, and the
     # clonal structure of each tumor, a modified version of PyClone was used.
     # For each mutation, two values were calculated, obsCCF and phyloCCF. obsCCF
@@ -80,6 +231,7 @@ estimate_ccf <- function(mut_cn_data, subclone_metric = "subclone_prop", min_sub
     # from a phylogenetic perspective the mutation can be considered ‘clonal’ as
     # it occurred on the trunk of the tumor’s phylogenetic tree, and, as such,
     # the phyloCCF may be 1.
+    out <- mut_cn_data
 
     # define normal_cn
     # nolint start
@@ -398,7 +550,7 @@ define_subclone_cn <- function(seg, min_subclonal = 0.01) {
 }
 
 utils::globalVariables(c(
-    "SampleID", "amp_mut_pvalue", "best_cn", "expVAF", "obsVAF", "purity",
+    "sample_id", "amp_mut_pvalue", "best_cn", "expVAF", "obsVAF", "purity",
     "explained_by_cn_pvalue",
     "fracA", "fracB", "fracC", "fracD",
     "fracMaj1", "fracMaj2", "fracMin1", "fracMin2", "is_subclone",
@@ -408,14 +560,21 @@ utils::globalVariables(c(
     "nMaj_C", "nMaj_D", "nMin1", "nMin2",
     "nMin_A", "nMin_B", "nMin_C", "nMin_D",
     "phyloCCF_higher", "phyloCCF_lower", "absCCF_higher", "expProp",
-    "ref_counts", "sample_id", "startpos", "alt_counts", "whichFrac",
+    "ref_counts", "startpos", "alt_counts", "whichFrac",
     "..operated_rows..", "..matched_rows..", "normal_cn", "tmp_mut_multi"
 ))
 
 define_normal_cn <- function(gender, chr) {
+    allosomes <- GenomeInfoDb::seqlevelsInGroup(chr, group = "sex")
+    autosomes <- GenomeInfoDb::seqlevelsInGroup(chr, group = "auto")
+    if (!all(as.character(chr) %chin% c(allosomes, autosomes))) {
+        cli::cli_abort(c(
+            "Find chromosomes no in groups ({.filed allosomes} and {.field autosomes})",
+            i = "Please check {.code ?GenomeInfoDb::seqlevelsInGroup} for definition of {.filed allosomes} and {.field autosomes}"
+        ))
+    }
     data.table::fifelse(
-        gender == "male" & as.character(chr) %chin%
-            GenomeInfoDb::seqlevelsInGroup(chr, group = "sex"),
+        gender == "male" & as.character(chr) %chin% allosomes,
         1L, 2L
     )
 }

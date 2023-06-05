@@ -6,6 +6,12 @@
 \usage{
 estimate_ccf(
   mut_cn_data,
+  sample_field = NULL,
+  purity_field = NULL,
+  contigs = NULL,
+  chr_field = NULL,
+  normal_cn = 2L,
+  gender_field = NULL,
   subclone_metric = "subclone_prop",
   min_subclonal = NULL,
   subclone_correction = FALSE,
@@ -17,6 +23,28 @@ estimate_ccf(
 \item{mut_cn_data}{A data.frame with mutation and copy number data. Copy
 number often contain subclonal copy number as described in
 \href{https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1}{CONIPHER}.}
+
+\item{sample_field}{A string specifying the sample column. If NULL, all data
+will be regarded from the same sample. This is used to confirm every sample
+have the same \code{purity} or \code{gender}.}
+
+\item{purity_field}{A string specifying the purity column. Default is
+"purity".}
+
+\item{contigs}{An atomic vector specifying the chromosome to analyze.}
+
+\item{chr_field}{A string specifying the chromosome column. Only used when
+\code{contigs} is not NULL or \code{normal_cn} is NULL. Default is "chr".}
+
+\item{normal_cn}{A scalar number specifying the normal.copy number or a
+string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
+if you only analyze autosomes. Or you should use \code{gender_field} to define
+the \code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
+otherwise, 2L will be used.}
+
+\item{gender_field}{A string specifying the chromosome column. Only used when
+normal_cn is NULL. Default is "gender". Only "female" and "male" are
+supported in this column.}
 
 \item{subclone_metric}{A string, "ccf" or "subclone_prop" specifying how to
 choose subclone.}
@@ -37,4 +65,7 @@ subclone.}
 For CONIPHER anlayis, use subclone_metric = "ccf", min_subclonal = 0.05,
 subclone_correction = TRUE, pvalue_correction = "BH", min_vaf_to_explain =
 0.05.
+}
+\seealso{
+\link{run_ccf}
 }
