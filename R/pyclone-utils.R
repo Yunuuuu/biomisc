@@ -31,7 +31,8 @@ prepare_pyclone <- function(
     major_cn_field = "major_cn", minor_cn_field = "minor_cn",
     ref_counts_field = "ref_counts", var_counts_field = "var_counts",
     purity_field = NULL, normal_cn = 2L,
-    pyclone_vi = FALSE, error_rate = NULL) {
+    pyclone_vi = FALSE, error_rate = NULL,
+    nomatch = NA) {
     assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
@@ -49,7 +50,8 @@ prepare_pyclone <- function(
         mut_data, cnv_data,
         on_sample = on_sample,
         on_chr = on_chr, mut_pos = mut_pos,
-        start_field = start_field, end_field = end_field
+        start_field = start_field, end_field = end_field,
+        nomatch = nomatch
     )
     out[, mutation_id := paste(chromosome, position, sep = ":")]
     out[, normal_cn := normal_cn]
@@ -117,17 +119,20 @@ prepare_pyclone <- function(
 #' @param start_field,end_field A string indicating the column names in
 #' `cnv_data` that contains the start positions and end position of the genomic
 #' ranges.
+#' @param nomatch When a row in `mut_data` has no match to `cnv_data`,
+#' nomatch=NA (default) means NA is returned. NULL (or 0 for backward
+#' compatibility) means no rows will be returned for that row of `mut_data`.
 #' @return A integrated data.frame with data column from both mut_data and
 #' cnv_data.
 #' @export
 identify_mut_cn <- function(
-    mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
-    mut_pos = "pos", start_field = "start", end_field = "end") {
+    mut_data, cnv_data, on_sample = NULL, on_chr = "chr", mut_pos = "pos",
+    start_field = "start", end_field = "end", nomatch = NA) {
     mut_cn <- mut_match_cn(
         mut_data = mut_data, cnv_data = cnv_data,
         on_sample = on_sample, on_chr = on_chr,
         mut_pos = mut_pos, start_field = start_field,
-        end_field = end_field
+        end_field = end_field, nomatch = nomatch
     )
     data.table::setDF(mut_cn)
     mut_cn
@@ -139,6 +144,7 @@ identify_mut_cn <- function(
 mut_match_cn <- function(
     mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
     mut_pos = "pos", start_field = "start", end_field = "end",
+    nomatch = NA,
     on_sample_arg = rlang::caller_arg(on_sample),
     on_chr_arg = rlang::caller_arg(on_chr),
     mut_pos_arg = rlang::caller_arg(on_chr),
@@ -171,23 +177,33 @@ mut_match_cn <- function(
         arg = end_field_arg,
         call = call
     )
-    assert_df_with_columns(mut_data, c(
-        names(on_sample) %||% on_sample,
-        names(on_chr) %||% on_chr,
-        mut_pos
-    ))
-    assert_df_with_columns(cnv_data, c(on_sample, on_chr, start_field, end_field))
+    mut_sample_col <- names(on_sample) %||% on_sample
+    mut_chr_col <- names(on_chr) %||% on_chr
+    assert_df_with_columns(mut_data, c(mut_sample_col, mut_chr_col, mut_pos))
+    assert_df_with_columns(
+        cnv_data,
+        c(on_sample, on_chr, start_field, end_field)
+    )
     if (!is.null(on_sample)) {
-        on_string <- paste(
-            names(on_sample) %||% on_sample,
-            on_sample,
-            sep = "=="
+        samples_in_mut_not_in_cnv <- setdiff(
+            mut_data[[mut_sample_col]], cnv_data[[on_sample]]
         )
+        samples_in_cnv_not_in_mut <- setdiff( # nolint
+            cnv_data[[on_sample]], mut_data[[mut_sample_col]]
+        )
+        if (length(samples_in_mut_not_in_cnv)) {
+            cli::cli_warn(c(
+                "Cannot match all samples between {.arg mut_data} and {.arg cnv_data}",
+                x = "Samples in {.arg mut_data} not in {.arg cnv_data}: {.val {samples_in_mut_not_in_cnv}}",
+                i = "Samples in {.arg cnv_data} not in {.arg mut_data}: {.val {samples_in_cnv_not_in_mut}}"
+            ))
+        }
+        on_string <- paste(on_sample, mut_sample_col, sep = "==")
     } else {
         on_string <- character()
     }
     on_string <- c(
-        on_string, paste(names(on_chr) %||% on_chr, on_chr, sep = "=="),
+        on_string, paste(on_chr, mut_chr_col, sep = "=="),
         paste(start_field, mut_pos, sep = "<="),
         paste(end_field, mut_pos, sep = ">=")
     )
@@ -195,7 +211,7 @@ mut_match_cn <- function(
     ..mut_data.. <- data.table::as.data.table(mut_data)
     mut_cn <- data.table::as.data.table(cnv_data)[
         ..mut_data..,
-        on = on_string, nomatch = NA
+        on = on_string, nomatch = nomatch
     ]
     # check the match works well
     failed_pos <- mut_cn[[mut_pos]] < mut_cn[[start_field]] |

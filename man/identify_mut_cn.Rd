@@ -11,7 +11,8 @@ identify_mut_cn(
   on_chr = "chr",
   mut_pos = "pos",
   start_field = "start",
-  end_field = "end"
+  end_field = "end",
+  nomatch = NA
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ contains the variants positions in the chromosome.}
 \item{start_field, end_field}{A string indicating the column names in
 \code{cnv_data} that contains the start positions and end position of the genomic
 ranges.}
+
+\item{nomatch}{When a row in \code{mut_data} has no match to \code{cnv_data},
+nomatch=NA (default) means NA is returned. NULL (or 0 for backward
+compatibility) means no rows will be returned for that row of \code{mut_data}.}
 }
 \value{
 A integrated data.frame with data column from both mut_data and
