@@ -6,6 +6,10 @@
 #' "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 #' be omited. Column names don't matter.
 #' @inheritParams identify_mut_cn
+#' @param major_cn_field,minor_cn_field A string indicating the column names in
+#' `cnv_data` that contains the major_cn and minor_cn.
+#' @param ref_counts_field,var_counts_field A string indicating the column names
+#' in `mut_data` that contains the ref_counts and var_counts.
 #' @param normal_cn The copy number of the locus in non-malignant cells. This
 #' should generally be 2 except for sex chromosomes in males.
 #' @param pyclone_vi a logical value indicates whether prepare data for the
@@ -28,18 +32,24 @@ prepare_pyclone <- function(
     ref_counts_field = "ref_counts", var_counts_field = "var_counts",
     purity_field = NULL, normal_cn = 2L,
     pyclone_vi = FALSE, error_rate = NULL) {
-    assert_class(mut_data, "data.frame")
-    assert_class(cnv_data, "data.frame")
+    assert_df_with_columns(mut_data, c(
+        names(on_sample) %||% on_sample,
+        names(on_chr) %||% on_chr,
+        mut_pos, ref_counts_field, var_counts_field
+    ))
+    assert_df_with_columns(cnv_data, c(
+        on_sample, on_chr, start_field, end_field,
+        major_cn_field, minor_cn_field
+    ))
 
     mut_data <- data.table::as.data.table(mut_data)
     cnv_data <- data.table::as.data.table(cnv_data)
-    cnv_data[, sample_id := cnv_sample_id] # nolint
 
     out <- mut_match_cn(
         mut_data, cnv_data,
+        on_sample = on_sample,
         on_chr = on_chr, mut_pos = mut_pos,
-        start_field = start_field, end_field = end_field,
-        on_sample = on_sample
+        start_field = start_field, end_field = end_field
     )
     out[, mutation_id := paste(chromosome, position, sep = ":")]
     out[, normal_cn := normal_cn]
@@ -58,16 +68,17 @@ prepare_pyclone <- function(
         )
         if (is.null(purity_field)) {
             purity_field <- "..purity.."
-            mut_data$..purity.. <- 1L
+            out$..purity.. <- 1L
+        } else {
+            assert_df_with_columns(out, purity_field,
+                arg = c("mut_data", "cnv_data")
+            )
         }
         columns <- c(columns, purity_field)
         column_names <- c(column_names, "purity")
     }
 
-    out <- out[, .SD, SDcols = c(
-        "mutation_id", ref_counts_field, var_counts_field,
-        "normal_cn", c(minor_cn_field, major_cn_field)
-    )]
+    out <- out[, .SD, SDcols = columns]
     data.table::setnames(out, column_names)
     if (pyclone_vi) {
         data.table::setnames(out, "var_counts", "alt_counts")
@@ -160,12 +171,12 @@ mut_match_cn <- function(
         arg = end_field_arg,
         call = call
     )
-    assert_df_columns(mut_data, c(
+    assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
         mut_pos
     ))
-    assert_df_columns(cnv_data, c(on_sample, on_chr, start_field, end_field))
+    assert_df_with_columns(cnv_data, c(on_sample, on_chr, start_field, end_field))
     if (!is.null(on_sample)) {
         on_string <- paste(
             names(on_sample) %||% on_sample,

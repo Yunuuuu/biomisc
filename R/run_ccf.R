@@ -5,26 +5,20 @@
 run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
                     mut_pos = "pos", start_field = "startpos",
                     end_field = "endpos", ...) {
-    assert_df_columns(mut_data, c(
+    assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
         mut_pos, "ref_counts", "alt_counts"
     ))
-    assert_df_columns(cnv_data, c(
+    assert_df_with_columns(cnv_data, c(
         on_chr, start_field, end_field, "nMajor", "nMinor", "nAraw", "nBraw"
     ))
 
     mut_data <- data.table::as.data.table(mut_data)
-    mut_data[, sample_id := mut_sample_id] # nolint
-
     cnv_data <- data.table::as.data.table(cnv_data)
-    cnv_data[, sample_id := cnv_sample_id] # nolint
 
     # define subclone copy number
-    cnv_data <- define_subclone_cn(
-        cnv_data,
-        min_subclonal = 0.01
-    )
+    cnv_data <- define_subclone_cn(cnv_data, min_subclonal = 0.01)
 
     # just extract the segmented CNV for this sample
     out <- mut_match_cn(mut_data, cnv_data,
@@ -32,7 +26,7 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
         mut_pos = mut_pos, start_field = start_field,
         end_field = end_field
     )
-    assert_df_columns(out, c("gender", "purity"),
+    assert_df_with_columns(out, c("gender", "purity"),
         arg = c("mut_data", "cnv_data")
     )
     out[, c("major_cn", "minor_cn") := list(
@@ -41,7 +35,7 @@ run_ccf <- function(mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
     )]
 
     # let's load the purity estimate from VAF purity
-    out[, normal_cn := define_normal_cn(gender, chr)] # nolint
+    out$normal_cn <- define_normal_cn(out$gender, out[[on_chr]])
 
     out <- estimate_ccf(out, ...)
     if (!is.null(on_sample)) {
@@ -404,6 +398,7 @@ utils::globalVariables(c(
     "fracA", "fracB", "fracC", "fracD",
     "fracMaj1", "fracMaj2", "fracMin1", "fracMin2", "is_subclone",
     "major_raw", "minor_raw", "mutCopyNum", "nAraw", "nBraw",
+    "nMajor", "nMinor",
     "nMaj1", "nMaj2", "nMaj_A", "nMaj_B",
     "nMaj_C", "nMaj_D", "nMin1", "nMin2",
     "nMin_A", "nMin_B", "nMin_C", "nMin_D",

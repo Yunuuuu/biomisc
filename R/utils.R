@@ -13,7 +13,7 @@ assert_class <- function(
     x, is_class, msg,
     cross_msg = "You've supplied a {.cls {class(x)}} object",
     null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(),
-    .env = environment()) {
+    .envir = environment()) {
     if (rlang::is_scalar_character(is_class)) {
         class <- is_class
         is_class <- function(x) {
@@ -33,20 +33,20 @@ assert_class <- function(
         if (!null_ok) {
             cli::cli_abort(c(msg,
                 "x" = "You've supplied a {.code NULL}"
-            ), call = call, .envir = .env)
+            ), call = call, .envir = .envir)
         }
     } else if (!is_right_class) {
         if (!is.null(cross_msg)) {
             msg <- c(msg, x = cross_msg)
         }
-        cli::cli_abort(msg, call = call, .envir = .env)
+        cli::cli_abort(msg, call = call, .envir = .envir)
     }
 }
 
 #' Report if an argument has specific length
 #' @keywords internal
 #' @noRd
-assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(), .env = environment()) {
+assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(), .envir = environment()) {
     if (!missing(length)) {
         length <- as.integer(length)
         if (missing(msg)) {
@@ -80,12 +80,12 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
         if (!null_ok) {
             cli::cli_abort(c(msg,
                 "x" = "You've supplied a {.code NULL}"
-            ), call = call, .envir = .env)
+            ), call = call, .envir = .envir)
         }
     } else if (!is_right_length) {
         cli::cli_abort(c(msg,
             "x" = "You've supplied a length {.val {length(x)}} object"
-        ), call = call, .envir = .env)
+        ), call = call, .envir = .envir)
     }
 }
 
@@ -102,21 +102,24 @@ assert_pkg <- function(pkg, fun = NULL, call = parent.frame()) {
     }
 }
 
-assert_df_columns <- function(x, cols, ..., arg = rlang::caller_arg(x), call = parent.frame()) {
-    is_right <- inherits(x, "data.frame")
+assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg = rlang::caller_arg(x), call = parent.frame()) {
+    if (check_class) {
+        is_right <- inherits(x, "data.frame")
+        msg <- c(i = "{.arg {arg}} must be a {.cls data.frame}")
+    }
     arg_style <- cli::cli_vec(arg, style = list("vec-last" = " or ")) # nolint
-    msg <- c(
-        "{.arg {arg}} must be a {.cls data.frame}",
+    msg <- c(msg,
         i = "{.arg {arg_style}} must contatin {.val {cols}} columns"
     )
-    if (is_right) {
-        missing_cols <- setdiff(cols, names(x))
-        if (length(missing_cols)) {
-            is_right <- FALSE
-            msg <- c(msg, x = "Cannot find column{?s}: {.val {missing_cols}}")
-        }
+    if (!is_right) {
+        msg <- c(msg, x = "You've supplied a {.cls {class(x)}} object")
     }
-    if (!is_right) cli::cli_abort(msg)
+    missing_cols <- setdiff(cols, names(x))
+    if (length(missing_cols)) {
+        is_right <- FALSE
+        msg <- c(msg, x = "Cannot find column{?s}: {.val {missing_cols}}")
+    }
+    if (!is_right) cli::cli_abort(msg, call = call)
 }
 
 is_scalar_numeric <- function(x) {

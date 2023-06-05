@@ -44,6 +44,12 @@ contains the variants positions in the chromosome.}
 \code{cnv_data} that contains the start positions and end position of the genomic
 ranges.}
 
+\item{major_cn_field, minor_cn_field}{A string indicating the column names in
+\code{cnv_data} that contains the major_cn and minor_cn.}
+
+\item{ref_counts_field, var_counts_field}{A string indicating the column names
+in \code{mut_data} that contains the ref_counts and var_counts.}
+
 \item{purity_field}{Only used for
 \href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, a string specifying the
 tumour content (cellularity) column (can in \code{mut_data} or \code{cnv_data}) of the
