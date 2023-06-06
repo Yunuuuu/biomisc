@@ -6,6 +6,8 @@
 #' "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 #' be omited. Column names don't matter.
 #' @inheritParams identify_mut_cn
+#' @param alt_field A string indicating the column names in `mut_data` that
+#' contains the tumor variant allele.
 #' @param major_cn_field,minor_cn_field A string indicating the column names in
 #' `cnv_data` that contains the major_cn and minor_cn.
 #' @param ref_counts_field,var_counts_field A string indicating the column names
@@ -27,16 +29,18 @@
 #' @export
 prepare_pyclone <- function(
     mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
-    mut_pos = "pos", start_field = "start", end_field = "end",
-    major_cn_field = "major_cn", minor_cn_field = "minor_cn",
-    ref_counts_field = "ref_counts", var_counts_field = "var_counts",
+    mut_pos = "pos", alt_field = "alt", start_field = "start",
+    end_field = "end", major_cn_field = "major_cn", minor_cn_field = "minor_cn",
+    ref_counts_field = "ref_counts",
+    var_counts_field = "var_counts",
     purity_field = NULL, normal_cn = 2L,
     pyclone_vi = FALSE, error_rate = NULL,
     nomatch = NULL) {
     assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
-        mut_pos, ref_counts_field, var_counts_field
+        mut_pos, alt_field,
+        ref_counts_field, var_counts_field
     ))
     assert_df_with_columns(cnv_data, c(
         on_sample, on_chr, start_field, end_field,
@@ -53,7 +57,9 @@ prepare_pyclone <- function(
         start_field = start_field, end_field = end_field,
         nomatch = nomatch
     )
-    out[, mutation_id := paste(chromosome, position, sep = ":")]
+    out[, mutation_id := Reduce(function(x, y) {
+        paste(x, y, sep = ":")
+    }, .SD), .SDcols = c(on_sample, on_chr, mut_pos, alt_field)]
     out[, normal_cn := normal_cn]
     columns <- c(
         "mutation_id", ref_counts_field, var_counts_field,
@@ -150,28 +156,33 @@ mut_match_cn <- function(
     end_field_arg = rlang::caller_arg(end_field),
     call = parent.frame()) {
     assert_class(on_sample, rlang::is_scalar_character,
-        "scalar {.cls character}", cross_msg = NULL,
+        "scalar {.cls character}",
+        cross_msg = NULL,
         null_ok = TRUE,
         arg = on_sample_arg,
         call = call
     )
     assert_class(on_chr, rlang::is_scalar_character,
-        "scalar {.cls character}", cross_msg = NULL,
+        "scalar {.cls character}",
+        cross_msg = NULL,
         arg = on_chr_arg,
         call = call
     )
     assert_class(mut_pos, rlang::is_scalar_character,
-        "scalar {.cls character}", cross_msg = NULL,
+        "scalar {.cls character}",
+        cross_msg = NULL,
         arg = mut_pos_arg,
         call = call
     )
     assert_class(start_field, rlang::is_scalar_character,
-        "scalar {.cls character}", cross_msg = NULL,
+        "scalar {.cls character}",
+        cross_msg = NULL,
         arg = start_field_arg,
         call = call
     )
     assert_class(end_field, rlang::is_scalar_character,
-        "scalar {.cls character}", cross_msg = NULL,
+        "scalar {.cls character}",
+        cross_msg = NULL,
         arg = end_field_arg,
         call = call
     )
