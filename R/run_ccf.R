@@ -601,7 +601,7 @@ define_normal_cn <- function(gender, chr) {
     autosomes <- GenomeInfoDb::seqlevelsInGroup(chr, group = "auto")
     if (!all(as.character(chr) %chin% c(allosomes, autosomes))) {
         cli::cli_abort(c(
-            "Find chromosomes no in groups ({.filed allosomes} and {.field autosomes})",
+            "Find chromosomes not in {.filed allosomes} and {.field autosomes}",
             i = "Please check {.code ?GenomeInfoDb::seqlevelsInGroup} for definition of {.filed allosomes} and {.field autosomes}"
         ))
     }
