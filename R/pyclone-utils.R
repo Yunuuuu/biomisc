@@ -230,9 +230,9 @@ mut_match_cn <- function(
     # abort if
     ntotal2 <- nrow(out)
     if (ntotal2 > ntotal) {
-        msg <- "multiple copy number value found for {ntotal2 - ntotal}/{ntotal} mutations"
+        msg <- "multiple copy number value found producing {ntotal2}/{ntotal} mutations"
         if (is.null(on_sample)) {
-            msg <- c(msg, i = "Try to set {.arg on_sample} and you should ensure no duplciated segment")
+            msg <- c(msg, i = "try to set {.arg on_sample} or you should ensure no duplciated segment")
         } else {
             msg <- c(msg, i = "you should ensure no duplciated segment")
         }
