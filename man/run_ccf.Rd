@@ -14,7 +14,8 @@ run_ccf(
   start_field = "startpos",
   end_field = "endpos",
   ...,
-  nomatch = NULL
+  nomatch = NULL,
+  kept_cols = NULL
 )
 }
 \arguments{
@@ -70,6 +71,10 @@ place purity data in cnv_data, in this way, if some mutation cannot match the
 cnv data, the purity and copy number value for this mutation would be NA, For
 CCF estimation, NA is not allowed. Just set nomatch = NULL to omit these
 rows.}
+
+\item{kept_cols}{A character vector specifying the columns in \code{mut_data} or
+\code{cnv_data} you want to keep in the results. By default only created columns
+will be returned.}
 }
 \description{
 Matching  mutation Copy number and Estimating CCF (absolute and phylogenetic)

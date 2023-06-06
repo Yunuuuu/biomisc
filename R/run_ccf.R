@@ -10,31 +10,37 @@
 #' cnv data, the purity and copy number value for this mutation would be NA, For
 #' CCF estimation, NA is not allowed. Just set nomatch = NULL to omit these
 #' rows.
+#' @param kept_cols A character vector specifying the columns in `mut_data` or
+#' `cnv_data` you want to keep in the results. By default only created columns
+#' will be returned.
 #' @export
 run_ccf <- function(
     mut_data, cnv_data, on_sample = NULL, purity_field = NULL,
-    on_chr = "chr",
-    mut_pos = "pos", start_field = "startpos",
-    end_field = "endpos", ..., nomatch = NULL) {
+    on_chr = "chr", mut_pos = "pos", start_field = "startpos",
+    end_field = "endpos", ..., nomatch = NULL, kept_cols = NULL) {
     assert_class(on_sample, rlang::is_scalar_character,
         "scalar {.cls character}",
-        null_ok = TRUE
+        null_ok = TRUE, cross_msg = NULL
     )
     assert_class(
         on_chr, rlang::is_scalar_character,
-        "scalar {.cls character}"
+        "scalar {.cls character}",
+        cross_msg = NULL
     )
     assert_class(
         mut_pos, rlang::is_scalar_character,
-        "scalar {.cls character}"
+        "scalar {.cls character}",
+        cross_msg = NULL
     )
     assert_class(
         start_field, rlang::is_scalar_character,
-        "scalar {.cls character}"
+        "scalar {.cls character}",
+        cross_msg = NULL
     )
     assert_class(
         end_field, rlang::is_scalar_character,
-        "scalar {.cls character}"
+        "scalar {.cls character}",
+        cross_msg = NULL
     )
     assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
@@ -43,8 +49,11 @@ run_ccf <- function(
     ))
     assert_df_with_columns(cnv_data, c(
         on_sample, on_chr, start_field, end_field,
-        "nMajor", "nMinor", "nAraw", "nBraw"
+        "nAraw", "nBraw"
     ))
+    assert_class(kept_cols, is.character, "{.cls character} vector",
+        cross_msg = NULL, null_ok = TRUE
+    )
 
     mut_data <- data.table::as.data.table(mut_data)
     cnv_data <- data.table::as.data.table(cnv_data)
@@ -64,21 +73,37 @@ run_ccf <- function(
         arg = c("mut_data", "cnv_data")
     )
     data.table::setnames(out, c("nAraw", "nBraw"), c("major_raw", "minor_raw"))
-    out[, c("major_cn", "minor_cn") := list(
-        major_cn = pmax(nMinor, nMajor), # nolint
-        minor_cn = pmin(nMinor, nMajor) # nolint
-    )]
     out <- estimate_ccf(out,
         sample_field = on_sample,
         purity_field = purity_field,
         chr_field = on_chr, ...
     )
-    if (!is.null(on_sample)) {
-        data.table::setDT(out)
-        data.table::setcolorder(out, on_sample)
-        data.table::setDF(out)
+    data.table::setDT(out)
+    # out[, c("major_cn", "minor_cn") := list(
+    #     major_cn = pmax(nMinor, nMajor), # nolint
+    #     minor_cn = pmin(nMinor, nMajor) # nolint
+    # )]
+    columns <- c(
+        on_sample, purity_field, on_chr, mut_pos,
+        "alt_counts", "ref_counts", start_field, end_field
+    )
+    for (i in c("nMajor", "nMinor")) {
+        if (any(i == names(cnv_data))) {
+            columns <- c(columns, i)
+        }
     }
-    out
+    columns <- c(
+        columns, "major_raw", "minor_raw",
+        "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D",
+        "nMin_A", "nMin_B", "nMin_C", "nMin_D",
+        "fracA", "fracB", "fracC", "fracD",
+        "normal_cn", "expVAF", "obsVAF", "absCCF",
+        "absCCF_lower", "absCCF_higher", "phyloCCF",
+        "phyloCCF_lower", "phyloCCF_higher", "mutCopyNum",
+        "no.chrs.bearing.mut", "whichFrac", "CPNChange",
+        kept_cols
+    )
+    out[, .SD, .SDcols = columns]
 }
 
 #' Estimating CCF (absolute and phylogenetic)
@@ -129,7 +154,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         sample_field, purity_field,
         "major_raw", "minor_raw", "alt_counts", "ref_counts",
         "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D",
-        "nMin_A", "nMin_D", "nMin_C", "nMin_B",
+        "nMin_A", "nMin_B", "nMin_C", "nMin_D",
         "fracA", "fracB", "fracC", "fracD"
     ))
     assert_class(sample_field, rlang::is_scalar_character,
@@ -547,14 +572,12 @@ define_subclone_cn <- function(seg, min_subclonal = 0.01) {
 
     # finally, let's choose the columns we want and the order we want
     # columns <- c(
-    #     "SampleID", "chr", "startpos", "endpos", "n.het", "cnTotal", "nMajor", "nMinor", "Ploidy",
-    #     "ACF", "nAraw", "nBraw",
-    #     "fracA", "nMaj_A", "nMin_A",
-    #     "fracB", "nMaj_B", "nMin_B",
-    #     "fracC", "nMaj_C", "nMin_C",
+    #     "SampleID", "chr", "startpos", "endpos", "n.het", "cnTotal", "nMajor",
+    #     "nMinor", "Ploidy", "ACF", "nAraw", "nBraw", "fracA", "nMaj_A",
+    #     "nMin_A", "fracB", "nMaj_B", "nMin_B", "fracC", "nMaj_C", "nMin_C",
     #     "fracD", "nMaj_D", "nMin_D"
     # )
-    # # let's order this correctly
+    # let's order this correctly
     # seg_out[order(SampleID, chr, startpos), .SD, .SDcols = columns] # nolint
 }
 
