@@ -212,24 +212,45 @@ mut_match_cn <- function(
         paste("...start..___..pos...", "...mut..___..pos...", sep = "<="),
         paste("...end..___..pos...", "...mut..___..pos...", sep = ">=")
     )
-    # Reduce the possibility of some columns in cnv_data named as mut_data
+
+    # Reduce the possibility of some columns in cnv_data be overrided
     # Also keep the original column mut_pos, start_field and end_field
     cnv_data <- data.table::as.data.table(cnv_data)
     cnv_data$...start..___..pos... <- cnv_data[[start_field]]
     cnv_data$...end..___..pos... <- cnv_data[[end_field]]
     mut_data <- data.table::as.data.table(mut_data)
     mut_data$...mut..___..pos... <- mut_data[[mut_pos]]
-    out <- cnv_data[mut_data, on = on_string, nomatch = nomatch]
+    ntotal <- nrow(mut_data) # nolint
+    out <- cnv_data[mut_data,
+        on = on_string, nomatch = NA,
+        allow.cartesian = FALSE
+    ]
+
+    # for every mutation, there must have one copy number value
+    # abort if
+    ntotal2 <- nrow(out)
+    if (ntotal2 > ntotal) {
+        msg <- "multiple copy number value found for {ntotal2 - ntotal}/{ntotal} mutations"
+        if (is.null(on_sample)) {
+            msg <- c(msg, i = "Try to set {.arg on_sample} and you should ensure no duplciated segment")
+        } else {
+            msg <- c(msg, i = "you should ensure no duplciated segment")
+        }
+        cli::cli_abort(msg)
+    }
+    # warning if nomatch found, since we have ensure start_field in cnv_data
+    # have no NA value, it's save to regard NA as nomatch
+    nomatch_rows <- is.na(out[[start_field]])
+    if (anyNA(out[[start_field]])) {
+        nfailed <- sum(nomatch_rows) # nolint
+        cli::cli_warn(
+            "Cannot match copy number for {nfailed}/{ntotal} mutations"
+        )
+    }
+    if (is.null(nomatch)) out <- out[nomatch_rows]
 
     # remove the created columns
     out[, c("...start..___..pos...", "...end..___..pos...") := list(NULL, NULL)]
-    if (anyNA(out[[start_field]])) {
-        nfailed <- sum(is.na(out[[start_field]])) # nolint
-        ntotal <- nrow(out) # nolint
-        cli::cli_warn(
-            "Cannot match copy number for {.val {nfailed}} / {.val {ntotal}} mutations"
-        )
-    }
     # check the match works well
     failed_pos <- out[[mut_pos]] < out[[start_field]] |
         out[[mut_pos]] > out[[end_field]]
