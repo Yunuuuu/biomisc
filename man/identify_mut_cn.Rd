@@ -12,7 +12,7 @@ identify_mut_cn(
   mut_pos = "pos",
   start_field = "start",
   end_field = "end",
-  nomatch = NA
+  nomatch = NULL
 )
 }
 \arguments{
@@ -35,8 +35,8 @@ contains the variants positions in the chromosome.}
 ranges.}
 
 \item{nomatch}{When a row in \code{mut_data} has no match to \code{cnv_data},
-nomatch=NA (default) means NA is returned. NULL (or 0 for backward
-compatibility) means no rows will be returned for that row of \code{mut_data}.}
+nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
+no rows will be returned for that row of \code{mut_data}.}
 }
 \value{
 A integrated data.frame with data column from both mut_data and

@@ -4,18 +4,18 @@
 #'  `cnv_data`). Default is "purity".
 #' @inheritDotParams estimate_ccf -mut_cn_data -sample_field -chr_field
 #' @param nomatch When a row in `mut_data` has no match to `cnv_data`,
-#' nomatch=NA (default) means NA is returned. NULL (or 0 for backward
-#' compatibility) means no rows will be returned for that row of `mut_data`.
-#' It's not unusual to place purity data in cnv_data, in this way, if some
-#' mutation cannot match the cnv data, the purity for this mutation would be NA,
-#' For CCF estimation, NA is not allowed. Just set nomatch = NULL to omit these
+#' nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
+#' no rows will be returned for that row of `mut_data`.  It's not unusual to
+#' place purity data in cnv_data, in this way, if some mutation cannot match the
+#' cnv data, the purity and copy number value for this mutation would be NA, For
+#' CCF estimation, NA is not allowed. Just set nomatch = NULL to omit these
 #' rows.
 #' @export
 run_ccf <- function(
     mut_data, cnv_data, on_sample = NULL, purity_field = NULL,
     on_chr = "chr",
     mut_pos = "pos", start_field = "startpos",
-    end_field = "endpos", ..., nomatch = NA) {
+    end_field = "endpos", ..., nomatch = NULL) {
     assert_class(on_sample, rlang::is_scalar_character,
         "scalar {.cls character}",
         null_ok = TRUE

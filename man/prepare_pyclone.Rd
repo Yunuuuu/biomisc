@@ -20,7 +20,7 @@ prepare_pyclone(
   normal_cn = 2L,
   pyclone_vi = FALSE,
   error_rate = NULL,
-  nomatch = NA
+  nomatch = NULL
 )
 }
 \arguments{
@@ -66,8 +66,8 @@ input of PyClone-vi. Details see \url{https://github.com/Roth-Lab/pyclone-vi}}
 \href{https://github.com/Roth-Lab/pyclone-vi}{PyClone-vi}, sequencing error rate.}
 
 \item{nomatch}{When a row in \code{mut_data} has no match to \code{cnv_data},
-nomatch=NA (default) means NA is returned. NULL (or 0 for backward
-compatibility) means no rows will be returned for that row of \code{mut_data}.}
+nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
+no rows will be returned for that row of \code{mut_data}.}
 }
 \description{
 Prepare data for the input of PyClone or PyClone-vi

@@ -32,7 +32,7 @@ prepare_pyclone <- function(
     ref_counts_field = "ref_counts", var_counts_field = "var_counts",
     purity_field = NULL, normal_cn = 2L,
     pyclone_vi = FALSE, error_rate = NULL,
-    nomatch = NA) {
+    nomatch = NULL) {
     assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
@@ -120,14 +120,14 @@ prepare_pyclone <- function(
 #' `cnv_data` that contains the start positions and end position of the genomic
 #' ranges.
 #' @param nomatch When a row in `mut_data` has no match to `cnv_data`,
-#' nomatch=NA (default) means NA is returned. NULL (or 0 for backward
-#' compatibility) means no rows will be returned for that row of `mut_data`.
+#' nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
+#' no rows will be returned for that row of `mut_data`.
 #' @return A integrated data.frame with data column from both mut_data and
 #' cnv_data.
 #' @export
 identify_mut_cn <- function(
     mut_data, cnv_data, on_sample = NULL, on_chr = "chr", mut_pos = "pos",
-    start_field = "start", end_field = "end", nomatch = NA) {
+    start_field = "start", end_field = "end", nomatch = NULL) {
     mut_cn <- mut_match_cn(
         mut_data = mut_data, cnv_data = cnv_data,
         on_sample = on_sample, on_chr = on_chr,
@@ -144,7 +144,7 @@ identify_mut_cn <- function(
 mut_match_cn <- function(
     mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
     mut_pos = "pos", start_field = "start", end_field = "end",
-    nomatch = NA,
+    nomatch = NULL,
     on_sample_arg = rlang::caller_arg(on_sample),
     on_chr_arg = rlang::caller_arg(on_chr),
     mut_pos_arg = rlang::caller_arg(on_chr),
@@ -241,13 +241,12 @@ mut_match_cn <- function(
     # warning if nomatch found, since we have ensure start_field in cnv_data
     # have no NA value, it's save to regard NA as nomatch
     nomatch_rows <- is.na(out[[start_field]])
-    if (anyNA(out[[start_field]])) {
-        nfailed <- sum(nomatch_rows) # nolint
+    if (any(nomatch_rows)) {
         cli::cli_warn(
-            "Cannot match copy number for {nfailed}/{ntotal} mutations"
+            "Cannot match copy number for {sum(nomatch_rows)}/{ntotal} mutations"
         )
     }
-    if (is.null(nomatch)) out <- out[nomatch_rows]
+    if (is.null(nomatch)) out <- out[!nomatch_rows]
 
     # remove the created columns
     out[, c("...start..___..pos...", "...end..___..pos...") := list(NULL, NULL)]

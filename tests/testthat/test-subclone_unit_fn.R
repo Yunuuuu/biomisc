@@ -207,11 +207,11 @@ test_that("subclone unit function works well", {
     region.seg.phylo <- seg.mat.phylo[SampleID %in% region]
     # just extract the segmented CNV for this sample
     # region.seg.copy <- seg.mat.phylo[SampleID %in% region]
-    pyclone.table <- mut_match_cn(region.mut.table, seg.mat.phylo,
+    pyclone.table <- suppressWarnings(mut_match_cn(region.mut.table, seg.mat.phylo,
         on_sample = "SampleID", on_chr = "chr",
         mut_pos = "start", start_field = "startpos",
         end_field = "endpos"
-    )
+    ))
     data.table::setDT(pyclone.table)
     pyclone.table <- pyclone.table[, list(
         SampleID,
