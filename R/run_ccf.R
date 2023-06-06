@@ -68,7 +68,7 @@ run_ccf <- function(
         end_field = end_field, nomatch = nomatch
     )
     purity_field <- purity_field %||% "purity"
-    assert_df_with_columns(out, purity_field,
+    assert_df_with_columns(out, c(purity_field, kept_cols),
         check_class = FALSE,
         arg = c("mut_data", "cnv_data")
     )
@@ -148,7 +148,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         null_ok = TRUE,
         cross_msg = NULL
     )
-    purity_field <- unname(purity_field %||% "purity")
+    purity_field <- purity_field %||% "purity"
     assert_df_with_columns(mut_cn_data, c(
         sample_field, purity_field,
         "major_raw", "minor_raw", "alt_counts", "ref_counts",
@@ -161,13 +161,11 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         null_ok = TRUE,
         cross_msg = NULL
     )
-    sample_field <- unname(sample_field)
     assert_class(chr_field, rlang::is_scalar_character,
         "scalar {.cls character}",
         null_ok = TRUE,
         cross_msg = NULL
     )
-    chr_field <- unname(chr_field)
     assert_class(normal_cn,
         function(x) {
             is_scalar_numeric(x) || rlang::is_scalar_character(x)
@@ -179,7 +177,6 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         null_ok = TRUE,
         cross_msg = NULL
     )
-    gender_field <- unname(gender_field)
     mut_cn_data <- data.table::as.data.table(mut_cn_data)
     if (!is.null(contigs) || is.null(normal_cn)) {
         chr_field <- chr_field %||% "chr"
