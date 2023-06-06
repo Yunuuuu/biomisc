@@ -210,7 +210,7 @@ test_that("subclone unit function works well", {
     pyclone.table <- suppressWarnings(mut_match_cn(region.mut.table, seg.mat.phylo,
         on_sample = "SampleID", on_chr = "chr",
         mut_pos = "start", start_field = "startpos",
-        end_field = "endpos"
+        end_field = "endpos", nomatch = NA
     ))
     data.table::setDT(pyclone.table)
     pyclone.table <- pyclone.table[, list(
