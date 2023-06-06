@@ -73,8 +73,8 @@ CCF estimation, NA is not allowed. Just set nomatch = NULL to omit these
 rows.}
 
 \item{kept_cols}{A character vector specifying the columns in \code{mut_data} or
-\code{cnv_data} you want to keep in the results. By default only created columns
-will be returned.}
+\code{cnv_data} you want to keep in the results. By default only used column and
+created columns will be returned.}
 }
 \description{
 Matching  mutation Copy number and Estimating CCF (absolute and phylogenetic)

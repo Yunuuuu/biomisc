@@ -11,8 +11,8 @@
 #' CCF estimation, NA is not allowed. Just set nomatch = NULL to omit these
 #' rows.
 #' @param kept_cols A character vector specifying the columns in `mut_data` or
-#' `cnv_data` you want to keep in the results. By default only created columns
-#' will be returned.
+#' `cnv_data` you want to keep in the results. By default only used column and
+#' created columns will be returned.
 #' @export
 run_ccf <- function(
     mut_data, cnv_data, on_sample = NULL, purity_field = NULL,
