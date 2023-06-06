@@ -51,7 +51,8 @@ Cohen-Sharir uses background ploidy ("abs" cnv_mode) derived from
 profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).}
 }
 \value{
-A data.frame containing Chromosome-arm-levels copy number.
+A \link[data.table:data.table]{data.table} containing
+Chromosome-arm-levels copy number.
 }
 \description{
 Caculate Chromosome-arm-levels copy number variation

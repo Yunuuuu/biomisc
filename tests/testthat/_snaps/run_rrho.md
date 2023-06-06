@@ -61,8 +61,9 @@
     Code
       rrho_sig_spot(out)
     Output
-        hyper_metric hyper_pvalue list1 list2
-      1     2.097783  0.007983937    up    up
+         hyper_metric hyper_pvalue  list1  list2
+                <num>        <num> <char> <char>
+      1:     2.097783  0.007983937     up     up
 
 ---
 

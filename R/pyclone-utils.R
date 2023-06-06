@@ -122,20 +122,18 @@ prepare_pyclone <- function(
 #' @param nomatch When a row in `mut_data` has no match to `cnv_data`,
 #' nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
 #' no rows will be returned for that row of `mut_data`.
-#' @return A integrated data.frame with data column from both mut_data and
-#' cnv_data.
+#' @return A integrated [data.table][data.table::data.table] with data column
+#' from both mut_data and cnv_data.
 #' @export
 identify_mut_cn <- function(
     mut_data, cnv_data, on_sample = NULL, on_chr = "chr", mut_pos = "pos",
     start_field = "start", end_field = "end", nomatch = NULL) {
-    mut_cn <- mut_match_cn(
+    mut_match_cn(
         mut_data = mut_data, cnv_data = cnv_data,
         on_sample = on_sample, on_chr = on_chr,
         mut_pos = mut_pos, start_field = start_field,
         end_field = end_field, nomatch = nomatch
     )
-    data.table::setDF(mut_cn)
-    mut_cn
 }
 
 #' @return A data.table
@@ -256,5 +254,5 @@ mut_match_cn <- function(
     if (any(failed_pos, na.rm = TRUE)) {
         cli::cli_abort("Something wrong when parsing CN of mutation")
     }
-    out
+    out[]
 }

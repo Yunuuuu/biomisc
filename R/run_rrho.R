@@ -510,15 +510,13 @@ print.rrho_sig <- function(x, ...) {
 #'
 #' @inheritParams rrho_sig_items
 #' @inherit rrho_sig_items details
-#' @return A data.frame, of which each row indicates the highest intensity
-#'   point.
+#' @return A [data.table][data.table::data.table], of which each row indicates
+#'   the highest intensity point.
 #' @seealso [rrho_sig_items]
 #' @export
 rrho_sig_spot <- function(rrho_obj) {
     assert_rrho(rrho_obj)
-    sig_spot <- rrho_sig_spot_internal(rrho_obj)
-    data.table::setDF(sig_spot)
-    sig_spot
+    rrho_sig_spot_internal(rrho_obj)
 }
 
 rrho_sig_spot_internal <- function(rrho_obj) {

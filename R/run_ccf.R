@@ -78,7 +78,6 @@ run_ccf <- function(
         purity_field = purity_field,
         chr_field = on_chr, ...
     )
-    data.table::setDT(out)
     # out[, c("major_cn", "minor_cn") := list(
     #     major_cn = pmax(nMinor, nMajor), # nolint
     #     minor_cn = pmin(nMinor, nMajor) # nolint
@@ -461,8 +460,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         alt_counts == 0L, # nolint
         c("no.chrs.bearing.mut", "expVAF", "absCCF") := list(0L, 0L, 0L)
     ]
-    data.table::setDF(out)
-    out
+    out[]
 }
 
 #' min.subclonal was set to 0.1 in

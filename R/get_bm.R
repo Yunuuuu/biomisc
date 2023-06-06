@@ -10,7 +10,7 @@
 #' @param ... Other arguments passed to [getBM][biomaRt::getBM].
 #' @param times The maximal times to try to download data from biomaRt database.
 #' @seealso [getBM][biomaRt::getBM]
-#' @return A `data.frame`
+#' @return A [data.table][data.table::data.table]
 #' @export
 get_bm <- function(mart, attributes, split = "chromosome_name", ..., times = 10L) {
     assert_pkg("biomaRt")
@@ -47,9 +47,7 @@ get_bm <- function(mart, attributes, split = "chromosome_name", ..., times = 10L
             do.call("get_bm_safe", args)
         }
     )
-    out <- data.table::rbindlist(out, use.names = FALSE)
-    data.table::setDF(out)
-    out
+    data.table::rbindlist(out, use.names = FALSE)
 }
 
 #' @keywords internal

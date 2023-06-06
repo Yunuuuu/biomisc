@@ -45,7 +45,7 @@
 #'   matrix divided by the median expression level of all genes in the mixture.
 #'   Multiple cell subset fractions by S. - no_sumto1 = remove sum to 1
 #'   constraint
-#' @return a data.frame
+#' @return A [data.table][data.table::data.table]
 #' @references
 #'  - Newman, A., Liu, C., Green, M. et al. Robust enumeration of cell subsets
 #'   from tissue expression profiles. Nat Methods 12, 453–457 (2015).
@@ -156,9 +156,7 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
             paste("Absolute score (", abs_method, ")", sep = "")
         )
     }
-    results <- data.table::as.data.table(results, keep.rownames = "Samples")
-    data.table::setDF(results)
-    results
+    data.table::as.data.table(results, keep.rownames = "Samples")
 }
 
 # Core algorithm

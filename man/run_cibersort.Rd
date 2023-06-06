@@ -53,7 +53,7 @@ Multiple cell subset fractions by S. - no_sumto1 = remove sum to 1
 constraint}
 }
 \value{
-a data.frame
+A \link[data.table:data.table]{data.table}
 }
 \description{
 Robust enumeration of cell subsets from tissue expression

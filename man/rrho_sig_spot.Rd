@@ -10,8 +10,8 @@ rrho_sig_spot(rrho_obj)
 \item{rrho_obj}{An object returned by \code{\link[=run_rrho]{run_rrho()}}}
 }
 \value{
-A data.frame, of which each row indicates the highest intensity
-point.
+A \link[data.table:data.table]{data.table}, of which each row indicates
+the highest intensity point.
 }
 \description{
 Extract the the significant spot and its quadrant

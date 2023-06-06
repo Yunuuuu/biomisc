@@ -39,8 +39,8 @@ nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
 no rows will be returned for that row of \code{mut_data}.}
 }
 \value{
-A integrated data.frame with data column from both mut_data and
-cnv_data.
+A integrated \link[data.table:data.table]{data.table} with data column
+from both mut_data and cnv_data.
 }
 \description{
 Identify the copy number in mutation position

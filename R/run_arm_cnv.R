@@ -23,7 +23,8 @@
 #'   Cohen-Sharir uses background ploidy ("abs" cnv_mode) derived from
 #'   [run_absolute][ABSOLUTE::RunAbsolute] algorithm.
 #' @author Yun \email{yunyunpp96@@outlook.com}
-#' @return A data.frame containing Chromosome-arm-levels copy number.
+#' @return A [data.table][data.table::data.table] containing
+#' Chromosome-arm-levels copy number.
 #' @references  \itemize{
 #'  \item Cohen-Sharir, Y., McFarland, J.M., Abdusamad, M. et al. Aneuploidy
 #'    renders cancer cells vulnerable to mitotic checkpoint inhibition. Nature
@@ -136,7 +137,7 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_col, arm_cytoband, cnv_mode = "rel", ...
         arm = S4Vectors::mcols(arm_ranges)[["arm"]],
         arm_width = GenomicRanges::width(arm_ranges)
     )
-    out <- switch(cnv_mode,
+    switch(cnv_mode,
         rel = out[, list(arm_cnv = as.integer(
             sum(CNV * width / arm_width, na.rm = TRUE) > threshold # nolint
         )), by = c("seqnames", "arm")],
@@ -153,7 +154,6 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_col, arm_cytoband, cnv_mode = "rel", ...
             by = c("seqnames", "arm")
         ]
     )
-    data.table::setDF(out)
 }
 
 utils::globalVariables(c(

@@ -212,7 +212,6 @@ test_that("subclone unit function works well", {
         mut_pos = "start", start_field = "startpos",
         end_field = "endpos", nomatch = NA
     ))
-    data.table::setDT(pyclone.table)
     pyclone.table <- pyclone.table[, list(
         SampleID,
         mutation_id,

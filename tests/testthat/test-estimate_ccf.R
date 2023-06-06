@@ -53,7 +53,6 @@ test_that("estimate_ccf function works well", {
         mut_pos = "start", start_field = "startpos",
         end_field = "endpos"
     ))
-    data.table::setDT(pyclone.table)
     pyclone.table <- pyclone.table[, list(
         SampleID,
         gender = "male", mutation_id, chr,
@@ -445,7 +444,6 @@ test_that("estimate_ccf function works well", {
         return(pyClone.tsv)
     }
 
-    data.table::setDT(region.phyloCCF)
     region.phyloCCF2 <- suppressWarnings(subclonalDissection(region,
         complete.mutation.table = as.data.frame(pyclone.table),
         purity = sample.purity

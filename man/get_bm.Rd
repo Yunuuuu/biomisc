@@ -21,7 +21,7 @@ attributes. You can list all filter attributes for a mart by
 \item{times}{The maximal times to try to download data from biomaRt database.}
 }
 \value{
-A \code{data.frame}
+A \link[data.table:data.table]{data.table}
 }
 \description{
 A modified \link[biomaRt:getBM]{getBM}, which will split our task into pieces
