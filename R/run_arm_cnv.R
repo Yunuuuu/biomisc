@@ -45,7 +45,10 @@ run_arm_cnv <- function(
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
     assert_class(seg_cnv, "GenomicRanges")
-    assert_class(cnv_col, rlang::is_scalar_character, "scalar character")
+    assert_class(cnv_col, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = NULL
+    )
     cnv_mode <- match.arg(cnv_mode)
 
     if (!any(cnv_col == colnames(S4Vectors::mcols(seg_cnv)))) {

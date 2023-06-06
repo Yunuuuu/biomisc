@@ -122,7 +122,7 @@
 run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
     assert_class(stepsize, is_scalar_numeric,
         "scalar {.cls numeric}",
-        null_ok = TRUE
+        null_ok = TRUE, cross_msg = NULL
     )
     rrho_data <- set_rrho_list(list1, list2)
     if (is.null(stepsize)) {
@@ -588,7 +588,8 @@ rrho_heatmap <- function(
     assert_pkg("ComplexHeatmap")
     assert_pkg("circlize")
     assert_class(use_raster, rlang::is_scalar_logical,
-        msg = "scalar {.cls logical} value", null_ok = TRUE
+        msg = "scalar {.cls logical} value",
+        null_ok = TRUE, cross_msg = NULL
     )
     heat_matrix <- t(rrho_obj$hyper_metric)
     heat_matrix <- heat_matrix[

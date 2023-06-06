@@ -66,7 +66,7 @@ prepare_pyclone <- function(
     if (pyclone_vi) {
         assert_class(purity_field, rlang::is_scalar_character,
             "scalar {.cls character}",
-            null_ok = TRUE
+            null_ok = TRUE, cross_msg = NULL
         )
         if (is.null(purity_field)) {
             purity_field <- "..purity.."
@@ -152,28 +152,28 @@ mut_match_cn <- function(
     end_field_arg = rlang::caller_arg(end_field),
     call = parent.frame()) {
     assert_class(on_sample, rlang::is_scalar_character,
-        "scalar {.cls character}",
+        "scalar {.cls character}", cross_msg = NULL,
         null_ok = TRUE,
         arg = on_sample_arg,
         call = call
     )
     assert_class(on_chr, rlang::is_scalar_character,
-        "scalar {.cls character}",
+        "scalar {.cls character}", cross_msg = NULL,
         arg = on_chr_arg,
         call = call
     )
     assert_class(mut_pos, rlang::is_scalar_character,
-        "scalar {.cls character}",
+        "scalar {.cls character}", cross_msg = NULL,
         arg = mut_pos_arg,
         call = call
     )
     assert_class(start_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+        "scalar {.cls character}", cross_msg = NULL,
         arg = start_field_arg,
         call = call
     )
     assert_class(end_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+        "scalar {.cls character}", cross_msg = NULL,
         arg = end_field_arg,
         call = call
     )

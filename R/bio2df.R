@@ -24,7 +24,7 @@ bio2df.SummarizedExperiment <- function(x, ..., assay = NULL, row_as_observation
     assert_length(assay, 1L, null_ok = TRUE)
     assert_class(row_as_observations, rlang::is_scalar_logical,
         "scalar {.cls logical}",
-        null_ok = FALSE
+        null_ok = FALSE, cross_msg = NULL
     )
     if (is.null(assay)) {
         assay_data <- SummarizedExperiment::assay(x, 1L)

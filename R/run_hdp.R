@@ -51,9 +51,11 @@ run_hdp <- function(
     if (!is.null(priors) && ncol(matrix) != nrow(priors)) {
         cli::cli_abort("{.code ncol(matrix)} and {.code nrow(priors)} must be equal")
     }
-    assert_class(initcc, is_scalar_numeric, "scalar numeric")
-    assert_class(n_posterior, is_scalar_numeric, "scalar numeric")
-    assert_class(seed, is_scalar_numeric, "scalar numeric")
+    assert_class(initcc, is_scalar_numeric, "scalar numeric", cross_msg = NULL)
+    assert_class(n_posterior, is_scalar_numeric, "scalar numeric",
+        cross_msg = NULL
+    )
+    assert_class(seed, is_scalar_numeric, "scalar numeric", cross_msg = NULL)
     set.seed(seed,
         kind = "Mersenne-Twister",
         normal.kind = "Inversion",
@@ -78,7 +80,9 @@ run_hdp <- function(
     if (!is.null(priors)) {
         ### with priors ###
         nps <- ncol(priors)
-        assert_class(prior_pseudoc, is.numeric, "numeric", null_ok = TRUE)
+        assert_class(prior_pseudoc, is.numeric, "numeric",
+            null_ok = TRUE, cross_msg = NULL
+        )
         assert_length(prior_pseudoc, nps, scalar_ok = TRUE, null_ok = TRUE)
         # (don’t activate the frozen pseudo-count nodes for the prior
         # signatures)

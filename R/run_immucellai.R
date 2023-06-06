@@ -23,7 +23,7 @@ run_immucellai <- function(sample_exp, data_type = c("microarray", "rnaseq")) {
     assert_class(
         sample_exp,
         function(x) is.matrix(x) && is.numeric(x),
-        msg = "numeric {.cls matrix} object"
+        msg = "numeric {.cls matrix} object",cross_msg = NULL
     )
     data_type <- match.arg(data_type)
 
