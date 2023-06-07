@@ -14,7 +14,8 @@ run_wgd(
   start_field = "startpos",
   end_field = "endpos",
   ref_cytoband = "hg38",
-  arm_field = NULL
+  arm_field = NULL,
+  perm_times = 1000L
 )
 }
 \arguments{
@@ -44,6 +45,8 @@ Cytoband reference.}
 chromosome arm. If \code{NULL}, the internal will search the first column starts
 with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
 arm) are supported.}
+
+\item{perm_times}{An integer specifying the times of simulation genome.}
 }
 \description{
 Infer Whole-genome doubling

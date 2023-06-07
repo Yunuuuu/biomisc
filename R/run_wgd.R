@@ -9,6 +9,7 @@
 #' @param major_cn_field A string specifying the major_cn (allele-specific)
 #'  column in seg_cnv.
 #' @inheritParams run_arm_cnv
+#' @param perm_times An integer specifying the times of simulation genome.
 #' @references Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling
 #' shapes the evolution and prognosis of advanced cancers. Nat Genet 50,
 #' 1189–1195 (2018). https://doi.org/10.1038/s41588-018-0165-1
@@ -18,11 +19,12 @@ run_wgd <- function(
     thresholds = 2:3, contigs = 1:22,
     major_cn_field = "major_cn",
     chr_field = "chr", start_field = "startpos", end_field = "endpos",
-    ref_cytoband = "hg38", arm_field = NULL) {
+    ref_cytoband = "hg38", arm_field = NULL, perm_times = 1000L) {
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_class(sample_field, rlang::is_scalar_character,
-        "scalar {.cls character}", null_ok = TRUE,
+        "scalar {.cls character}",
+        null_ok = TRUE,
         cross_msg = NULL
     )
     assert_class(major_cn_field, rlang::is_scalar_character,
@@ -65,7 +67,10 @@ run_wgd <- function(
     }
     cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
     seg_cnv <- map_seqnames(seg_cnv, cytoband_seqstyle)
-    contigs <- map_seqnames(as.character(contigs), cytoband_seqstyle)
+    contigs <- map_seqnames(as.character(contigs),
+        cytoband_seqstyle,
+        arg = "contigs"
+    )
     arm_cytoband <- get_arm_ranges(ref_cytoband,
         arm_field = arm_field, arms = c("p", "q")
     )
@@ -98,7 +103,7 @@ run_wgd <- function(
     out[,
         perm_wgd(
             chr = chr, .SD, thresholds = thresholds,
-            genome_width = genome_width
+            genome_width = genome_width, times = perm_times
         ),
         .SDcols = setdiff(names(out), c(sample_field, "chr")),
         by = sample_field
@@ -114,7 +119,7 @@ perm_wgd <- function(chr, events, thresholds, genome_width, times = 1000L) {
     })
     perm_stats_list <- data.table::transpose(perm_stats_list)
     pvalues <- mapply(function(stat, perm_stats) {
-        1L - stats::ecdf(perm_stats)(stat)
+        mean(perm_stats >= stat)
     }, stat = actual_stats, perm_stats = perm_stats_list, USE.NAMES = FALSE)
-    list(thretholds = thresholds, wgd_events = actual_stats, pvalues = pvalues)
+    list(thretholds = thresholds, wgd_prop = actual_stats, pvalues = pvalues)
 }
