@@ -173,6 +173,17 @@ assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), 
     }
 }
 
+silent_expr <- function(expr, msg, ...) {
+    withCallingHandlers(
+        rlang::eval_tidy(rlang::enquo(expr)),
+        warning = function(cnd) {
+            if (grepl(pattern = msg, x = conditionMessage(cnd), ...)) {
+                rlang::cnd_muffle(cnd)
+            }
+        }
+    )
+}
+
 is_scalar_numeric <- function(x) {
     length(x) == 1L && is.numeric(x)
 }
