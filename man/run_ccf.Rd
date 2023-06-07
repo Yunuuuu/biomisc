@@ -52,14 +52,15 @@ otherwise, 2L will be used.}
     \item{\code{gender_field}}{A string specifying the chromosome column. Only used when
 normal_cn is NULL. Default is "gender". Only "female" and "male" are
 supported in this column.}
-    \item{\code{subclone_metric}}{A string, "ccf" or "subclone_prop" specifying how to
-choose subclone.}
+    \item{\code{subclone_prop}}{Minimal subclone proportion to define subclone.}
+    \item{\code{min_absCCF_higher}}{Minimal right-side 95\% confidence interval of
+absolute CCF value to define subclone.}
     \item{\code{min_subclonal}}{Minimal copy number to define subclone.}
     \item{\code{subclone_correction}}{A scalar logical indicates whether subclonal copy
 number correction be used.}
-    \item{\code{pvalue_correction}}{The method of multiple testing correction be applied
-for the copy number correcting mutations. If NULL, no multiple testing
-correction will be used.}
+    \item{\code{subclone_pvalue_correction}}{The method of multiple testing correction
+be applied for the copy number correcting mutations. If NULL, no multiple
+testing correction will be used.}
     \item{\code{min_vaf_to_explain}}{A numeric, the minimal vaf value to define
 subclone.}
   }}
