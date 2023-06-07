@@ -110,7 +110,6 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
 }
 
 map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
-    x <- as.character(x)
     if (all(GenomeInfoDb::seqlevelsStyle(x) != style)) {
         cli::cli_inform("Mapping seqnames of {.arg arg} to {style} style")
         GenomeInfoDb::seqlevelsStyle(x) <- style
