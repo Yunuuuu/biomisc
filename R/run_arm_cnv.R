@@ -125,7 +125,7 @@ run_arm_cnv <- function(
             S4Vectors::mcols(arm_cytoband)[[arm_field]] == "acen"
         ]
         # Remove any segment that sligthly overlaps the centromere
-        centromere_hits <- GenomicRanges::findOverlaps(seg_cnv, acen_region)
+        centromere_hits <- silent_find_overlaps(seg_cnv, acen_region)
         if (length(centromere_hits) > 0) {
             seg_cnv <- seg_cnv[-S4Vectors::queryHits(centromere_hits)]
         }
@@ -165,10 +165,13 @@ run_arm_cnv <- function(
 
 seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, other_fields = character()) {
     # find ouverlap index --------------------------------
-    overlap_hits <- GenomicRanges::findOverlaps(
+    overlap_hits <- silent_find_overlaps(
         seg_cnv, arm_cytoband,
         type = "any"
     )
+    if (length(overlap_hits) == 0L) {
+        cli::cli_abort("No match between {.arg seg_cnv} and {.arg arm_cytoband}")
+    }
     seg_hits <- S4Vectors::queryHits(overlap_hits)
     cytoband_hits <- S4Vectors::subjectHits(overlap_hits)
 
@@ -198,3 +201,16 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, other_fields = characte
 utils::globalVariables(c(
     "CNV", "width", "arm_width"
 ))
+
+silent_find_overlaps <- function(query, subject, ...) {
+    # subject <- subject[GenomeInfoDb::seqnames(subject) %in%
+    #     GenomeInfoDb::seqnames(query)]
+    withCallingHandlers(
+        GenomicRanges::findOverlaps(query = query, subject = subject, ...),
+        warning = function(cnd) {
+            if (grepl("Each of the 2 combined objects has sequence levels not in the other:", conditionMessage(cnd), fixed = TRUE)) { # nolint
+                rlang::cnd_muffle(cnd)
+            }
+        }
+    )
+}
