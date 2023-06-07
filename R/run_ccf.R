@@ -184,36 +184,26 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     }
     if (!is.null(contigs)) {
         # filter contigs
-        matched_contigs <- mut_cn_data[[chr_field]] %chin% as.character(contigs)
+        matched_contigs <- as.character(mut_cn_data[[chr_field]]) %chin%
+            as.character(contigs)
         mut_cn_data <- mut_cn_data[matched_contigs]
     }
     if (is.null(normal_cn)) {
         # assert every samples provided only one gender value
         gender_field <- gender_field %||% "gender"
         assert_df_with_columns(mut_cn_data, gender_field, check_class = FALSE)
-        if (!is.null(sample_field)) {
-            gender_data <- mut_cn_data[, unique(.SD),
-                .SDcols = c(sample_field, gender_field)
-            ][, .SD[.N > 1L], by = sample_field]
-            if (nrow(gender_data)) {
-                cli::cli_abort(c(
-                    "All samples must have the same gender",
-                    x = "samples with multiple gender value: {.val {unique(gender_data[[sample_field]])}}",
-                    i = "try to set {.arg normal_cn}"
-                ))
-            }
-        } else {
-            gender_data <- unique(mut_cn_data[[gender_field]])
-            if (length(gender_data) > 1L) {
-                cli::cli_abort(c(
-                    "All samples must have the same gender",
-                    i = "try to set {.arg sample_field} or {.arg normal_cn}"
-                ))
-            }
-        }
         if (!mut_cn_data[[gender_field]] %in% c("male", "female")) {
             cli::cli_abort("Only {.val male} and {.val female} are supported in {.field {gender_field}} column")
         }
+        if (!is.null(sample_field)) {
+            info_msg <- "try to set {.arg normal_cn}"
+        } else {
+            info_msg <- "try to set {.arg sample_field} or {.arg normal_cn}"
+        }
+        assert_nest(
+            mut_cn_data, gender_field, sample_field,
+            cross_format = "group", info_msg = info_msg
+        )
         mut_cn_data$normal_cn <- define_normal_cn(
             mut_cn_data[[gender_field]], mut_cn_data[[chr_field]]
         )
@@ -226,26 +216,13 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         }
     }
     # assert every samples provided only one purity value
-    if (!is.null(sample_field)) {
-        purity_data <- mut_cn_data[, unique(.SD),
-            .SDcols = c(sample_field, purity_field)
-        ][, .SD[.N > 1L], by = sample_field]
-        if (nrow(purity_data)) {
-            cli::cli_abort(c(
-                "All samples must have the same purity value",
-                x = "samples with multiple purity: {.val {unique(purity_data[[sample_field]])}}"
-            ))
-        }
-    } else {
-        purity_data <- unique(mut_cn_data[[purity_field]])
-        if (length(purity_data) > 1L) {
-            cli::cli_abort(c(
-                "All samples must have the same purity value",
-                x = "duplicated purity: {.val {purity_data}}",
-                i = "try to set {.arg sample_field}"
-            ))
-        }
+    if (!all(data.table::between(mut_cn_data[[purity_field]], 0L, 1L))) {
+        cli::cli_abort("purity must in (0, 1)")
     }
+    assert_nest(
+        mut_cn_data, purity_field, sample_field,
+        info_msg = if (is.null(sample_field)) "try to set {.arg sample_field}"
+    )
     subclone_metric <- match.arg(subclone_metric, c("ccf", "subclone_prop"))
 
     # In order to estimate whether mutations were clonal or subclonal, and the

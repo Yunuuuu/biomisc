@@ -180,19 +180,9 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
             )
         }
         if (ncol(dp_tree) >= 2L) {
+            all_items <- names(dp_tree)
             for (kk in seq_len(ncol(dp_tree) - 1L)) {
-                child_col <- names(dp_tree)[[kk]]
-                children_parent_pairs <- dp_tree[,
-                    list(n = length(unique(.SD[[1L]]))),
-                    by = c(child_col),
-                    .SDcols = kk + 1L
-                ][n > 1L] # nolint
-                if (nrow(children_parent_pairs) > 0L) {
-                    cli::cli_abort(
-                        "Finding more than one parents defined for {.val {children_parent_pairs[[1L]]}} in {child_col} of {.arg arg1}", # nolint
-                        call = call
-                    )
-                }
+                assert_nest(dp_tree, all_items[[kk + 1L]], all_items[[kk]])
             }
         }
     } else {
