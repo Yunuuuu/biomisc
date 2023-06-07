@@ -160,14 +160,8 @@ run_motif_fisher <- function(
 
     # match seqlevelstyle between mut_data and ref_genome
     ref_genome_style <- GenomeInfoDb::seqlevelsStyle(ref_genome)
-    if (all(GenomeInfoDb::seqlevelsStyle(mut_gr) != ref_genome_style)) {
-        cli::cli_inform(
-            "Mapping seqnames of {.arg mut_data} to {.arg ref_genome} ({.val {ref_genome_style}})"
-        )
-        GenomeInfoDb::seqlevelsStyle(mut_gr) <- ref_genome_style
-    }
+    mut_gr <- map_seqnames(mut_gr, ref_genome_style, "mut_data")
     GenomeInfoDb::seqlevels(mut_gr) <- GenomeInfoDb::seqlevels(ref_genome)
-
     suppressWarnings(
         GenomeInfoDb::seqinfo(mut_gr) <- GenomeInfoDb::seqinfo(ref_genome)
     )

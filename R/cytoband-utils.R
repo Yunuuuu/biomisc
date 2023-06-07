@@ -15,10 +15,6 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     assert_pkg("GenomeInfoDb")
     assert_class(ref_ranges, "GenomicRanges")
 
-    if (!identical(GenomeInfoDb::seqlevelsStyle(ref_ranges), "UCSC")) {
-        cli::cli_inform("try to map seqnames of {.arg ref_ranges} to UCSC style")
-        GenomeInfoDb::seqlevelsStyle(ref_ranges) <- "UCSC"
-    }
     if (is.null(arm_field)) {
         arm_field <- grep("^arm", names(S4Vectors::mcols(ref_ranges)),
             ignore.case = TRUE, perl = TRUE,
@@ -111,4 +107,13 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
         )
     }
     out
+}
+
+map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
+    x <- as.character(x)
+    if (all(GenomeInfoDb::seqlevelsStyle(x) != style)) {
+        cli::cli_inform("Mapping seqnames of {.arg arg} to {style} style")
+        GenomeInfoDb::seqlevelsStyle(x) <- style
+    }
+    x
 }

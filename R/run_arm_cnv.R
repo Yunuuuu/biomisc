@@ -110,12 +110,7 @@ run_arm_cnv <- function(
         )
     }
     cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
-    if (all(GenomeInfoDb::seqlevelsStyle(seg_cnv) != cytoband_seqstyle)) {
-        cli::cli_inform(
-            "Mapping seqnames of {.arg seg_cnv} to {cytoband_seqstyle} style"
-        )
-        GenomeInfoDb::seqlevelsStyle(seg_cnv) <- cytoband_seqstyle
-    }
+    seg_cnv <- map_seqnames(seg_cnv, cytoband_seqstyle)
 
     arm_cytoband <- get_arm_ranges(ref_cytoband,
         arm_field = arm_field, arms = unique(c(arms, "acen"))
