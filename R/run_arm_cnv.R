@@ -1,11 +1,15 @@
 #' Caculate Chromosome-arm-levels copy number variation
 #'
-#' @param seg_cnv A [GenomicRanges][GenomicRanges::GenomicRanges] obeject with
-#'   CNV values in "cnv_field" column of metadata (absolute segment copy number
-#'   determined by ABSOLUTE algorithm, which is the sum of allelic copy numbers,
-#'   or relative segment copy number defined with -1 meaning del, 0 meaning
-#'   neutral and 1 meaning amp) and samples IDs in "sample_id_col" column.
+#' @param seg_cnv A [data.frame][data.frame] obeject with CNV values in
+#'   "cnv_field" column (absolute segment copy number determined by ABSOLUTE
+#'   algorithm, which is the sum of allelic copy numbers, or relative segment
+#'   copy number defined with -1 meaning del, 0 meaning neutral and 1 meaning
+#'   amp).
+#' @param sample_field A string indicates the sample Id column in seg_cnv.
 #' @param cnv_field A scalar character gives the column containing CNV values.
+#' @param chr_field,start_field,end_field A string specifying the column of the
+#'  chromosome name, start positions and end positions of the genomic ranges in
+#'  seg_cnv.
 #' @param ref_cytoband A [GenomicRanges][GenomicRanges::GenomicRanges] obeject
 #'   containing the Cytoband reference, It can be a scalar character `"hg19"` or
 #'   `"hg38"`, in this way, see [get_cytoband], or you can provided a
@@ -35,9 +39,9 @@
 #' }
 #' @export
 run_arm_cnv <- function(
-    seg_cnv, cnv_field,
-    ref_cytoband = "hg38",
-    arm_field = NULL, arms = c("p", "q"),
+    seg_cnv, sample_field = NULL, cnv_field,
+    chr_field = "chr", start_field = "startpos", end_field = "endpos",
+    ref_cytoband = "hg38", arm_field = NULL, arms = c("p", "q"),
     cnv_mode = c("rel", "abs"),
     ..., filter_centromere = TRUE,
     ploidy = NULL,
@@ -46,16 +50,38 @@ run_arm_cnv <- function(
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
-    assert_class(seg_cnv, "GenomicRanges")
+    assert_class(sample_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = NULL, null_ok = TRUE
+    )
     assert_class(cnv_field, rlang::is_scalar_character,
         "scalar {.cls character}",
         cross_msg = NULL
     )
+    assert_class(chr_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = NULL
+    )
+    assert_class(start_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = NULL
+    )
+    assert_class(end_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = NULL
+    )
     cnv_mode <- match.arg(cnv_mode)
-
-    if (!any(cnv_field == colnames(S4Vectors::mcols(seg_cnv)))) {
-        cli::cli_abort("Cannot find {.val {cnv_field}} in the metadata column of {.arg seg_cnv}")
-    }
+    assert_df_with_columns(seg_cnv, c(
+        sample_field, cnv_field, chr_field, start_field, end_field
+    ))
+    seg_cnv <- GenomicRanges::makeGRangesFromDataFrame(
+        df = seg_cnv,
+        keep.extra.columns = TRUE,
+        seqnames.field = chr_field,
+        start.field = start_field,
+        end.field = end_field,
+        ignore.strand = TRUE
+    )
     cnv_values <- S4Vectors::mcols(seg_cnv)[[cnv_field]]
     if (!is.numeric(cnv_values)) {
         cli::cli_abort("CNV values must be numeric")
@@ -74,12 +100,6 @@ run_arm_cnv <- function(
             default = 0L
         )
     }
-
-    if (all(GenomeInfoDb::seqlevelsStyle(seg_cnv) != "UCSC")) {
-        cli::cli_inform("Mapping seqnames of {.arg seg_cnv} to UCSC style")
-        GenomeInfoDb::seqlevelsStyle(seg_cnv) <- "UCSC"
-    }
-
     if (rlang::is_scalar_character(ref_cytoband) &&
         any(ref_cytoband == c("hg19", "hg38"))) {
         ref_cytoband <- get_cytoband(ref_cytoband, add_arm = TRUE)
@@ -89,6 +109,14 @@ run_arm_cnv <- function(
             '{.arg ref_cytoband} must be a scalar character ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
         )
     }
+    cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(seg_cnv)
+    if (all(GenomeInfoDb::seqlevelsStyle(seg_cnv) != cytoband_seqstyle)) {
+        cli::cli_inform(
+            "Mapping seqnames of {.arg seg_cnv} to {cytoband_seqstyle} style"
+        )
+        GenomeInfoDb::seqlevelsStyle(seg_cnv) <- cytoband_seqstyle
+    }
+
     arm_cytoband <- get_arm_ranges(ref_cytoband,
         arm_field = arm_field, arms = unique(c(arms, "acen"))
     )
@@ -102,14 +130,16 @@ run_arm_cnv <- function(
             seg_cnv <- seg_cnv[-S4Vectors::queryHits(centromere_hits)]
         }
     }
-    out <- seg_to_arm_cnv(
+    arm_cytoband <- arm_cytoband[
+        S4Vectors::mcols(arm_cytoband)[[arm_field]] %in% arms
+    ]
+    out <- seg_to_arm(
         seg_cnv = seg_cnv,
-        cnv_field = cnv_field,
-        arm_cytoband = arm_cytoband[
-            S4Vectors::mcols(arm_cytoband)[[arm_field]] %in% arms
-        ],
-        arm_field = arm_field
+        arm_cytoband = arm_cytoband,
+        arm_field = arm_field,
+        other_fields = c(sample_field, cnv_field)
     )
+    data.table::setnames(out, cnv_field, "CNV")
     # though we need the abolsute copy number only in rel cnv_mode
     # since the copy numbers of abs cnv_mode are always larger than zero
     # it won't hurt to do it for both cnv_mode.
@@ -117,7 +147,7 @@ run_arm_cnv <- function(
     switch(cnv_mode,
         rel = out[, list(arm_cnv = as.integer(
             sum(CNV * width / arm_width, na.rm = TRUE) > threshold # nolint
-        )), by = c("seqnames", "arm")],
+        )), by = c(sample_field, "chr", "arm")],
         # https://github.com/broadinstitute/Aneuploidy_dependencies/blob/master/make_CCLE_arm_calls.R
         abs = out[,
             {
@@ -128,12 +158,12 @@ run_arm_cnv <- function(
                 ploidy <- round(ploidy, digits = 0L)
                 list(arm_cnv = as.integer(sign(median_weighted - ploidy)))
             },
-            by = c("seqnames", "arm")
+            by = c(sample_field, "chr", "arm")
         ]
     )
 }
 
-seg_to_arm_cnv <- function(seg_cnv, cnv_field, arm_cytoband, ..., arm_field) {
+seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, other_fields = character()) {
     # find ouverlap index --------------------------------
     overlap_hits <- GenomicRanges::findOverlaps(
         seg_cnv, arm_cytoband,
@@ -152,13 +182,17 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_field, arm_cytoband, ..., arm_field) {
 
     # define arm-level cnv -------------------------------
     arm_ranges <- arm_cytoband[cytoband_hits]
-    data.table::data.table(
-        seqnames = as.factor(GenomicRanges::seqnames(intersect_region)),
+    out <- data.table::data.table(
+        chr = as.factor(GenomicRanges::seqnames(intersect_region)),
         width = GenomicRanges::width(intersect_region),
-        CNV = S4Vectors::mcols(intersect_region)[[cnv_field]],
         arm = S4Vectors::mcols(arm_ranges)[[arm_field]],
         arm_width = GenomicRanges::width(arm_ranges)
     )
+    if (length(other_fields)) {
+        other_data <- data.table::as.data.table(seg_cnv[seg_hits])
+        other_data <- other_data[, .SD, .SDcols = other_fields]
+    }
+    cbind(out, other_data)
 }
 
 utils::globalVariables(c(

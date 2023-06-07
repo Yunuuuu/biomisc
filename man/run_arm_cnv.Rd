@@ -6,7 +6,11 @@
 \usage{
 run_arm_cnv(
   seg_cnv,
+  sample_field = NULL,
   cnv_field,
+  chr_field = "chr",
+  start_field = "startpos",
+  end_field = "endpos",
   ref_cytoband = "hg38",
   arm_field = NULL,
   arms = c("p", "q"),
@@ -18,13 +22,19 @@ run_arm_cnv(
 )
 }
 \arguments{
-\item{seg_cnv}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject with
-CNV values in "cnv_field" column of metadata (absolute segment copy number
-determined by ABSOLUTE algorithm, which is the sum of allelic copy numbers,
-or relative segment copy number defined with -1 meaning del, 0 meaning
-neutral and 1 meaning amp) and samples IDs in "sample_id_col" column.}
+\item{seg_cnv}{A \link{data.frame} obeject with CNV values in
+"cnv_field" column (absolute segment copy number determined by ABSOLUTE
+algorithm, which is the sum of allelic copy numbers, or relative segment
+copy number defined with -1 meaning del, 0 meaning neutral and 1 meaning
+amp).}
+
+\item{sample_field}{A string indicates the sample Id column in seg_cnv.}
 
 \item{cnv_field}{A scalar character gives the column containing CNV values.}
+
+\item{chr_field, start_field, end_field}{A string specifying the column of the
+chromosome name, start positions and end positions of the genomic ranges in
+seg_cnv.}
 
 \item{ref_cytoband}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject
 containing the Cytoband reference, It can be a scalar character \code{"hg19"} or
