@@ -63,14 +63,14 @@ run_wgd <- function(
             '{.arg ref_cytoband} must be a scalar character ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
         )
     }
-    cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(seg_cnv)
+    cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
     seg_cnv <- map_seqnames(seg_cnv, cytoband_seqstyle)
     contigs <- map_seqnames(as.character(contigs), cytoband_seqstyle)
     arm_cytoband <- get_arm_ranges(ref_cytoband,
         arm_field = arm_field, arms = c("p", "q")
     )
     missing_contigs <- setdiff(contigs, GenomeInfoDb::seqnames(arm_cytoband)) # nolint
-    if (!all(contigs %chin% as.character(GenomeInfoDb::seqnames(arm_cytoband)))) {
+    if (length(missing_contigs) > 0L) {
         cli::cli_abort(c(
             "Cannot find all contigs in {.arg ref_cytoband}",
             x = "missing contigs: {.val {missing_contigs}}"
