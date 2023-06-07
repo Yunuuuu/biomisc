@@ -4,7 +4,7 @@
       suppressWarnings(run_motif_fisher(maf[, c("Tumor_Sample_Barcode", "Chromosome",
         "Start_position", "Reference_Allele", "Tumor_Seq_Allele2")], ref_genome = ref_genome))
     Message
-      Mapping seqnames of `mut_data` to `ref_genome` ("UCSC")
+      Mapping seqnames of `mut_data` to UCSC style
       Defining signature motif frequency and background context
       i Using "C>T" and "C>G" to define background_mut_freq
       i Using "TCA", "TCT", "TGA", and "AGA" to define signature_mut_freq
