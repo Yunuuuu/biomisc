@@ -109,7 +109,7 @@ run_arm_cnv <- function(
             '{.arg ref_cytoband} must be a scalar character ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
         )
     }
-    cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(seg_cnv)
+    cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
     if (all(GenomeInfoDb::seqlevelsStyle(seg_cnv) != cytoband_seqstyle)) {
         cli::cli_inform(
             "Mapping seqnames of {.arg seg_cnv} to {cytoband_seqstyle} style"
