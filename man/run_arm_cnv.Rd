@@ -36,10 +36,10 @@ amp).}
 chromosome name, start positions and end positions of the genomic ranges in
 seg_cnv.}
 
-\item{ref_cytoband}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject
-containing the Cytoband reference, It can be a scalar character \code{"hg19"} or
-\code{"hg38"}, in this way, see \link{get_cytoband}, or you can provided a
-self-defined \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject.}
+\item{ref_cytoband}{A scalar string \code{"hg19"} or \code{"hg38"}, in this way, see
+\link{get_cytoband}, or you can provided a self-defined
+\link[GenomicRanges:GRanges-class]{GenomicRanges} obeject containing the
+Cytoband reference.}
 
 \item{arm_field}{A scalar string indicates the column containing the
 chromosome arm. If \code{NULL}, the internal will search the first column starts

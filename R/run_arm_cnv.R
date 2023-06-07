@@ -10,10 +10,10 @@
 #' @param chr_field,start_field,end_field A string specifying the column of the
 #'  chromosome name, start positions and end positions of the genomic ranges in
 #'  seg_cnv.
-#' @param ref_cytoband A [GenomicRanges][GenomicRanges::GenomicRanges] obeject
-#'   containing the Cytoband reference, It can be a scalar character `"hg19"` or
-#'   `"hg38"`, in this way, see [get_cytoband], or you can provided a
-#'   self-defined [GenomicRanges][GenomicRanges::GenomicRanges] obeject.
+#' @param ref_cytoband A scalar string `"hg19"` or `"hg38"`, in this way, see
+#'   [get_cytoband], or you can provided a self-defined
+#'   [GenomicRanges][GenomicRanges::GenomicRanges] obeject containing the
+#'   Cytoband reference.
 #' @inheritParams get_arm_ranges
 #' @param cnv_mode One of "rel" and "abs" correspongding to what Shukla, A and
 #'   Cohen-Sharir have presented respectively.
