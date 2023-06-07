@@ -129,6 +129,50 @@ assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg
     if (!is_right) cli::cli_abort(msg, call = call)
 }
 
+# assert hierarchy relationship, every value only correspond to a unique id
+assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), tag_uid = uid, tag_group = group, msg = NULL, cross_msg = NULL, cross_format = c("pair", "group", "uid"), info_msg = NULL, call = parent.frame()) {
+    if (is.null(group)) {
+        pairs <- list(unique(uid))
+    } else {
+        pairs <- lapply(
+            split(data[[uid]], data[[group]], drop = TRUE),
+            unique
+        )
+    }
+    pairs <- pairs[lengths(pairs) > 1L]
+    if (length(pairs) > 0L) {
+        cross_format <- match.arg(cross_format)
+        if (is.null(group)) {
+            msg <- msg %||% "A single {.field {tag_group}}"
+            cross_msg <- cross_msg %||%
+                switch(cross_format,
+                    group = NULL,
+                    uid = ,
+                    pair = "Incorrect {.field {tag_uid}}: {.val {pairs[[1L]]}}",
+                )
+        } else {
+            msg <- msg %||% "Every {.field {tag_group}}"
+            cross_msg <- cross_msg %||%
+                switch(cross_format,
+                    group = "{tag_group} with multiple {tag_uid}: {.val {names(pairs)}}",
+                    uid = "{tag_uid} with multiple {tag_group}: {.val {pairs}}",
+                    pair = vapply(seq_along(pairs), function(i) {
+                        sprintf(
+                            "{.field {names(pairs)[[%d]]}}: {.val {pairs[[%d]]}}",
+                            i, i
+                        )
+                    }, character(1L), USE.NAMES = FALSE)
+                )
+        }
+        msg <- paste(
+            msg,
+            "can only have one {.field {tag_uid}} value in {.arg {arg}}"
+        )
+        names(cross_msg) <- rlang::rep_along(cross_msg, "x")
+        cli::cli_abort(c(msg, cross_msg, i = info_msg), call = call)
+    }
+}
+
 is_scalar_numeric <- function(x) {
     length(x) == 1L && is.numeric(x)
 }
