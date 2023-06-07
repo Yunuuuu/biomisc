@@ -6,9 +6,10 @@
 \usage{
 run_arm_cnv(
   seg_cnv,
-  cnv_col,
+  cnv_field,
   ref_cytoband = "hg38",
-  arm_col = NULL,
+  arm_field = NULL,
+  arms = c("p", "q"),
   cnv_mode = c("rel", "abs"),
   ...,
   filter_centromere = TRUE,
@@ -18,21 +19,24 @@ run_arm_cnv(
 }
 \arguments{
 \item{seg_cnv}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject with
-CNV values in "cnv_col" column of metadata (absolute segment copy number
+CNV values in "cnv_field" column of metadata (absolute segment copy number
 determined by ABSOLUTE algorithm, which is the sum of allelic copy numbers,
 or relative segment copy number defined with -1 meaning del, 0 meaning
 neutral and 1 meaning amp) and samples IDs in "sample_id_col" column.}
 
-\item{cnv_col}{A scalar character gives the column containing CNV values.}
+\item{cnv_field}{A scalar character gives the column containing CNV values.}
 
 \item{ref_cytoband}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject
 containing the Cytoband reference, It can be a scalar character \code{"hg19"} or
 \code{"hg38"}, in this way, see \link{get_cytoband}, or you can provided a
 self-defined \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject.}
 
-\item{arm_col}{A scalar string indicates the column containing the chromosome
-arm. If \code{NULL}, the internal will search the first column starts with "arm"
-(ignore letter case). Only values of "p", "q" and "acen" are supported.}
+\item{arm_field}{A scalar string indicates the column containing the
+chromosome arm. If \code{NULL}, the internal will search the first column starts
+with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
+arm) are supported.}
+
+\item{arms}{A character specifying the arms to return.}
 
 \item{cnv_mode}{One of "rel" and "abs" correspongding to what Shukla, A and
 Cohen-Sharir have presented respectively.}

@@ -4,15 +4,18 @@
 \alias{get_arm_ranges}
 \title{Get arm-level ranges}
 \usage{
-get_arm_ranges(ref_ranges, arm_col = NULL)
+get_arm_ranges(ref_ranges, arm_field = NULL, arms = c("p", "q"))
 }
 \arguments{
 \item{ref_ranges}{A \code{\link[GenomicRanges:GRanges-class]{GenomicRanges}} object to
 combine into arm-level ranges.}
 
-\item{arm_col}{A scalar string indicates the column containing the chromosome
-arm. If \code{NULL}, the internal will search the first column starts with "arm"
-(ignore letter case). Only values of "p", "q" and "acen" are supported.}
+\item{arm_field}{A scalar string indicates the column containing the
+chromosome arm. If \code{NULL}, the internal will search the first column starts
+with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
+arm) are supported.}
+
+\item{arms}{A character specifying the arms to return.}
 }
 \value{
 A \link[GenomicRanges:GRanges-class]{GenomicRanges} object containing
