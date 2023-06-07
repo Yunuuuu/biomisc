@@ -102,19 +102,38 @@ run_arm_cnv <- function(
             seg_cnv <- seg_cnv[-S4Vectors::queryHits(centromere_hits)]
         }
     }
-    seg_to_arm_cnv(
+    out <- seg_to_arm_cnv(
         seg_cnv = seg_cnv,
         cnv_field = cnv_field,
         arm_cytoband = arm_cytoband[
             S4Vectors::mcols(arm_cytoband)[[arm_field]] %in% arms
         ],
-        cnv_mode = cnv_mode,
-        threshold = threshold,
-        ploidy = ploidy
+        arm_field = arm_field
+    )
+    # though we need the abolsute copy number only in rel cnv_mode
+    # since the copy numbers of abs cnv_mode are always larger than zero
+    # it won't hurt to do it for both cnv_mode.
+    out$CNV <- abs(out$CNV)
+    switch(cnv_mode,
+        rel = out[, list(arm_cnv = as.integer(
+            sum(CNV * width / arm_width, na.rm = TRUE) > threshold # nolint
+        )), by = c("seqnames", "arm")],
+        # https://github.com/broadinstitute/Aneuploidy_dependencies/blob/master/make_CCLE_arm_calls.R
+        abs = out[,
+            {
+                median_weighted <- matrixStats::weightedMedian(
+                    CNV, w = width, na.rm = TRUE # nolint styler: off
+                )
+                median_weighted <- round(median_weighted, digits = 0L)
+                ploidy <- round(ploidy, digits = 0L)
+                list(arm_cnv = as.integer(sign(median_weighted - ploidy)))
+            },
+            by = c("seqnames", "arm")
+        ]
     )
 }
 
-seg_to_arm_cnv <- function(seg_cnv, cnv_field, arm_cytoband, cnv_mode = "rel", ..., threshold, ploidy) {
+seg_to_arm_cnv <- function(seg_cnv, cnv_field, arm_cytoband, ..., arm_field) {
     # find ouverlap index --------------------------------
     overlap_hits <- GenomicRanges::findOverlaps(
         seg_cnv, arm_cytoband,
@@ -133,32 +152,12 @@ seg_to_arm_cnv <- function(seg_cnv, cnv_field, arm_cytoband, cnv_mode = "rel", .
 
     # define arm-level cnv -------------------------------
     arm_ranges <- arm_cytoband[cytoband_hits]
-    out <- data.table::data.table(
+    data.table::data.table(
         seqnames = as.factor(GenomicRanges::seqnames(intersect_region)),
         width = GenomicRanges::width(intersect_region),
-        # though we need the abolsute copy number only in rel cnv_mode
-        # since the copy numbers of abs cnv_mode are always larger than zero
-        # it won't hurt to do it for both cnv_mode.
-        CNV = abs(S4Vectors::mcols(intersect_region)[[cnv_field]]),
-        arm = S4Vectors::mcols(arm_ranges)[["arm"]],
+        CNV = S4Vectors::mcols(intersect_region)[[cnv_field]],
+        arm = S4Vectors::mcols(arm_ranges)[[arm_field]],
         arm_width = GenomicRanges::width(arm_ranges)
-    )
-    switch(cnv_mode,
-        rel = out[, list(arm_cnv = as.integer(
-            sum(CNV * width / arm_width, na.rm = TRUE) > threshold # nolint
-        )), by = c("seqnames", "arm")],
-        # https://github.com/broadinstitute/Aneuploidy_dependencies/blob/master/make_CCLE_arm_calls.R
-        abs = out[,
-            {
-                median_weighted <- matrixStats::weightedMedian(
-                    CNV, w = width, na.rm = TRUE # nolint styler: off
-                )
-                median_weighted <- round(median_weighted, digits = 0L)
-                ploidy <- round(ploidy, digits = 0L)
-                list(arm_cnv = as.integer(sign(median_weighted - ploidy)))
-            },
-            by = c("seqnames", "arm")
-        ]
     )
 }
 
