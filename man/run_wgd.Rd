@@ -10,12 +10,15 @@ run_wgd(
   thresholds = 2:3,
   contigs = 1:22,
   major_cn_field = "major_cn",
+  minor_cn_field = NULL,
+  CNt_field = NULL,
+  ploidy_field = NULL,
   chr_field = "chr",
   start_field = "startpos",
   end_field = "endpos",
   ref_cytoband = "hg38",
   arm_field = NULL,
-  perm_times = 1000L
+  perm_times = 10000L
 )
 }
 \arguments{
@@ -31,6 +34,10 @@ Whole-genome doubling.}
 
 \item{major_cn_field}{A string specifying the major_cn (allele-specific)
 column in seg_cnv.}
+
+\item{minor_cn_field, CNt_field, ploidy_field}{A string specifying the minor_cn
+(minor allele), total_cn (segmented absoltue copy number) and ploidy column
+in seg_cnv. Only used when \code{major_cn_field} is NULL.}
 
 \item{chr_field, start_field, end_field}{A string specifying the column of the
 chromosome name, start positions and end positions of the genomic ranges in
@@ -52,7 +59,12 @@ arm) are supported.}
 Infer Whole-genome doubling
 }
 \references{
-Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling
-shapes the evolution and prognosis of advanced cancers. Nat Genet 50,
-1189–1195 (2018). https://doi.org/10.1038/s41588-018-0165-1
+\itemize{
+\item Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling shapes the
+evolution and prognosis of advanced cancers. Nat Genet 50, 1189–1195
+(2018).  \url{https://doi.org/10.1038/s41588-018-0165-1}
+\item Tolerance of Whole-Genome Doubling Propagates Chromosomal Instability and
+Accelerates Cancer Genome Evolution.
+\url{https://doi.org/10.1158/2159-8290.CD-13-0285}
+}
 }
