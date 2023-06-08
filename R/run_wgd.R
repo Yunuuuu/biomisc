@@ -55,18 +55,15 @@ run_wgd <- function(
     )
     assert_class(seg_cnv, is_class = "data.frame")
     if (is.null(minor_cn_field)) {
-        other_fields <- c(sample_field, major_cn_field)
+        group_fields <- sample_field
+        other_fields <- major_cn_field
     } else {
         if (is.null(CNt_field)) {
             CNt_field <- "CNt"
             seg_cnv$CNt <- seg_cnv[[major_cn_field]] + seg_cnv[[minor_cn_field]]
         }
-        other_fields <- c(
-            sample_field, minor_cn_field,
-            CNt_field, ploidy_field
-        )
-    }
-    if (!is.null(minor_cn_field)) {
+        group_fields <- c(sample_field, ploidy_field)
+        other_fields <- c(minor_cn_field, CNt_field)
         assert_nest(seg_cnv, ploidy_field, group = sample_field)
     }
     out <- prepare_granges(
@@ -74,7 +71,7 @@ run_wgd <- function(
         chr_field = chr_field,
         start_field = start_field,
         end_field = end_field,
-        other_fields = other_fields,
+        other_fields = c(group_fields, other_fields),
         keep.extra.columns = TRUE,
         ignore.strand = TRUE
     )
@@ -113,26 +110,25 @@ run_wgd <- function(
         seg_cnv = out,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
-        group_field = sample_field,
+        group_fields = group_fields,
         other_fields = other_fields
     )
     if (is.null(minor_cn_field)) {
         data.table::setnames(out, major_cn_field, "major_cn")
         out[, width := as.double(width)]
-        out <- out[, lapply(rlang::set_names(thresholds), function(threshold) {
+        names(thresholds) <- paste0("Genome_prop_above_", thresholds)
+        out <- out[, lapply(thresholds, function(threshold) {
             sum(width[major_cn >= threshold], na.rm = TRUE)
         }), by = c(sample_field, "chr", "arm", "arm_width")]
         out[, lapply(.SD, function(x) sum(x) / sum(arm_width)),
-            by = sample_field, .SDcols = setdiff(
-                names(out), c(sample_field, "chr", "arm", "arm_width")
-            )
+            by = sample_field, .SDcols = names(thresholds)
         ]
     } else {
         data.table::setnames(
             out, c(minor_cn_field, CNt_field, ploidy_field),
             c("arm_minor_ploidy", "arm_total_ploidy", "ploidy")
         )
-        out <- out[,
+        out <- out[!is.na(width),
             lapply(.SD, function(x) {
                 matrixStats::weightedMedian(
                     x, w = width, na.rm = TRUE # styler: off
@@ -141,29 +137,31 @@ run_wgd <- function(
             by = c(sample_field, "chr", "arm", "ploidy"),
             .SDcols = c("arm_minor_ploidy", "arm_total_ploidy")
         ]
-        out[, arm_major_ploidy := arm_total_ploidy - arm_minor_ploidy] # nolint
-        out[, total_aber := sum(abs(arm_minor_ploidy - 1L)) + # nolint
-            sum(abs(arm_major_ploidy - 1L)), by = sample_field] # nolint
+        # nolint start
+        out[, arm_major_ploidy := arm_total_ploidy - arm_minor_ploidy]
+        out[, total_aber := sum(abs(arm_minor_ploidy - 1L), na.rm = TRUE) +
+            sum(abs(arm_major_ploidy - 1L), na.rm = TRUE), by = sample_field]
         out[,
             c("A", "B") := lapply(.SD, function(x) {
                 sign(x - 1L)
             }),
             .SDcols = c("arm_major_ploidy", "arm_minor_ploidy")
         ]
-        out[total_aber > 0L, # nolint
+        out[total_aber > 0L,
             c("A_prob", "B_prob") := lapply(.SD, function(x) {
-                abs(x - 1L) / total_aber # nolint
+                abs(x - 1L) / total_aber
             }),
             .SDcols = c("A", "B")
         ]
         out <- out[,
             calculate_wgd(
-                .SD, arm_major_ploidy, total_aber[[1L]], perm_times # nolint
+                .SD, arm_major_ploidy, total_aber[[1L]], perm_times
             ),
             .SDcols = c("A", "B", "A_prob", "B_prob"),
             by = c(sample_field, "ploidy")
         ]
-        out[, wGD := wgd_staus(pvalue, ploidy)][] # nolint
+        out[, wGD := wgd_staus(pvalue, ploidy)][]
+        # nolint end
     }
 }
 
@@ -212,7 +210,8 @@ perm_wgd <- function(A, B, A_prob, B_prob, total, times = 1000L) {
             replace = TRUE, prob = c(A_prob, B_prob)
         )
         idx <- c(table(idx)) # name is index and value is the counts
-        genotype[as.integer(names(idx))] <- 1L + genotype * idx
+        genotype[as.integer(names(idx))] <- 1L +
+            genotype[as.integer(names(idx))] * idx
         genome <- pmax(genotype[, 1L, drop = TRUE], genotype[, 2L, drop = TRUE])
         mean(genome >= 2L)
     }, numeric(1L), genotype = genotype)

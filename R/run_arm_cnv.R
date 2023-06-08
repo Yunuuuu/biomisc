@@ -23,9 +23,11 @@
 #'   ref_cytoband.  Default: `TRUE`.
 #' @param threshold The fraction to define Chromosome arm-level aneuploidy
 #'   profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).
-#' @param ploidy The ploidy to define Chromosome arm-level aneuploidy profiling.
-#'   Cohen-Sharir uses background ploidy ("abs" cnv_mode) derived from
-#'   [run_absolute][ABSOLUTE::RunAbsolute] algorithm.
+#' @param ploidy_field A single numeric indicates the ploidy to define
+#'   Chromosome arm-level aneuploidy profiling.  Cohen-Sharir uses background
+#'   ploidy ("abs" cnv_mode) derived from [run_absolute][ABSOLUTE::RunAbsolute]
+#'   algorithm. Or you can also provide a string to specifying the ploidy column
+#'   in `seg_cnv`.
 #' @author Yun \email{yunyunpp96@@outlook.com}
 #' @return A [data.table][data.table::data.table] containing
 #' Chromosome-arm-levels copy number.
@@ -39,12 +41,11 @@
 #' }
 #' @export
 run_arm_cnv <- function(
-    seg_cnv, sample_field = NULL, cnv_field,
+    seg_cnv, sample_field = NULL, cnv_field, ploidy_field = 2L,
     chr_field = "chr", start_field = "startpos", end_field = "endpos",
     ref_cytoband = "hg38", arm_field = NULL, arms = c("p", "q"),
-    cnv_mode = c("rel", "abs"),
-    ..., filter_centromere = TRUE,
-    ploidy = NULL, threshold = 0.9) {
+    cnv_mode = c("rel", "abs"), ...,
+    filter_centromere = TRUE, threshold = 0.9) {
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
     cnv_mode <- match.arg(cnv_mode)
@@ -56,12 +57,23 @@ run_arm_cnv <- function(
         "scalar {.cls character}",
         cross_msg = NULL
     )
+    other_fields <- cnv_field
+    group_fields <- sample_field
+    if (cnv_mode == "abs") {
+        assert_class(ploidy_field, function(x) {
+            rlang::is_scalar_character(x) || is_scalar_numeric(x)
+        }, "scalar {.cls numeric} or {.cls chacter}", cross_msg = NULL)
+        if (is.character(ploidy_field)) {
+            assert_nest(seg_cnv, ploidy_field, group = sample_field)
+            group_fields <- c(sample_field, ploidy_field)
+        }
+    }
     seg_cnv <- prepare_granges(
         data = seg_cnv,
         chr_field = chr_field,
         start_field = start_field,
         end_field = end_field,
-        other_fields = c(sample_field, cnv_field),
+        other_fields = c(other_fields, group_fields),
         keep.extra.columns = TRUE,
         ignore.strand = TRUE
     )
@@ -75,8 +87,7 @@ run_arm_cnv <- function(
         if (!all(cnv_values >= 0L)) {
             cli::cli_abort("Copy number values must be positive or 0L in {.val {cnv_mode}} CNV mode")
         }
-        ploidy <- ploidy %||% 2L
-    } else if (cnv_mode == "rel") {
+    } else {
         S4Vectors::mcols(seg_cnv)[[cnv_field]] <- data.table::fcase(
             cnv_values < 0L, -1L, cnv_values > 0L, 1L,
             default = 0L
@@ -118,10 +129,13 @@ run_arm_cnv <- function(
         seg_cnv = seg_cnv,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
-        group_field = sample_field,
+        group_fields = group_fields,
         other_fields = cnv_field
     )
     data.table::setnames(out, cnv_field, "CNV")
+    if (cnv_mode == "abs" && is.character(ploidy_field)) {
+        data.table::setnames(out, ploidy_field, "ploidy")
+    }
     switch(cnv_mode,
         rel = out[, list(arm_cnv = as.integer(
             sum(abs(CNV) * width / arm_width, na.rm = TRUE) > threshold # nolint

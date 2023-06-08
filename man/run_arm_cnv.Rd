@@ -8,6 +8,7 @@ run_arm_cnv(
   seg_cnv,
   sample_field = NULL,
   cnv_field,
+  ploidy_field = 2L,
   chr_field = "chr",
   start_field = "startpos",
   end_field = "endpos",
@@ -17,7 +18,6 @@ run_arm_cnv(
   cnv_mode = c("rel", "abs"),
   ...,
   filter_centromere = TRUE,
-  ploidy = NULL,
   threshold = 0.9
 )
 }
@@ -31,6 +31,12 @@ amp).}
 \item{sample_field}{A string indicates the sample Id column in seg_cnv.}
 
 \item{cnv_field}{A scalar character gives the column containing CNV values.}
+
+\item{ploidy_field}{A single numeric indicates the ploidy to define
+Chromosome arm-level aneuploidy profiling.  Cohen-Sharir uses background
+ploidy ("abs" cnv_mode) derived from \link[ABSOLUTE:RunAbsolute]{run_absolute}
+algorithm. Or you can also provide a string to specifying the ploidy column
+in \code{seg_cnv}.}
 
 \item{chr_field, start_field, end_field}{A string specifying the column of the
 chromosome name, start positions and end positions of the genomic ranges in
@@ -56,10 +62,6 @@ Cohen-Sharir have presented respectively.}
 \item{filter_centromere}{Whether to include or exclude segments across
 centromere, namely genomic ranges interseted with "acen" arm of
 ref_cytoband.  Default: \code{TRUE}.}
-
-\item{ploidy}{The ploidy to define Chromosome arm-level aneuploidy profiling.
-Cohen-Sharir uses background ploidy ("abs" cnv_mode) derived from
-\link[ABSOLUTE:RunAbsolute]{run_absolute} algorithm.}
 
 \item{threshold}{The fraction to define Chromosome arm-level aneuploidy
 profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).}

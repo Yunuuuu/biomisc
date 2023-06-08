@@ -111,7 +111,7 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
     out
 }
 
-seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, other_fields = character()) {
+seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL, other_fields = character()) {
     # find ouverlap index --------------------------------
     overlap_hits <- silent_expr(
         GenomicRanges::findOverlaps(
@@ -148,7 +148,7 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, oth
     )
 
     # ensure everything in the output
-    other_fields <- c(other_fields, group_field)
+    other_fields <- c(other_fields, group_fields)
     if (length(other_fields)) {
         other_data <- data.table::as.data.table(seg_cnv[seg_hits])
         other_data <- other_data[, .SD, .SDcols = other_fields]
@@ -164,7 +164,7 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, oth
     ref_cytoband_dt <- ref_cytoband_dt[, c("chr", "arm", "arm_width")]
     out <- out[,
         .SD[ref_cytoband_dt, on = c("chr", "arm"), allow.cartesian = FALSE],
-        by = group_field
+        by = group_fields
     ]
     # finally, move arm_width next to arm column
     data.table::setcolorder(out, "arm_width", after = "arm")
