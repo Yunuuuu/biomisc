@@ -44,12 +44,10 @@ run_arm_cnv <- function(
     ref_cytoband = "hg38", arm_field = NULL, arms = c("p", "q"),
     cnv_mode = c("rel", "abs"),
     ..., filter_centromere = TRUE,
-    ploidy = NULL,
-    threshold = 0.9) {
-    assert_pkg("S4Vectors")
-    assert_pkg("GenomicRanges")
+    ploidy = NULL, threshold = 0.9) {
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
+    cnv_mode <- match.arg(cnv_mode)
     assert_class(sample_field, rlang::is_scalar_character,
         "scalar {.cls character}",
         cross_msg = NULL, null_ok = TRUE
@@ -58,30 +56,16 @@ run_arm_cnv <- function(
         "scalar {.cls character}",
         cross_msg = NULL
     )
-    assert_class(chr_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
-    )
-    assert_class(start_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
-    )
-    assert_class(end_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
-    )
-    cnv_mode <- match.arg(cnv_mode)
-    assert_df_with_columns(seg_cnv, c(
-        sample_field, cnv_field, chr_field, start_field, end_field
-    ))
-    seg_cnv <- GenomicRanges::makeGRangesFromDataFrame(
-        df = seg_cnv,
+    seg_cnv <- prepare_granges(
+        data = seg_cnv,
+        chr_field = chr_field,
+        start_field = start_field,
+        end_field = end_field,
+        other_fields = c(sample_field, cnv_field),
         keep.extra.columns = TRUE,
-        seqnames.field = chr_field,
-        start.field = start_field,
-        end.field = end_field,
         ignore.strand = TRUE
     )
+    assert_range_unique(seg_cnv, group = sample_field)
     cnv_values <- S4Vectors::mcols(seg_cnv)[[cnv_field]]
     if (!is.numeric(cnv_values)) {
         cli::cli_abort("CNV values must be numeric")
@@ -156,6 +140,4 @@ run_arm_cnv <- function(
     )
 }
 
-utils::globalVariables(c(
-    "CNV", "width", "arm_width"
-))
+utils::globalVariables(c("CNV", "width", "arm_width"))

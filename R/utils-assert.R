@@ -84,15 +84,15 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
     }
 }
 
-assert_pkg <- function(pkg, fun = NULL, call = parent.frame()) {
+assert_pkg <- function(pkg, fun = NULL, frame = rlang::caller_env()) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
         if (is.null(fun)) {
-            fn_call <- eval(quote(match.call()), envir = parent.frame())
-            fun <- rlang::as_string(fn_call[[1L]])
+            fun_call <- rlang::frame_call(frame = frame)
+            fun <- rlang::as_string(fun_call[[1L]])
         }
         cli::cli_abort(
             "{.pkg {pkg}} must be installed to use {.fn {fun}}.",
-            call = call
+            call = frame
         )
     }
 }

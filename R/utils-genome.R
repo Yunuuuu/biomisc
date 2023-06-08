@@ -111,7 +111,7 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
     out
 }
 
-seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, other_fields = character()) {
+seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, other_fields = character()) {
     # find ouverlap index --------------------------------
     overlap_hits <- silent_expr(
         GenomicRanges::findOverlaps(
@@ -144,14 +144,27 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, other_fields = characte
     out <- data.table::data.table(
         chr = as.factor(GenomicRanges::seqnames(intersect_region)),
         width = GenomicRanges::width(intersect_region),
-        arm = S4Vectors::mcols(arm_ranges)[[arm_field]],
-        arm_width = GenomicRanges::width(arm_ranges)
+        arm = S4Vectors::mcols(arm_ranges)[[arm_field]]
     )
+
+    # ensure everything in the output
+    other_fields <- c(other_fields, group_field)
     if (length(other_fields)) {
         other_data <- data.table::as.data.table(seg_cnv[seg_hits])
         other_data <- other_data[, .SD, .SDcols = other_fields]
     }
-    cbind(out, other_data)
+    out <- cbind(out, other_data)
+
+    # ensure every reference arm has a value 
+    ref_cytoband_dt <- data.table::as.data.table(arm_ranges)
+    data.table::setnames(
+        ref_cytoband_dt,
+        c("seqnames", arm_field, "width"), c("chr", "arm", "arm_width")
+    )
+    ref_cytoband_dt <- ref_cytoband_dt[, c("chr", "arm", "arm_width")]
+
+    out <- out[, .SD[ref_cytoband_dt, on = c("chr", "arm")], by = group_field]
+    data.table::setcolorder(out, "arm_width", after = "arm")
 }
 
 map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
@@ -162,7 +175,64 @@ map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
     x
 }
 
+assert_range_unique <- function(gr, group = NULL, arg_group = rlang::caller_arg(group), call = parent.frame()) {
+    if (is.null(group)) {
+        if (any_overlap(gr)) {
+            cli::cli_abort(c(
+                "Find overlapped ranges",
+                i = "try to set {.arg {arg_group}}"
+            ), call = call)
+        }
+    } else {
+        gr_list <- split(gr, S4Vectors::mcols(gr)[[group]], drop = TRUE)
+        failed_samples <- names(gr_list)[
+            vapply(gr_list, any_overlap, logical(1L))
+        ]
+        if (length(failed_samples)) {
+            cli::cli_abort(
+                "Find overlapped ranges in group{?s}: {.val {failed_samples}}"
+            )
+        }
+    }
+}
+
 any_overlap <- function(gr) {
     hits <- GenomicRanges::findOverlaps(gr, gr)
     any(S4Vectors::queryHits(hits) != S4Vectors::subjectHits(hits))
+}
+
+prepare_granges <- function(data, chr_field, start_field, end_field, other_fields = NULL, keep.extra.columns = TRUE, ignore.strand = TRUE, fun = NULL, call = parent.frame()) {
+    assert_pkg("S4Vectors", fun = fun, frame = call)
+    assert_pkg("GenomicRanges", fun = fun, frame = call)
+    assert_class(chr_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        arg = rlang::caller_arg(chr_field),
+        cross_msg = NULL, call = call
+    )
+    assert_class(start_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        arg = rlang::caller_arg(start_field),
+        cross_msg = NULL, call = call
+    )
+    assert_class(end_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        arg = rlang::caller_arg(end_field),
+        cross_msg = NULL, call = call
+    )
+    assert_df_with_columns(data,
+        c(other_fields, chr_field, start_field, end_field),
+        arg = rlang::caller_arg(data), call = call
+    )
+    GenomicRanges::makeGRangesFromDataFrame(
+        df = as.data.frame(data,
+            check.names = FALSE,
+            make.names = FALSE,
+            stringsAsFactors = FALSE
+        ),
+        keep.extra.columns = keep.extra.columns,
+        seqnames.field = chr_field,
+        start.field = start_field,
+        end.field = end_field,
+        ignore.strand = ignore.strand
+    )
 }
