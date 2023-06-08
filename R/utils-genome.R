@@ -1,6 +1,7 @@
 #' Get arm-level ranges
 #' @param ref_ranges A [`GenomicRanges`][GenomicRanges::GRanges-class] object to
-#'   combine into arm-level ranges.
+#'   combine into arm-level ranges. It's easy to use [get_cytoband] to get such
+#'   Genomic reference ranges.
 #' @param arm_field A scalar string indicates the column containing the
 #'   chromosome arm. If `NULL`, the internal will search the first column starts
 #'   with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
@@ -8,6 +9,7 @@
 #' @param arms A character specifying the arms to return.
 #' @return A [GenomicRanges][GenomicRanges::GRanges-class] object containing
 #' arm-level ranges.
+#' @seealso [get_cytoband]
 #' @export
 get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     assert_pkg("S4Vectors")
