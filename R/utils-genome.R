@@ -143,8 +143,8 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, oth
     arm_ranges <- arm_cytoband[cytoband_hits]
     out <- data.table::data.table(
         chr = as.factor(GenomicRanges::seqnames(intersect_region)),
-        width = GenomicRanges::width(intersect_region),
-        arm = S4Vectors::mcols(arm_ranges)[[arm_field]]
+        arm = S4Vectors::mcols(arm_ranges)[[arm_field]],
+        width = GenomicRanges::width(intersect_region)
     )
 
     # ensure everything in the output
@@ -162,8 +162,9 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, oth
         c("seqnames", arm_field, "width"), c("chr", "arm", "arm_width")
     )
     ref_cytoband_dt <- ref_cytoband_dt[, c("chr", "arm", "arm_width")]
-
     out <- out[, .SD[ref_cytoband_dt, on = c("chr", "arm")], by = group_field]
+
+    # finally, move arm_width next to arm column
     data.table::setcolorder(out, "arm_width", after = "arm")
 }
 
@@ -190,7 +191,8 @@ assert_range_unique <- function(gr, group = NULL, arg_group = rlang::caller_arg(
         ]
         if (length(failed_samples)) {
             cli::cli_abort(
-                "Find overlapped ranges in group{?s}: {.val {failed_samples}}"
+                "Find overlapped ranges in group{?s}: {.val {failed_samples}}",
+                call = call
             )
         }
     }
