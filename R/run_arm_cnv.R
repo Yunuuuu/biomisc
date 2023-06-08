@@ -139,13 +139,9 @@ run_arm_cnv <- function(
         other_fields = c(sample_field, cnv_field)
     )
     data.table::setnames(out, cnv_field, "CNV")
-    # though we need the abolsute copy number only in rel cnv_mode
-    # since the copy numbers of abs cnv_mode are always larger than zero
-    # it won't hurt to do it for both cnv_mode.
-    out$CNV <- abs(out$CNV)
     switch(cnv_mode,
         rel = out[, list(arm_cnv = as.integer(
-            sum(CNV * width / arm_width, na.rm = TRUE) > threshold # nolint
+            sum(abs(CNV) * width / arm_width, na.rm = TRUE) > threshold # nolint
         )), by = c(sample_field, "chr", "arm")],
         # https://github.com/broadinstitute/Aneuploidy_dependencies/blob/master/make_CCLE_arm_calls.R
         abs = out[,
