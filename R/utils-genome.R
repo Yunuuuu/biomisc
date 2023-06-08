@@ -155,15 +155,17 @@ seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_field = NULL, oth
     }
     out <- cbind(out, other_data)
 
-    # ensure every reference arm has a value 
-    ref_cytoband_dt <- data.table::as.data.table(arm_ranges)
+    # ensure every reference arm has a value
+    ref_cytoband_dt <- unique(data.table::as.data.table(arm_cytoband))
     data.table::setnames(
         ref_cytoband_dt,
         c("seqnames", arm_field, "width"), c("chr", "arm", "arm_width")
     )
     ref_cytoband_dt <- ref_cytoband_dt[, c("chr", "arm", "arm_width")]
-    out <- out[, .SD[ref_cytoband_dt, on = c("chr", "arm")], by = group_field]
-
+    out <- out[,
+        .SD[ref_cytoband_dt, on = c("chr", "arm"), allow.cartesian = FALSE],
+        by = group_field
+    ]
     # finally, move arm_width next to arm column
     data.table::setcolorder(out, "arm_width", after = "arm")
 }

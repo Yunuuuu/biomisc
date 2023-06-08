@@ -1,11 +1,11 @@
 #' Infer Whole-genome doubling
 #'
-#' @param seg_cnv A [data.frame][data.frame] obeject with CNV values in
-#'  "major_cn_field" .
+#' @param seg_cnv A [data.frame][data.frame] obeject with following columns
+#'  (arguments ends with "_field").
 #' @param sample_field A string specifying the sample id column in seg_cnv.
 #' @param contigs The Chromosome names to define Whole-genome doubling.
 #' @param major_cn_field A string specifying the major_cn (allele-specific)
-#'  column in seg_cnv.
+#'  column in seg_cnv. Default: "major_cn".
 #' @param thresholds An integer vector specifying the thresholds to define
 #'  Whole-genome doubling.
 #' @param minor_cn_field,CNt_field,ploidy_field A string specifying the minor_cn
@@ -16,7 +16,7 @@
 #' @references
 #' - Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling shapes the
 #'   evolution and prognosis of advanced cancers. Nat Genet 50, 1189–1195
-#'   (2018).  <https://doi.org/10.1038/s41588-018-0165-1> 
+#'   (2018).  <https://doi.org/10.1038/s41588-018-0165-1>
 #' - Tolerance of Whole-Genome Doubling Propagates Chromosomal Instability and
 #'   Accelerates Cancer Genome Evolution.
 #'   <https://doi.org/10.1158/2159-8290.CD-13-0285>
@@ -24,8 +24,8 @@
 run_wgd <- function(
     seg_cnv, sample_field = NULL,
     thresholds = 2:3, contigs = 1:22,
-    major_cn_field = "major_cn",
-    minor_cn_field = NULL, CNt_field = NULL, ploidy_field = NULL,
+    major_cn_field = "major_cn", minor_cn_field = NULL,
+    CNt_field = NULL, ploidy_field = "ploidy",
     chr_field = "chr", start_field = "startpos", end_field = "endpos",
     ref_cytoband = "hg38", arm_field = NULL, perm_times = 10000L) {
     assert_class(sample_field, rlang::is_scalar_character,
@@ -35,41 +35,50 @@ run_wgd <- function(
     )
     assert_class(major_cn_field, rlang::is_scalar_character,
         "scalar {.cls character}",
-        null_ok = TRUE,
+        null_ok = !is.null(minor_cn_field),
         cross_msg = NULL
     )
     assert_class(minor_cn_field, rlang::is_scalar_character,
         "scalar {.cls character}",
-        null_ok = !is.null(major_cn_field),
+        null_ok = TRUE,
         cross_msg = NULL
     )
     assert_class(CNt_field, rlang::is_scalar_character,
         "scalar {.cls character}",
-        null_ok = !is.null(major_cn_field),
+        null_ok = !(!is.null(minor_cn_field) && is.null(major_cn_field)),
         cross_msg = NULL
     )
     assert_class(ploidy_field, rlang::is_scalar_character,
         "scalar {.cls character}",
-        null_ok = !is.null(major_cn_field),
+        null_ok = is.null(minor_cn_field),
         cross_msg = NULL
     )
-
-    seg_cnv <- prepare_granges(
+    assert_class(seg_cnv, is_class = "data.frame")
+    if (is.null(minor_cn_field)) {
+        other_fields <- c(sample_field, major_cn_field)
+    } else {
+        if (is.null(CNt_field)) {
+            CNt_field <- "CNt"
+            seg_cnv$CNt <- seg_cnv[[major_cn_field]] + seg_cnv[[minor_cn_field]]
+        }
+        other_fields <- c(
+            sample_field, minor_cn_field,
+            CNt_field, ploidy_field
+        )
+    }
+    if (!is.null(minor_cn_field)) {
+        assert_nest(seg_cnv, ploidy_field, group = sample_field)
+    }
+    out <- prepare_granges(
         data = seg_cnv,
         chr_field = chr_field,
         start_field = start_field,
         end_field = end_field,
-        other_fields = c(
-            sample_field, major_cn_field,
-            minor_cn_field, CNt_field, ploidy_field
-        ),
+        other_fields = other_fields,
         keep.extra.columns = TRUE,
         ignore.strand = TRUE
     )
-    if (is.null(major_cn_field)) {
-        assert_nest(seg_cnv, ploidy_field, group = sample_field)
-    }
-    assert_range_unique(seg_cnv, group = sample_field)
+    assert_range_unique(out, group = sample_field)
 
     # prepare cytoband data ------------------------
     if (rlang::is_scalar_character(ref_cytoband) &&
@@ -82,7 +91,7 @@ run_wgd <- function(
         )
     }
     cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
-    seg_cnv <- map_seqnames(seg_cnv, cytoband_seqstyle)
+    out <- map_seqnames(out, cytoband_seqstyle)
     contigs <- map_seqnames(as.character(contigs),
         cytoband_seqstyle,
         arg = "contigs"
@@ -100,42 +109,36 @@ run_wgd <- function(
     arm_cytoband <- arm_cytoband[
         as.character(GenomeInfoDb::seqnames(arm_cytoband)) %chin% contigs
     ]
-    seg_cnv <- seg_to_arm(
-        seg_cnv = seg_cnv,
+    out <- seg_to_arm(
+        seg_cnv = out,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
-        other_fields = c(sample_field, major_cn_field, minor_cn_field)
+        group_field = sample_field,
+        other_fields = other_fields
     )
-    if (!is.null(major_cn_field)) {
-        data.table::setnames(seg_cnv, major_cn_field, "major_cn")
-        seg_cnv <- seg_cnv[, c(
-            arm_width = unique(arm_width),
-            lapply(rlang::set_names(thresholds), function(threshold) {
-                sum(width[major_cn >= threshold])
-            })
-        ), by = c(sample_field, "chr", "arm")]
-        seg_cnv[, lapply(.SD, function(x) sum(x) / sum(arm_width)),
+    if (is.null(minor_cn_field)) {
+        data.table::setnames(out, major_cn_field, "major_cn")
+        out[, width := as.double(width)]
+        out <- out[, lapply(rlang::set_names(thresholds), function(threshold) {
+            sum(width[major_cn >= threshold], na.rm = TRUE)
+        }), by = c(sample_field, "chr", "arm", "arm_width")]
+        out[, lapply(.SD, function(x) sum(x) / sum(arm_width)),
             by = sample_field, .SDcols = setdiff(
-                names(seg_cnv), c(sample_field, "chr", "arm", "arm_width")
+                names(out), c(sample_field, "chr", "arm", "arm_width")
             )
         ]
-        # seg_cnv[,
-        #     perm_wgd(
-        #         len = length(contigs), .SD, thresholds = thresholds,
-        #         genome_width = genome_width, times = perm_times
-        #     ),
-        #     .SDcols = setdiff(names(seg_cnv), c(sample_field, "chr"))
-        # ]
     } else {
         data.table::setnames(
-            seg_cnv, c(minor_cn_field, CNt_field, ploidy_field),
+            out, c(minor_cn_field, CNt_field, ploidy_field),
             c("arm_minor_ploidy", "arm_total_ploidy", "ploidy")
         )
-        out <- seg_cnv[,
+        out <- out[,
             lapply(.SD, function(x) {
-                matrixStats::weightedMedian(x, w = width, na.rm = TRUE)
+                matrixStats::weightedMedian(
+                    x, w = width, na.rm = TRUE # styler: off
+                )
             }),
-            by = c(sample_field, "chr", "arm"),
+            by = c(sample_field, "chr", "arm", "ploidy"),
             .SDcols = c("arm_minor_ploidy", "arm_total_ploidy")
         ]
         out[, arm_major_ploidy := arm_total_ploidy - arm_minor_ploidy] # nolint
@@ -147,29 +150,18 @@ run_wgd <- function(
             }),
             .SDcols = c("arm_major_ploidy", "arm_minor_ploidy")
         ]
-        out[,
+        out[total_aber > 0L, # nolint
             c("A_prob", "B_prob") := lapply(.SD, function(x) {
-                abs(x) / total_aber # nolint
+                abs(x - 1L) / total_aber # nolint
             }),
             .SDcols = c("A", "B")
         ]
         out <- out[,
-            {
-                obs_wgd_event <- mean(arm_major_ploidy >= 2L) # nolint
-                if (obs_wgd_event == 1L) {
-                    pvalue <- 0L
-                } else {
-                    perm_wgd_events <- do.call(
-                        perm_wgd, c(.SD, list(
-                            total = total_aber[[1L]], times = perm_times # nolint
-                        ))
-                    )
-                    pvalue <- mean(perm_wgd_events >= obs_wgd_event)
-                }
-                list(pvalue = pvalue, ploidy = ploidy[[1L]]) # nolint
-            },
+            calculate_wgd(
+                .SD, arm_major_ploidy, total_aber[[1L]], perm_times # nolint
+            ),
             .SDcols = c("A", "B", "A_prob", "B_prob"),
-            by = sample_field
+            by = c(sample_field, "ploidy")
         ]
         out[, wGD := wgd_staus(pvalue, ploidy)][] # nolint
     }
@@ -188,6 +180,30 @@ run_wgd <- function(
 #     }, stat = actual_stats, perm_stats = perm_stats_list, USE.NAMES = FALSE)
 #     list(thretholds = thresholds, wgd_prob = actual_stats, pvalues = pvalues)
 # }
+
+
+# https://bitbucket.org/nmcgranahan/pancancerclonality/src/master/EstimateClonality/R/GD.functions.R
+calculate_wgd <- function(events, arm_major_ploidy, total_aber, perm_times) {
+    obs_wgd_event <- mean(arm_major_ploidy >= 2L)
+    out_list <- list(total_aber = total_aber, wgd_event = obs_wgd_event)
+    if (total_aber == 0L) {
+        pvalue <- 1
+    } else {
+        if (obs_wgd_event == 1L) {
+            pvalue <- 0
+        } else {
+            perm_wgd_events <- do.call(
+                perm_wgd, c(
+                    events,
+                    list(total = total_aber, times = perm_times)
+                )
+            )
+            pvalue <- mean(perm_wgd_events >= obs_wgd_event)
+        }
+        pvalue <- pvalue
+    }
+    c(pvalue = pvalue, out_list)
+}
 
 perm_wgd <- function(A, B, A_prob, B_prob, total, times = 1000L) {
     genotype <- cbind(A, B)

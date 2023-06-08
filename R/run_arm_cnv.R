@@ -118,7 +118,8 @@ run_arm_cnv <- function(
         seg_cnv = seg_cnv,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
-        other_fields = c(sample_field, cnv_field)
+        group_field = sample_field,
+        other_fields = cnv_field
     )
     data.table::setnames(out, cnv_field, "CNV")
     switch(cnv_mode,

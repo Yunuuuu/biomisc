@@ -12,7 +12,7 @@ run_wgd(
   major_cn_field = "major_cn",
   minor_cn_field = NULL,
   CNt_field = NULL,
-  ploidy_field = NULL,
+  ploidy_field = "ploidy",
   chr_field = "chr",
   start_field = "startpos",
   end_field = "endpos",
@@ -22,8 +22,8 @@ run_wgd(
 )
 }
 \arguments{
-\item{seg_cnv}{A \link{data.frame} obeject with CNV values in
-"major_cn_field" .}
+\item{seg_cnv}{A \link{data.frame} obeject with following columns
+(arguments ends with "_field").}
 
 \item{sample_field}{A string specifying the sample id column in seg_cnv.}
 
@@ -33,7 +33,7 @@ Whole-genome doubling.}
 \item{contigs}{The Chromosome names to define Whole-genome doubling.}
 
 \item{major_cn_field}{A string specifying the major_cn (allele-specific)
-column in seg_cnv.}
+column in seg_cnv. Default: "major_cn".}
 
 \item{minor_cn_field, CNt_field, ploidy_field}{A string specifying the minor_cn
 (minor allele), total_cn (segmented absoltue copy number) and ploidy column
