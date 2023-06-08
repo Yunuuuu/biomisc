@@ -118,3 +118,8 @@ map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
     }
     x
 }
+
+any_overlap <- function(gr) {
+    hits <- GenomicRanges::findOverlaps(gr, gr)
+    any(S4Vectors::queryHits(hits) != S4Vectors::subjectHits(hits))
+}
