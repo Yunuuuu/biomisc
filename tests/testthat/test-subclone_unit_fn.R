@@ -472,11 +472,12 @@ test_that("subclone unit function works well", {
     pyClone.tsv$absCCF_higher <- absolute_ccfs$higher
 
     ## test calculate_abs_ccf --------------------------------
-    phylo.ccfs <- suppressWarnings(calculate_phylo_ccf(
+    phylo.ccfs <- suppressWarnings(calculate_ccf(
         pyClone.tsv$alt_counts, pyClone.tsv$ref_counts,
         CNts = pyClone.tsv$major_raw + pyClone.tsv$minor_raw,
         purity, observed_vafs = pyClone.tsv$obsVAF,
-        expected_vafs = pyClone.tsv$expVAF
+        expected_vafs = pyClone.tsv$expVAF,
+        prefix = "phyloCCF"
     ))
     data.table::setDT(phylo.ccfs)
     pyClone.tsv$mutCopyNum <- phylo.ccfs$phyloCCF

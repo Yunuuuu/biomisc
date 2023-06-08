@@ -272,7 +272,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
 
     out[
         ,
-        c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher") := calculate_phylo_ccf(
+        c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher") := calculate_ccf(
             alt_counts, ref_counts,
             CNts = major_raw + minor_raw,
             purity, observed_vafs = obsVAF,
@@ -658,21 +658,23 @@ calculate_abs_ccf <- function(
     data.table::rbindlist(out_list)
 }
 
-calculate_phylo_ccf <- function(alt_counts, ref_counts, CNts, purity, observed_vafs = NULL, expected_vafs = NULL, CNns = 2L) {
+calculate_ccf <- function(alt_counts, ref_counts, CNts, purity, observed_vafs = NULL, expected_vafs = NULL, CNns = 2L, prefix = NULL) {
     depths <- alt_counts + ref_counts
     obs_vafs <- observed_vafs %||% (alt_counts / depths)
-    expected_vafs <- expected_vafs %||%
-        calculate_vaf(1L, purity, CNts, CNns = CNns)
-    vafs <- prop_test_ci(alt_counts, depths, trim_value(expected_vafs))
-    lapply(list(
-        phyloCCF = obs_vafs, phyloCCF_lower = vafs[[1L]],
-        phyloCCF_higher = vafs[[2L]]
-    ), function(vcf) {
+    if (!is.null(expected_vafs)) {
+        expected_vafs <- trim_value(expected_vafs)
+    }
+    vafs <- prop_test_ci(alt_counts, depths, expected_vafs)
+    out_list <- lapply(list(obs_vafs, vafs[[1L]], vafs[[2L]]), function(vaf) {
         calculate_obs_mut(
-            CNts = CNts, vafs = vcf,
+            CNts = CNts, vafs = vaf,
             purity = purity, CNns = CNns
         )
     })
+    if (!is.null(prefix)) {
+        names(out_list) <- paste0(prefix, c("", "_lower", "_higher"))
+    }
+    out_list
 }
 
 # check which subclonal mutations can be explained by copy number
