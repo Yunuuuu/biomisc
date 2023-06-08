@@ -91,9 +91,7 @@ run_arm_cnv <- function(
         if (!all(cnv_values >= 0L)) {
             cli::cli_abort("Copy number values must be positive or 0L in {.val {cnv_mode}} CNV mode")
         }
-        if (is.null(ploidy)) {
-            ploidy <- 2L
-        }
+        ploidy <- ploidy %||% 2L
     } else if (cnv_mode == "rel") {
         S4Vectors::mcols(seg_cnv)[[cnv_field]] <- data.table::fcase(
             cnv_values < 0L, -1L, cnv_values > 0L, 1L,
@@ -156,49 +154,6 @@ run_arm_cnv <- function(
             by = c(sample_field, "chr", "arm")
         ]
     )
-}
-
-seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, other_fields = character()) {
-    # find ouverlap index --------------------------------
-    overlap_hits <- silent_expr(
-        GenomicRanges::findOverlaps(
-            seg_cnv, arm_cytoband,
-            type = "any"
-        ),
-        "Each of the 2 combined objects has sequence levels not in the other:",
-        fixed = TRUE
-    )
-    if (length(overlap_hits) == 0L) {
-        cli::cli_abort("No match between {.arg seg_cnv} and {.arg arm_cytoband}")
-    }
-    seg_hits <- S4Vectors::queryHits(overlap_hits)
-    cytoband_hits <- S4Vectors::subjectHits(overlap_hits)
-
-    # extract intersected ranges ------------------------
-    intersect_region <- silent_expr(
-        GenomicRanges::pintersect(
-            seg_cnv[seg_hits], arm_cytoband[cytoband_hits],
-            drop.nohit.ranges = FALSE,
-            ignore.strand = FALSE,
-            strict.strand = FALSE
-        ),
-        "Each of the 2 combined objects has sequence levels not in the other:",
-        fixed = TRUE
-    )
-
-    # define arm-level cnv -------------------------------
-    arm_ranges <- arm_cytoband[cytoband_hits]
-    out <- data.table::data.table(
-        chr = as.factor(GenomicRanges::seqnames(intersect_region)),
-        width = GenomicRanges::width(intersect_region),
-        arm = S4Vectors::mcols(arm_ranges)[[arm_field]],
-        arm_width = GenomicRanges::width(arm_ranges)
-    )
-    if (length(other_fields)) {
-        other_data <- data.table::as.data.table(seg_cnv[seg_hits])
-        other_data <- other_data[, .SD, .SDcols = other_fields]
-    }
-    cbind(out, other_data)
 }
 
 utils::globalVariables(c(
