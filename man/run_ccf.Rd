@@ -13,6 +13,9 @@ run_ccf(
   mut_pos = "pos",
   start_field = "startpos",
   end_field = "endpos",
+  indel_field = NULL,
+  ref_field = NULL,
+  alt_field = NULL,
   ...,
   nomatch = NULL,
   kept_cols = NULL
@@ -40,15 +43,17 @@ contains the variants positions in the chromosome.}
 \code{cnv_data} that contains the start positions and end position of the genomic
 ranges.}
 
+\item{indel_field}{A string specifying a logical column of mut_cn_data which
+indicates whether or not a variant is a indel for indel phyloCCF corretion.}
+
+\item{ref_field, alt_field}{A string specifying the column of reference allele
+or variant allele in mut_cn_data to estimate whether a variant is a indel or
+not. This will only be used when indel_field is NULL.}
+
 \item{...}{
   Arguments passed on to \code{\link[=estimate_ccf]{estimate_ccf}}
   \describe{
     \item{\code{contigs}}{An atomic vector specifying the chromosome to analyze.}
-    \item{\code{indel_field}}{A string specifying a logical column of mut_cn_data which
-indicates whether or not a variant is a indel for indel phyloCCF corretion.}
-    \item{\code{ref_field,alt_field}}{A string specifying the column of reference allele
-or variant allele in mut_cn_data to estimate whether a variant is a indel or
-not. This will only be used when indel_field is NULL.}
     \item{\code{normal_cn}}{A scalar number specifying the normal.copy number or a
 string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
 if you only analyze autosomes. Or you should use \code{gender} to define the
@@ -76,7 +81,6 @@ rows.}
 created columns will be returned.}
 }
 \description{
-Notes: This function should run for every patient of all region samples.
 \itemize{
 \item define clone and subclone based on absCCF or mut.multi.bstr
 \item define early or late with Mt or phyloCCF.
@@ -85,6 +89,9 @@ Notes: This function should run for every patient of all region samples.
 For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
 min_vaf_to_explain = 0.05. And you should provide indel_field or both
 ref_field and alt_field.
+}
+\note{
+This function should run for every patient of all region samples.
 }
 \seealso{
 \itemize{

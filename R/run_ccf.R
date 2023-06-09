@@ -1,8 +1,20 @@
 #' Matching mutation Copy number and Estimating CCF (absolute and phylogenetic)
-#' @inherit estimate_ccf description
+#' @description
+#' - define clone and subclone based on absCCF or mut.multi.bstr
+#' - define early or late with Mt or phyloCCF.
+#'
+#' For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
+#' min_vaf_to_explain = 0.05. And you should provide indel_field or both
+#' ref_field and alt_field.
+#'
 #' @inheritParams identify_mut_cn
 #' @param purity_field A string specifying the purity column (in `mut_data` or
 #'  `cnv_data`). Default is "purity".
+#' @param indel_field A string specifying a logical column of mut_cn_data which
+#' indicates whether or not a variant is a indel for indel phyloCCF corretion.
+#' @param ref_field,alt_field A string specifying the column of reference allele
+#'  or variant allele in mut_cn_data to estimate whether a variant is a indel or
+#'  not. This will only be used when indel_field is NULL.
 #' @inheritDotParams estimate_ccf -mut_cn_data -sample_field -chr_field
 #' @param nomatch When a row in `mut_data` has no match to `cnv_data`,
 #' nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
@@ -18,11 +30,13 @@
 #'  - <https://bitbucket.org/nmcgranahan/clonalneoantigenanalysispipeline>
 #'  - <https://bitbucket.org/nmcgranahan/pancancerclonality>
 #'  - <https://github.com/McGranahanLab/CONIPHER-wrapper/>
+#' @inherit estimate_ccf note
 #' @export
 run_ccf <- function(
     mut_data, cnv_data, on_sample = NULL, purity_field = NULL,
     on_chr = "chr", mut_pos = "pos", start_field = "startpos",
-    end_field = "endpos", ..., nomatch = NULL, kept_cols = NULL) {
+    end_field = "endpos", indel_field = NULL, ref_field = NULL,
+    alt_field = NULL, ..., nomatch = NULL, kept_cols = NULL) {
     assert_class(on_sample, rlang::is_scalar_character,
         "scalar {.cls character}",
         null_ok = TRUE, cross_msg = NULL
@@ -83,12 +97,67 @@ run_ccf <- function(
         purity_field = purity_field,
         chr_field = on_chr, ...
     )
+    # to ensure potentially unreliable VAFs of indels did not lead to
+    # separate mutation clusters, each estimated indel CCF was multiplied by a
+    # region specific correction factor.  Assuming the majority of ubiquitous
+    # mutations, present in all regions, are clonal, the region specific
+    # correction factor was calculated by dividing the median mutation CCF of
+    # ubiquitous mutations by the median indel CCF of ubiquitous indels.
+
+    # SNV: width(ref) == width(alt) including snv, dbs, mbs
+    if (is.null(indel_field)) {
+        if (!is.null(ref_field) && !is.null(alt_field)) {
+            out$..tmp_is_indel.. <- is_indel(
+                out[[ref_field]], out[[alt_field]]
+            )
+        } else if (!is.null(ref_field) || !is.null(alt_field)) {
+            cli::cli_abort(
+                "both {.arg ref_field} and {.arg alt_field} must be specified to correct indel phyloCCF"
+            )
+        }
+    } else {
+        if (!is.logical(out[[indel_field]])) {
+            cli::cli_abort("{indel_field} column in {.arg out} must be logical")
+        }
+        data.table::setnames(out, indel_field, "..tmp_is_indel..")
+    }
+
+    if (!is.null(out$..tmp_is_indel..)) {
+        if (is.null(on_sample)) {
+            ..tmp_nsamples.. <- 1L
+        } else {
+            ..tmp_nsamples.. <- length(unique(out[[on_sample]]))
+        }
+        # nolint start
+        ubiq_out <- out[, .SD[sum(obsVAF > 5L) == ..tmp_nsamples..],
+            by = c(on_chr, mut_pos, ref_field)
+        ][!is.na(phyloCCF)]
+        ..tmp_indel_cf.. <- ubiq_out[, list(
+            ..tmp_correction_factor =
+                median(phyloCCF[!..tmp_is_indel..]) /
+                    median(phyloCCF[..tmp_is_indel..])
+        ), by = on_sample]
+        if (is.null(on_sample)) {
+            ..tmp_indel_cf.. <- ..tmp_indel_cf..$..tmp_correction_factor
+        } else {
+            ..tmp_indel_cf.. <- structure(
+                ..tmp_indel_cf..$..tmp_correction_factor,
+                names = ..tmp_indel_cf..[[on_sample]]
+            )
+            ..tmp_indel_cf.. <- ..tmp_indel_cf..[out[[on_sample]]]
+        }
+        out[(..tmp_is_indel..), phyloCCF := phyloCCF * ..tmp_indel_cf..]
+        out[(..tmp_is_indel..), mutCopyNum := mutCopyNum * ..tmp_indel_cf..]
+        out[, ..tmp_is_indel.. := NULL]
+        # nolint end
+    }
+
     # out[, c("major_cn", "minor_cn") := list(
     #     major_cn = pmax(nMinor, nMajor), # nolint
     #     minor_cn = pmin(nMinor, nMajor) # nolint
     # )]
     columns <- c(
-        on_sample, purity_field, on_chr, mut_pos,
+        on_sample, purity_field, on_chr, mut_pos, ref_field, alt_field,
         "alt_counts", "ref_counts", start_field, end_field
     )
     for (i in c("nMajor", "nMinor")) {
@@ -112,16 +181,6 @@ run_ccf <- function(
 
 #' Estimating CCF (absolute and phylogenetic)
 #'
-#' @description
-#'  Notes: This function should run for every patient of all region samples.
-#'
-#' - define clone and subclone based on absCCF or mut.multi.bstr
-#' - define early or late with Mt or phyloCCF.
-#'
-#' For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
-#' min_vaf_to_explain = 0.05. And you should provide indel_field or both
-#' ref_field and alt_field.
-#'
 #' @param mut_cn_data A data.frame with mutation and copy number data. Copy
 #'  number often contain subclonal copy number as described in
 #'  [CONIPHER](https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1).
@@ -133,11 +192,6 @@ run_ccf <- function(
 #' @param contigs An atomic vector specifying the chromosome to analyze.
 #' @param chr_field A string specifying the chromosome column. Only used when
 #'   `contigs` is not NULL or `normal_cn` is NULL. Default is "chr".
-#' @param indel_field A string specifying a logical column of mut_cn_data which
-#' indicates whether or not a variant is a indel for indel phyloCCF corretion.
-#' @param ref_field,alt_field A string specifying the column of reference allele
-#'  or variant allele in mut_cn_data to estimate whether a variant is a indel or
-#'  not. This will only be used when indel_field is NULL.
 #' @param normal_cn A scalar number specifying the normal.copy number or a
 #'  string indicating the normal_cn column in `mut_cn_data`.  It's save to use 2
 #'  if you only analyze autosomes. Or you should use `gender` to define the
@@ -150,9 +204,10 @@ run_ccf <- function(
 #'  <https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main>
 #' @param min_vaf_to_explain A numeric, the minimal vaf value to define
 #'  subclone.
+#' @note This function should run for every patient of all region samples.
 #' @seealso [run_ccf]
 #' @export
-estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, indel_field = NULL, ref_field = NULL, alt_field = NULL, normal_cn = 2L, gender, min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE) {
+estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender, min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE) {
     # check arguments firstly
     assert_class(purity_field, rlang::is_scalar_character,
         "scalar {.cls character}",
@@ -161,7 +216,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     )
     purity_field <- purity_field %||% "purity"
     assert_df_with_columns(mut_cn_data, c(
-        sample_field, purity_field, indel_field, ref_field, alt_field,
+        sample_field, purity_field,
         "major_raw", "minor_raw", "alt_counts", "ref_counts",
         "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D",
         "nMin_A", "nMin_B", "nMin_C", "nMin_D",
@@ -192,23 +247,6 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         null_ok = TRUE, cross_msg = NULL
     )
     mut_cn_data <- data.table::as.data.table(mut_cn_data)
-    # SNV: width(ref) == width(alt) including snv, dbs, mbs
-    if (is.null(indel_field)) {
-        if (!is.null(ref_field) && !is.null(alt_field)) {
-            mut_cn_data$..tmp_is_indel.. <- is_indel(
-                mut_cn_data[[ref_field]], mut_cn_data[[alt_field]]
-            )
-        } else if (!is.null(ref_field) || !is.null(alt_field)) {
-            cli::cli_abort(
-                "both {.arg ref_field} and {.arg alt_field} must be specified to correct indel phyloCCF"
-            )
-        }
-    } else {
-        if (!is.logical(mut_cn_data[[indel_field]])) {
-            cli::cli_abort("{indel_field} column in {.arg mut_cn_data} must be logical")
-        }
-        data.table::setnames(mut_cn_data, indel_field, "..tmp_is_indel..")
-    }
     if (!is.null(contigs) || is.null(normal_cn)) {
         chr_field <- chr_field %||% "chr"
         assert_df_with_columns(mut_cn_data, chr_field, check_class = FALSE)
@@ -454,41 +492,6 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     out[, ..tmp_amp_mut_pvalue.. := NULL]
     out[, ..tmp_best_cn.. := NULL]
     # nolint end
-
-    # to ensure potentially unreliable VAFs of indels did not lead to
-    # separate mutation clusters, each estimated indel CCF was multiplied by a
-    # region specific correction factor.  Assuming the majority of ubiquitous
-    # mutations, present in all regions, are clonal, the region specific
-    # correction factor was calculated by dividing the median mutation CCF of
-    # ubiquitous mutations by the median indel CCF of ubiquitous indels.
-    if (!is.null(out$..tmp_is_indel..)) {
-        if (is.null(sample_field)) {
-            ..tmp_nsamples.. <- 1L
-        } else {
-            ..tmp_nsamples.. <- length(unique(data[[sample_field]]))
-        }
-        # nolint start
-        ubiq_out <- out[, .SD[sum(obsVAF > 5L) == ..tmp_nsamples..],
-            by = c("chr", "pos", "ref_field")
-        ][!is.na(phyloCCF)]
-        ..tmp_indel_cf.. <- ubiq_out[, list(
-            ..tmp_correction_factor =
-                median(phyloCCF[!..tmp_is_indel..]) /
-                    median(phyloCCF[..tmp_is_indel..])
-        ), by = sample_field]
-        if (is.null(sample_field)) {
-            ..tmp_indel_cf.. <- ..tmp_indel_cf..$..tmp_correction_factor
-        } else {
-            ..tmp_indel_cf.. <- structure(
-                ..tmp_indel_cf..$..tmp_correction_factor,
-                names = ..tmp_indel_cf..[[sample_field]]
-            )
-            ..tmp_indel_cf.. <- ..tmp_indel_cf..[out[[sample_field]]]
-        }
-        out[(..tmp_is_indel..), phyloCCF := phyloCCF * ..tmp_indel_cf..]
-        out[(..tmp_is_indel..), mutCopyNum := mutCopyNum * ..tmp_indel_cf..]
-        # nolint end
-    }
 
     # finally, let's sort out 'missing' ones
     out[
