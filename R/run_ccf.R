@@ -13,7 +13,7 @@
 #' @param kept_cols A character vector specifying the columns in `mut_data` or
 #' `cnv_data` you want to keep in the results. By default only used column and
 #' created columns will be returned.
-#' @seealso 
+#' @seealso
 #'  - <https://bitbucket.org/nmcgranahan/clonalneoantigenanalysispipeline>
 #'  - <https://bitbucket.org/nmcgranahan/pancancerclonality>
 #'  - <https://github.com/McGranahanLab/CONIPHER-wrapper/>
@@ -111,20 +111,21 @@ run_ccf <- function(
 
 #' Estimating CCF (absolute and phylogenetic)
 #'
-#' @description 
-#' 
-#' - define clone and subclone based on absCCF or mut.multi.bstr 
+#' @description
+#'  Notes: This function should run for every patient of all region samples.
+#'
+#' - define clone and subclone based on absCCF or mut.multi.bstr
 #' - define early or late with Mt or phyloCCF.
-#' 
+#'
 #' For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
 #' min_vaf_to_explain = 0.05.
-#' 
+#'
 #' @param mut_cn_data A data.frame with mutation and copy number data. Copy
 #'  number often contain subclonal copy number as described in
 #'  [CONIPHER](https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1).
 #' @param sample_field A string specifying the sample column. If NULL, all data
 #'  will be regarded from the same sample. This is used to confirm every sample
-#'  have the same `purity` or `gender`.
+#'  have the same `purity`.
 #' @param purity_field A string specifying the purity column. Default is
 #'  "purity".
 #' @param contigs An atomic vector specifying the chromosome to analyze.
@@ -132,21 +133,19 @@ run_ccf <- function(
 #'   `contigs` is not NULL or `normal_cn` is NULL. Default is "chr".
 #' @param normal_cn A scalar number specifying the normal.copy number or a
 #'  string indicating the normal_cn column in `mut_cn_data`.  It's save to use 2
-#'  if you only analyze autosomes. Or you should use `gender_field` to define
-#'  the `normal_cn`. For sex chromosomes and gender is "male", 1L will be used,
+#'  if you only analyze autosomes. Or you should use `gender` to define the
+#'  `normal_cn`. For sex chromosomes and gender is "male", 1L will be used,
 #'  otherwise, 2L will be used.
-#' @param gender_field A string specifying the chromosome column. Only used when
-#'   normal_cn is NULL. Default is "gender". Only "female" and "male" are
-#'   supported in this column.
+#' @param gender A string, only "female" and "male" are allowed.
 #' @param min_subclonal Minimal copy number to define subclone.
 #' @param conipher A scalar logical indicates whether calculate phyloCCF like
 #'  CONIPHER. Details see
-#'  <https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main> 
+#'  <https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main>
 #' @param min_vaf_to_explain A numeric, the minimal vaf value to define
 #'  subclone.
 #' @seealso [run_ccf]
 #' @export
-estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender_field = NULL, min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE) {
+estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender, min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE) {
     # check arguments firstly
     assert_class(purity_field, rlang::is_scalar_character,
         "scalar {.cls character}",
@@ -177,11 +176,6 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         }, "scalar {.cls numeric} or {.cls character}",
         null_ok = TRUE, cross_msg = NULL
     )
-    assert_class(gender_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        null_ok = TRUE,
-        cross_msg = NULL
-    )
     assert_class(min_subclonal, is_scalar_numeric,
         "scalar {.cls numeric}",
         null_ok = TRUE, cross_msg = NULL
@@ -202,23 +196,10 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         mut_cn_data <- mut_cn_data[matched_contigs]
     }
     if (is.null(normal_cn)) {
-        # assert every samples provided only one gender value
-        gender_field <- gender_field %||% "gender"
-        assert_df_with_columns(mut_cn_data, gender_field, check_class = FALSE)
-        if (!mut_cn_data[[gender_field]] %in% c("male", "female")) {
-            cli::cli_abort("Only {.val male} and {.val female} are supported in {.field {gender_field}} column")
-        }
-        if (!is.null(sample_field)) {
-            info_msg <- "try to set {.arg normal_cn}"
-        } else {
-            info_msg <- "try to set {.arg sample_field} or {.arg normal_cn}"
-        }
-        assert_nest(
-            mut_cn_data, gender_field, sample_field,
-            cross_format = "group", info_msg = info_msg
-        )
+        # assert every patient provided only one gender value
+        gender <- match.arg(gender, c("female", "male"))
         mut_cn_data$normal_cn <- define_normal_cn(
-            mut_cn_data[[gender_field]], mut_cn_data[[chr_field]]
+            gender, mut_cn_data[[chr_field]]
         )
     } else {
         if (is_scalar_numeric(normal_cn)) {
@@ -596,10 +577,11 @@ define_normal_cn <- function(gender, chr) {
             i = "Please check {.code ?GenomeInfoDb::seqlevelsInGroup} for definition of {.filed allosomes} and {.field autosomes}"
         ))
     }
-    data.table::fifelse(
-        gender == "male" & as.character(chr) %chin% allosomes,
-        1L, 2L
-    )
+    if (gender == "male") {
+        data.table::fifelse(as.character(chr) %chin% allosomes, 1L, 2L)
+    } else {
+        2L
+    }
 }
 
 # Multiplicity of a mutation: the number of DNA copies bearing a mutation m.

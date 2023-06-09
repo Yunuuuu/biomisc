@@ -54,8 +54,7 @@ test_that("estimate_ccf function works well", {
         end_field = "endpos"
     ))
     pyclone.table <- pyclone.table[, list(
-        SampleID,
-        gender = "male", mutation_id, chr,
+        SampleID, mutation_id, chr,
         pos = startpos,
         ref_counts = ref_counts,
         alt_counts = alt_counts,
@@ -79,7 +78,7 @@ test_that("estimate_ccf function works well", {
     # let's load the purity estimate from VAF purity
     sample.purity <- region.seg.copy$ACF[1]
 
-    pyclone.table[, normal_cn := define_normal_cn(gender, chr)]
+    pyclone.table[, normal_cn := define_normal_cn("male", chr)]
     out <- suppressWarnings(estimate_ccf(pyclone.table,
         conipher = TRUE, min_subclonal = 0.05,
         min_vaf_to_explain = 0.05

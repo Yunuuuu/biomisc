@@ -11,7 +11,7 @@ estimate_ccf(
   contigs = NULL,
   chr_field = NULL,
   normal_cn = 2L,
-  gender_field = NULL,
+  gender,
   min_vaf_to_explain = NULL,
   min_subclonal = NULL,
   conipher = FALSE
@@ -24,7 +24,7 @@ number often contain subclonal copy number as described in
 
 \item{sample_field}{A string specifying the sample column. If NULL, all data
 will be regarded from the same sample. This is used to confirm every sample
-have the same \code{purity} or \code{gender}.}
+have the same \code{purity}.}
 
 \item{purity_field}{A string specifying the purity column. Default is
 "purity".}
@@ -36,13 +36,11 @@ have the same \code{purity} or \code{gender}.}
 
 \item{normal_cn}{A scalar number specifying the normal.copy number or a
 string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
-if you only analyze autosomes. Or you should use \code{gender_field} to define
-the \code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
+if you only analyze autosomes. Or you should use \code{gender} to define the
+\code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
 otherwise, 2L will be used.}
 
-\item{gender_field}{A string specifying the chromosome column. Only used when
-normal_cn is NULL. Default is "gender". Only "female" and "male" are
-supported in this column.}
+\item{gender}{A string, only "female" and "male" are allowed.}
 
 \item{min_vaf_to_explain}{A numeric, the minimal vaf value to define
 subclone.}
@@ -54,6 +52,7 @@ CONIPHER. Details see
 \url{https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main}}
 }
 \description{
+Notes: This function should run for every patient of all region samples.
 \itemize{
 \item define clone and subclone based on absCCF or mut.multi.bstr
 \item define early or late with Mt or phyloCCF.
