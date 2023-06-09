@@ -122,7 +122,7 @@ run_ccf <- function(
         data.table::setnames(out, indel_field, "..tmp_is_indel..")
     }
 
-    if (!is.null(out$..tmp_is_indel..)) {
+    if (!is.null(out$..tmp_is_indel..) && any(out$..tmp_is_indel..)) {
         if (is.null(on_sample)) {
             ..tmp_nsamples.. <- 1L
         } else {
@@ -132,22 +132,32 @@ run_ccf <- function(
         ubiq_out <- out[, .SD[sum(obsVAF > 5L) == ..tmp_nsamples..],
             by = c(on_chr, mut_pos, ref_field)
         ][!is.na(phyloCCF)]
-        ..tmp_indel_cf.. <- ubiq_out[, list(
-            ..tmp_correction_factor =
-                median(phyloCCF[!..tmp_is_indel..]) /
-                    median(phyloCCF[..tmp_is_indel..])
-        ), by = on_sample]
-        if (is.null(on_sample)) {
-            ..tmp_indel_cf.. <- ..tmp_indel_cf..$..tmp_correction_factor
-        } else {
-            ..tmp_indel_cf.. <- structure(
-                ..tmp_indel_cf..$..tmp_correction_factor,
-                names = ..tmp_indel_cf..[[on_sample]]
-            )
-            ..tmp_indel_cf.. <- ..tmp_indel_cf..[out[[on_sample]]]
+        if (nrow(ubiq_out) > 0L) {
+            cli::cli_inform("Correcting Indel phyloCCF")
+            ..tmp_indel_cf.. <- ubiq_out[, list(
+                ..tmp_correction_factor =
+                    median(phyloCCF[!..tmp_is_indel..]) /
+                        median(phyloCCF[..tmp_is_indel..])
+            ), by = on_sample]
+            if (is.null(on_sample)) {
+                ..tmp_indel_cf.. <- ..tmp_indel_cf..$..tmp_correction_factor
+                ..tmp_indel_cf.. <- rep_len(..tmp_indel_cf.., nrow(out))
+            } else {
+                ..tmp_indel_cf.. <- structure(
+                    ..tmp_indel_cf..$..tmp_correction_factor,
+                    names = ..tmp_indel_cf..[[on_sample]]
+                )
+                ..tmp_indel_cf.. <- ..tmp_indel_cf..[out[[on_sample]]]
+            }
+            out[
+                (..tmp_is_indel..),
+                phyloCCF := phyloCCF * ..tmp_indel_cf..[..tmp_is_indel..]
+            ]
+            out[
+                (..tmp_is_indel..),
+                mutCopyNum := mutCopyNum * ..tmp_indel_cf..[..tmp_is_indel..]
+            ]
         }
-        out[(..tmp_is_indel..), phyloCCF := phyloCCF * ..tmp_indel_cf..]
-        out[(..tmp_is_indel..), mutCopyNum := mutCopyNum * ..tmp_indel_cf..]
         out[, ..tmp_is_indel.. := NULL]
         # nolint end
     }
