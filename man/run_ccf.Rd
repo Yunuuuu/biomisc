@@ -75,3 +75,10 @@ created columns will be returned.}
 \description{
 Matching  mutation Copy number and Estimating CCF (absolute and phylogenetic)
 }
+\seealso{
+\itemize{
+\item \url{https://bitbucket.org/nmcgranahan/clonalneoantigenanalysispipeline}
+\item \url{https://bitbucket.org/nmcgranahan/pancancerclonality}
+\item \url{https://github.com/McGranahanLab/CONIPHER-wrapper/}
+}
+}

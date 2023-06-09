@@ -13,6 +13,10 @@
 #' @param kept_cols A character vector specifying the columns in `mut_data` or
 #' `cnv_data` you want to keep in the results. By default only used column and
 #' created columns will be returned.
+#' @seealso 
+#'  - <https://bitbucket.org/nmcgranahan/clonalneoantigenanalysispipeline>
+#'  - <https://bitbucket.org/nmcgranahan/pancancerclonality>
+#'  - <https://github.com/McGranahanLab/CONIPHER-wrapper/>
 #' @export
 run_ccf <- function(
     mut_data, cnv_data, on_sample = NULL, purity_field = NULL,
@@ -107,8 +111,14 @@ run_ccf <- function(
 
 #' Estimating CCF (absolute and phylogenetic)
 #'
+#' @description 
+#' 
+#' - define clone and subclone based on absCCF or mut.multi.bstr 
+#' - define early or late with Mt or phyloCCF.
+#' 
 #' For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
 #' min_vaf_to_explain = 0.05.
+#' 
 #' @param mut_cn_data A data.frame with mutation and copy number data. Copy
 #'  number often contain subclonal copy number as described in
 #'  [CONIPHER](https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1).
@@ -136,7 +146,7 @@ run_ccf <- function(
 #'  subclone.
 #' @seealso [run_ccf]
 #' @export
-estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender_field = NULL, min_subclonal = NULL, conipher = FALSE, min_vaf_to_explain = NULL) {
+estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender_field = NULL, min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE) {
     # check arguments firstly
     assert_class(purity_field, rlang::is_scalar_character,
         "scalar {.cls character}",

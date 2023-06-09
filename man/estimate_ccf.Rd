@@ -12,9 +12,9 @@ estimate_ccf(
   chr_field = NULL,
   normal_cn = 2L,
   gender_field = NULL,
+  min_vaf_to_explain = NULL,
   min_subclonal = NULL,
-  conipher = FALSE,
-  min_vaf_to_explain = NULL
+  conipher = FALSE
 )
 }
 \arguments{
@@ -44,16 +44,21 @@ otherwise, 2L will be used.}
 normal_cn is NULL. Default is "gender". Only "female" and "male" are
 supported in this column.}
 
+\item{min_vaf_to_explain}{A numeric, the minimal vaf value to define
+subclone.}
+
 \item{min_subclonal}{Minimal copy number to define subclone.}
 
 \item{conipher}{A scalar logical indicates whether calculate phyloCCF like
 CONIPHER. Details see
 \url{https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main}}
-
-\item{min_vaf_to_explain}{A numeric, the minimal vaf value to define
-subclone.}
 }
 \description{
+\itemize{
+\item define clone and subclone based on absCCF or mut.multi.bstr
+\item define early or late with Mt or phyloCCF.
+}
+
 For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
 min_vaf_to_explain = 0.05.
 }
