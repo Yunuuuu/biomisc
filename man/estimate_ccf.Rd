@@ -10,6 +10,9 @@ estimate_ccf(
   purity_field = NULL,
   contigs = NULL,
   chr_field = NULL,
+  indel_field = NULL,
+  ref_field = NULL,
+  alt_field = NULL,
   normal_cn = 2L,
   gender,
   min_vaf_to_explain = NULL,
@@ -33,6 +36,13 @@ have the same \code{purity}.}
 
 \item{chr_field}{A string specifying the chromosome column. Only used when
 \code{contigs} is not NULL or \code{normal_cn} is NULL. Default is "chr".}
+
+\item{indel_field}{A string specifying a logical column of mut_cn_data which
+indicates whether or not a variant is a indel for indel phyloCCF corretion.}
+
+\item{ref_field, alt_field}{A string specifying the column of reference allele
+or variant allele in mut_cn_data to estimate whether a variant is a indel or
+not. This will only be used when indel_field is NULL.}
 
 \item{normal_cn}{A scalar number specifying the normal.copy number or a
 string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
@@ -59,7 +69,8 @@ Notes: This function should run for every patient of all region samples.
 }
 
 For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
-min_vaf_to_explain = 0.05.
+min_vaf_to_explain = 0.05. And you should provide indel_field or both
+ref_field and alt_field.
 }
 \seealso{
 \link{run_ccf}
