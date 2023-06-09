@@ -7,15 +7,16 @@
 run_ccf(
   mut_data,
   cnv_data,
+  on_patient = NULL,
   on_sample = NULL,
   purity_field = NULL,
   on_chr = "chr",
   mut_pos = "pos",
   start_field = "startpos",
   end_field = "endpos",
-  indel_field = NULL,
   ref_field = NULL,
   alt_field = NULL,
+  indel_field = NULL,
   ...,
   nomatch = NULL,
   kept_cols = NULL
@@ -25,6 +26,10 @@ run_ccf(
 \item{mut_data}{A data.frame of mutation data.}
 
 \item{cnv_data}{A data.frame of allele-specific CNV data.}
+
+\item{on_patient}{A string (can be named), specifying the patient column used
+to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
+regarded from the same patient.}
 
 \item{on_sample}{A string (can be named), specifying the sample column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
@@ -43,12 +48,13 @@ contains the variants positions in the chromosome.}
 \code{cnv_data} that contains the start positions and end position of the genomic
 ranges.}
 
-\item{indel_field}{A string specifying a logical column of mut_cn_data which
-indicates whether or not a variant is a indel for indel phyloCCF corretion.}
-
 \item{ref_field, alt_field}{A string specifying the column of reference allele
-or variant allele in mut_cn_data to estimate whether a variant is a indel or
-not. This will only be used when indel_field is NULL.}
+or variant allele in mut_data to estimate whether a variant is a indel or
+not. \code{alt_field} will only be used when \code{indel_field} is NULL. \code{ref_field}
+must be specified when \code{indel_field} or \code{alt_field} is not NULL.}
+
+\item{indel_field}{A string specifying a logical column of mut_data which
+indicates whether or not a variant is a indel.}
 
 \item{...}{
   Arguments passed on to \code{\link[=estimate_ccf]{estimate_ccf}}
@@ -60,12 +66,12 @@ if you only analyze autosomes. Or you should use \code{gender} to define the
 \code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
 otherwise, 2L will be used.}
     \item{\code{gender}}{A string, only "female" and "male" are allowed.}
+    \item{\code{min_vaf_to_explain}}{A numeric, the minimal vaf value to define
+subclone.}
     \item{\code{min_subclonal}}{Minimal copy number to define subclone.}
     \item{\code{conipher}}{A scalar logical indicates whether calculate phyloCCF like
 CONIPHER. Details see
 \url{https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main}}
-    \item{\code{min_vaf_to_explain}}{A numeric, the minimal vaf value to define
-subclone.}
   }}
 
 \item{nomatch}{When a row in \code{mut_data} has no match to \code{cnv_data},

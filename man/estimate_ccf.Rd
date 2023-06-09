@@ -54,9 +54,6 @@ CONIPHER. Details see
 \description{
 Estimating CCF (absolute and phylogenetic)
 }
-\note{
-This function should run for every patient of all region samples.
-}
 \seealso{
 \link{run_ccf}
 }
