@@ -7,6 +7,7 @@
 identify_mut_cn(
   mut_data,
   cnv_data,
+  on_patient = NULL,
   on_sample = NULL,
   on_chr = "chr",
   mut_pos = "pos",
@@ -19,6 +20,10 @@ identify_mut_cn(
 \item{mut_data}{A data.frame of mutation data.}
 
 \item{cnv_data}{A data.frame of allele-specific CNV data.}
+
+\item{on_patient}{A string (can be named), specifying the patient column used
+to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
+regarded from the same patient.}
 
 \item{on_sample}{A string (can be named), specifying the sample column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be

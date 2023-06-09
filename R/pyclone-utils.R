@@ -115,6 +115,9 @@ prepare_pyclone <- function(
 #' Identify the copy number in mutation position
 #' @param mut_data A data.frame of mutation data.
 #' @param cnv_data A data.frame of allele-specific CNV data.
+#' @param on_patient A string (can be named), specifying the patient column used
+#' to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
+#' regarded from the same patient.
 #' @param on_sample A string (can be named), specifying the sample column used
 #' to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
 #' regarded from the same sample.
@@ -132,13 +135,14 @@ prepare_pyclone <- function(
 #' from both mut_data and cnv_data.
 #' @export
 identify_mut_cn <- function(
-    mut_data, cnv_data, on_sample = NULL, on_chr = "chr", mut_pos = "pos",
-    start_field = "start", end_field = "end", nomatch = NULL) {
+    mut_data, cnv_data, on_patient = NULL, on_sample = NULL, on_chr = "chr",
+    mut_pos = "pos", start_field = "start", end_field = "end", nomatch = NULL) {
     mut_match_cn(
         mut_data = mut_data, cnv_data = cnv_data,
-        on_sample = on_sample, on_chr = on_chr,
-        mut_pos = mut_pos, start_field = start_field,
-        end_field = end_field, nomatch = nomatch
+        on_patient = on_patient, on_sample = on_sample,
+        on_chr = on_chr, mut_pos = mut_pos,
+        start_field = start_field, end_field = end_field, 
+        nomatch = nomatch
     )
 }
 
@@ -146,15 +150,23 @@ identify_mut_cn <- function(
 #' @keywords internal
 #' @noRd
 mut_match_cn <- function(
-    mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
+    mut_data, cnv_data, on_patient = NULL, on_sample = NULL, on_chr = "chr",
     mut_pos = "pos", start_field = "start", end_field = "end",
     nomatch = NULL,
+    on_patient_arg = rlang::caller_arg(on_patient),
     on_sample_arg = rlang::caller_arg(on_sample),
     on_chr_arg = rlang::caller_arg(on_chr),
     mut_pos_arg = rlang::caller_arg(on_chr),
     start_field_arg = rlang::caller_arg(start_field),
     end_field_arg = rlang::caller_arg(end_field),
     call = parent.frame()) {
+    assert_class(on_patient, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = NULL,
+        null_ok = TRUE,
+        arg = on_patient_arg,
+        call = call
+    )
     assert_class(on_sample, rlang::is_scalar_character,
         "scalar {.cls character}",
         cross_msg = NULL,
@@ -186,9 +198,13 @@ mut_match_cn <- function(
         arg = end_field_arg,
         call = call
     )
+    mut_patient_col <- names(on_patient) %||% on_patient
     mut_sample_col <- names(on_sample) %||% on_sample
     mut_chr_col <- names(on_chr) %||% on_chr
-    assert_df_with_columns(mut_data, c(mut_sample_col, mut_chr_col, mut_pos))
+    assert_df_with_columns(
+        mut_data,
+        c(mut_patient_col, mut_sample_col, mut_chr_col, mut_pos)
+    )
     assert_df_with_columns(
         cnv_data,
         c(on_sample, on_chr, start_field, end_field)
@@ -197,6 +213,24 @@ mut_match_cn <- function(
         if (anyNA(cnv_data[[i]])) {
             cli::cli_abort("{.val {NA}} is not allowed in {.code cnv_data[[{i}]]}")
         }
+    }
+    if (!is.null(on_patient)) {
+        patients_in_mut_not_in_cnv <- setdiff(
+            mut_data[[mut_patient_col]], cnv_data[[on_patient]]
+        )
+        patients_in_cnv_not_in_mut <- setdiff( # nolint
+            cnv_data[[on_patient]], mut_data[[mut_patient_col]]
+        )
+        if (length(patients_in_mut_not_in_cnv)) {
+            cli::cli_warn(c(
+                "Cannot match all patients between {.arg mut_data} and {.arg cnv_data}",
+                x = "Patients in {.arg mut_data} not in {.arg cnv_data}: {.val {patients_in_mut_not_in_cnv}}",
+                i = "Patients in {.arg cnv_data} not in {.arg mut_data}: {.val {patients_in_cnv_not_in_mut}}"
+            ))
+        }
+        on_string <- paste(on_patient, mut_patient_col, sep = "==")
+    } else {
+        on_string <- NULL
     }
     if (!is.null(on_sample)) {
         samples_in_mut_not_in_cnv <- setdiff(
@@ -212,10 +246,9 @@ mut_match_cn <- function(
                 i = "Samples in {.arg cnv_data} not in {.arg mut_data}: {.val {samples_in_cnv_not_in_mut}}"
             ))
         }
-        on_string <- paste(on_sample, mut_sample_col, sep = "==")
-    } else {
-        on_string <- character()
+        on_string <- c(on_string, paste(on_sample, mut_sample_col, sep = "=="))
     }
+
     on_string <- c(
         on_string, paste(on_chr, mut_chr_col, sep = "=="),
         paste("...start..___..pos...", "...mut..___..pos...", sep = "<="),
