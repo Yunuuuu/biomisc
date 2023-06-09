@@ -6,6 +6,7 @@
 \usage{
 estimate_ccf(
   mut_cn_data,
+  patient_field = NULL,
   sample_field = NULL,
   purity_field = NULL,
   contigs = NULL,
@@ -21,6 +22,9 @@ estimate_ccf(
 \item{mut_cn_data}{A data.frame with mutation and copy number data. Copy
 number often contain subclonal copy number as described in
 \href{https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1}{CONIPHER}.}
+
+\item{patient_field}{A string specifying the patient column. If NULL, all
+data will be regarded from the same patient.}
 
 \item{sample_field}{A string specifying the sample column. If NULL, all data
 will be regarded from the same sample. This is used to confirm every sample
@@ -53,6 +57,9 @@ CONIPHER. Details see
 }
 \description{
 Estimating CCF (absolute and phylogenetic)
+}
+\note{
+Just for internal usage.
 }
 \seealso{
 \link{run_ccf}

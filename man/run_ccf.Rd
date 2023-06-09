@@ -60,6 +60,8 @@ indicates whether or not a variant is a indel.}
   Arguments passed on to \code{\link[=estimate_ccf]{estimate_ccf}}
   \describe{
     \item{\code{contigs}}{An atomic vector specifying the chromosome to analyze.}
+    \item{\code{chr_field}}{A string specifying the chromosome column. Only used when
+\code{contigs} is not NULL or \code{normal_cn} is NULL. Default is "chr".}
     \item{\code{normal_cn}}{A scalar number specifying the normal.copy number or a
 string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
 if you only analyze autosomes. Or you should use \code{gender} to define the
@@ -87,8 +89,9 @@ rows.}
 created columns will be returned.}
 }
 \description{
+Following methods to define subclone and clone.
 \itemize{
-\item define clone and subclone based on absCCF or mut.multi.bstr
+\item define clone and subclone based on absCCF or mut_multi_btstr
 \item define early or late with Mt or phyloCCF.
 }
 
@@ -97,7 +100,9 @@ min_vaf_to_explain = 0.05. And you should provide indel_field or both
 ref_field and alt_field.
 }
 \note{
-This function should run for every patient of all region samples.
+on_sample argument is just for multi-region from a single patient. You should
+always use \code{on_patient} to specify the matched sample for a single-region
+protocol if you want to correct indel phyloCCF.
 }
 \seealso{
 \itemize{

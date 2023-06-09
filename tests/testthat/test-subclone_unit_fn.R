@@ -37,7 +37,8 @@ test_that("subclone unit function works well", {
     # test define_subclone_cn works -----------------------------
     # define subclone copy number
     seg.mat.phylo <- define_subclone_cn(
-        seg.mat.copy, min_subclonal = 0.01
+        seg.mat.copy,
+        min_subclonal = 0.01
     )[order(SampleID, chr, startpos)]
 
     create.subclonal.copy.number <- function(seg.mat.copy,
@@ -195,7 +196,8 @@ test_that("subclone unit function works well", {
     data.table::setDT(seg.mat.phylo2)
     seg.mat.phylo2 <- seg.mat.phylo2[order(SampleID, chr, startpos)]
     testthat::expect_equal(seg.mat.phylo[
-        , .SD, .SDcols = names(seg.mat.phylo2)
+        , .SD,
+        .SDcols = names(seg.mat.phylo2)
     ], seg.mat.phylo2)
 
     # test mut_match_cn works well ------------------------------
@@ -446,6 +448,145 @@ test_that("subclone unit function works well", {
     pyClone.tsv$obsVAF <- as.integer(pyClone.tsv$alt_counts) /
         (as.integer(pyClone.tsv$alt_counts) +
             as.integer(pyClone.tsv$ref_counts))
+
+    ## test new_mut_types --------------------------------
+    abs.cn <- unlist(pyClone.tsv$minor_cn) + unlist(pyClone.tsv$major_cn)
+    max.cn <- max(abs.cn)
+    types <- sequenza::mufreq.types.matrix(
+        CNt.min = 1, CNt.max = max.cn, CNn = 2
+    )
+    types.xy <- sequenza::mufreq.types.matrix(
+        CNt.min = 1, CNt.max = max.cn, CNn = 1
+    )
+    types2 <- rbind(types, types.xy)
+    types2 <- types2[types2$Mt >= 1, ]
+    types2$F <- 0
+    for (i in 1:nrow(types2)) {
+        types2$F[i] <- sequenza::theoretical.mufreq(
+            cellularity = cellularity,
+            CNn = types2$CNn[i], CNt = types2$CNt[i],
+            Mt = types2$Mt[i]
+        )
+    }
+    types <- new_mut_types(
+        max(pyClone.tsv$minor_cn + pyClone.tsv$major_cn),
+        p = cellularity
+    )
+    types2_backup <- data.table::as.data.table(types2)
+    data.table::setnames(types2_backup, "F", "mufreq")
+    data.table::setnames(types2_backup, function(x) paste0("types_", x))
+    testthat::expect_equal(nrow(data.table::fsetdiff(types, types2_backup)), 0L)
+
+    ## test get_mt_likelihood -----------------------------
+    pyClone.tsv[, Mt := {
+        # for each sample, all mutation share the same types
+        types <- new_mut_types(max(minor_cn + major_cn), p = purity[1L])
+        get_mt_likelihood(
+            obsVAF,
+            depths = alt_counts + ref_counts,
+            types = types, CNts = minor_cn + major_cn,
+            CNns = normal_cn, major_cns = major_cn
+        )
+    }, by = "SampleID"]
+    get.Mt <- function(F, depth.t, types, CNt, CNn, Mt) {
+        types <- types[types$CNn == CNn, ]
+        l <- mufreq_dpois(
+            mufreq = F, types$F[types$CNt == CNt & types$Mt <= Mt],
+            depth = depth.t
+        )
+        l <- l / sum(l)
+        L <- data.frame(l = l, Mt = types$Mt[types$CNt == CNt & types$Mt <= Mt])
+    }
+    mt2 <- vapply(seq_len(nrow(pyClone.tsv)), function(i) {
+        major.cn <- unlist(pyClone.tsv$major_cn)
+        abs.cn <- unlist(pyClone.tsv$minor_cn) + unlist(pyClone.tsv$major_cn)
+        minor.cn <- unlist(pyClone.tsv$minor_cn)
+        depth.t <- unlist(pyClone.tsv$ref_counts) + unlist(pyClone.tsv$alt_counts)
+        max.cn <- max(abs.cn)
+        VAF <- unlist(pyClone.tsv$alt_counts) / (unlist(pyClone.tsv$alt_counts) + unlist(pyClone.tsv$ref_counts))
+
+        L <- get.Mt(
+            F = pyClone.tsv$obsVAF[i],
+            depth.t = (pyClone.tsv$alt_counts + pyClone.tsv$ref_counts)[i],
+            CNt = (pyClone.tsv$minor_cn + pyClone.tsv$major_cn)[i],
+            types = types2, CNn = unlist(pyClone.tsv$normal_cn[i]),
+            Mt = pyClone.tsv$major_cn[i]
+        )
+        if (is.na(L$l[1L])) NA_real_ else L[which.max(L$l), 2L]
+    }, numeric(1L))
+    testthat::expect_equal(pyClone.tsv$Mt, mt2)
+
+    ## test
+    bootstrap.cf <- function(Vaf, cellularity, CNn, CNt, depth.t) {
+        # print(i)
+        if (Vaf == 1) {
+            conf.int <- cbind(
+                prop.test(round(Vaf * depth.t, 0), depth.t)$conf[1],
+                prop.test(round(Vaf * depth.t, 0), depth.t)$conf[2]
+            )
+
+            lower <- get.mut.mult(Vaf = conf.int[1], cellularity = cellularity, CNt = CNt, CNn = CNn)
+            higher <- get.mut.mult(Vaf = conf.int[2], cellularity = cellularity, CNt = CNt, CNn = CNn)
+            conf.int <- cbind(lower, higher)
+            return(conf.int)
+        }
+
+        x <- c(rep(1, round(Vaf * depth.t, 0)), rep(0, (depth.t - round(Vaf * depth.t, 0))))
+        theta <- function(x, i) {
+            data <- x[i]
+            est <- sum(data) / length(data)
+            mut.multi <- (est * 1 / cellularity) * ((cellularity * CNt) + CNn * (1 - cellularity))
+            return(mut.multi)
+        }
+
+        bt.res <- boot::boot(x, theta, R = 1000)
+        bt.ci <- boot::boot.ci(bt.res, type = "norm")
+        out <- c(bt.ci$normal[2], bt.ci$normal[3])
+
+        return(out)
+    }
+    get.mut.mult <- function(CNt, Vaf, cellularity, CNn) {
+        return((Vaf * 1 / cellularity) * ((cellularity * CNt) + CNn * (1 - cellularity)))
+    }
+    get.cancer.cell.fraction <- function(Max.Likelihood, mut.mult) {
+        predicted.Mtn <- Max.Likelihood[, "Mt"]
+        ccf <- mut.mult / predicted.Mtn
+        return(ccf)
+    }
+    get.conf <- function(F, depth.t) {
+        conf.int <- cbind(
+            prop.test(round(F * depth.t, 0), depth.t)$conf[1],
+            prop.test(round(F * depth.t, 0), depth.t)$conf[2]
+        )
+        return(conf.int)
+    }
+    # calculate mut_multi
+    pyClone.tsv[
+        ,
+        c("mut_multi", "mut_multi_lower", "mut_multi_higher") := calculate_ccf(
+            alt_counts, ref_counts,
+            CNts = minor_cn + major_cn,
+            purity, observed_vafs = obsVAF,
+            expected_vafs = NULL, CNns = normal_cn
+        )
+    ]
+    set.seed(1L)
+    mut.multi.bstr <- bootstrap_cf(
+        pyClone.tsv$alt_counts, pyClone.tsv$ref_counts,
+        purity = purity, CNts = pyClone.tsv$minor_cn + pyClone.tsv$major_cn, CNns = pyClone.tsv$normal_cn
+    )
+    set.seed(1L)
+    mut.multi.bstr2 <- lapply(seq_len(nrow(pyClone.tsv)), function(i) {
+        bootstrap.cf(
+            Vaf = pyClone.tsv$obsVAF[i], cellularity = cellularity,
+            CNn = unlist(pyClone.tsv$normal_cn[i]),
+            CNt = (pyClone.tsv$minor_cn + pyClone.tsv$major_cn)[i],
+            depth.t = (pyClone.tsv$ref_counts + pyClone.tsv$alt_counts)[i]
+        )
+    })
+    testthat::expect_equal(
+        mut.multi.bstr, data.table::transpose(mut.multi.bstr2)
+    )
 
     ## test calculate_abs_ccf --------------------------------
     absolute_ccfs <- calculate_abs_ccf(

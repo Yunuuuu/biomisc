@@ -41,7 +41,9 @@ Suggests:
     Biostrings,
     BiocManager,
     BSgenome.Hsapiens.UCSC.hg19,
-    hdp
+    hdp,
+    sequenza,
+    boot
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
