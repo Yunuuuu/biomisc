@@ -292,6 +292,11 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     if (!is.null(min_vaf_to_explain)) {
         out[, is_subclone := is_subclone & obsVAF >= min_vaf_to_explain]
     }
+
+    # if the observed variant allele frequency was significantly different from
+    # that expected (P<0.01, using prop.test in R) given a clonal mutation, we
+    # determined whether a subclonal copy number event could result in a
+    # non-significant (P>0.01) difference between observed and expected VAFs. 
     if (!is.null(subclone_pvalue_correction)) {
         out[, is_subclone := is_subclone & prop_test_pvalues(
             alt_counts, alt_counts + ref_counts, trim_value(expVAF),
@@ -299,14 +304,14 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
             correction = subclone_pvalue_correction
         ) < 0.01]
     }
+    if (!is.null(min_absCCF_higher)) {
+        out[, is_subclone := is_subclone & absCCF_higher < min_absCCF_higher]
+    }
     if (!is.null(subclone_prop)) {
         out[
             ,
             is_subclone := is_subclone & absolute_ccfs$prob.subclonal > subclone_prop
         ]
-    }
-    if (!is.null(min_absCCF_higher)) {
-        out[, is_subclone := is_subclone & absCCF_higher < min_absCCF_higher]
     }
     out[is_subclone & fracA == 1L, whichFrac := "A,B"]
     # nolint end
