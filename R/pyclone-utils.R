@@ -6,8 +6,8 @@
 #' "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 #' be omited. Column names don't matter.
 #' @inheritParams identify_mut_cn
-#' @param alt_field A string indicating the column names in `mut_data` that
-#' contains the tumor variant allele.
+#' @param ref_field A string indicating the column names in `mut_data` that
+#' contains the normal reference allele.
 #' @param major_cn_field,minor_cn_field A string indicating the column names in
 #' `cnv_data` that contains the major_cn and minor_cn.
 #' @param ref_counts_field,var_counts_field A string indicating the column names
@@ -29,7 +29,7 @@
 #' @export
 prepare_pyclone <- function(
     mut_data, cnv_data, on_sample = NULL, on_chr = "chr",
-    mut_pos = "pos", alt_field = "alt", start_field = "start",
+    mut_pos = "pos", ref_field = "ref", start_field = "start",
     end_field = "end", major_cn_field = "major_cn", minor_cn_field = "minor_cn",
     ref_counts_field = "ref_counts",
     var_counts_field = "var_counts",
@@ -39,7 +39,7 @@ prepare_pyclone <- function(
     assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
-        mut_pos, alt_field,
+        mut_pos, ref_field,
         ref_counts_field, var_counts_field
     ))
     assert_df_with_columns(cnv_data, c(
@@ -59,7 +59,7 @@ prepare_pyclone <- function(
     )
     out[, mutation_id := Reduce(function(x, y) {
         paste(x, y, sep = ":")
-    }, .SD), .SDcols = c(on_sample, on_chr, mut_pos, alt_field)]
+    }, .SD), .SDcols = c(on_sample, on_chr, mut_pos, ref_field)]
     out[, normal_cn := normal_cn]
     columns <- c(
         "mutation_id", ref_counts_field, var_counts_field,

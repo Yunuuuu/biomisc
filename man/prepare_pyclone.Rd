@@ -10,7 +10,7 @@ prepare_pyclone(
   on_sample = NULL,
   on_chr = "chr",
   mut_pos = "pos",
-  alt_field = "alt",
+  ref_field = "ref",
   start_field = "start",
   end_field = "end",
   major_cn_field = "major_cn",
@@ -42,8 +42,8 @@ to match mut_data and cnv_data.}
 \item{mut_pos}{A string indicating the column names in \code{mut_data} that
 contains the variants positions in the chromosome.}
 
-\item{alt_field}{A string indicating the column names in \code{mut_data} that
-contains the tumor variant allele.}
+\item{ref_field}{A string indicating the column names in \code{mut_data} that
+contains the normal reference allele.}
 
 \item{start_field, end_field}{A string indicating the column names in
 \code{cnv_data} that contains the start positions and end position of the genomic
