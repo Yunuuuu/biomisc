@@ -64,7 +64,7 @@ run_ccf <- function(
     assert_df_with_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr, mut_pos,
-        "ref_counts", "alt_counts"
+        indel_field, ref_field, alt_field, "ref_counts", "alt_counts"
     ))
     assert_df_with_columns(cnv_data, c(
         on_sample, on_chr, start_field, end_field,
