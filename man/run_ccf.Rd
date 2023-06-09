@@ -100,9 +100,9 @@ min_vaf_to_explain = 0.05. And you should provide indel_field or both
 ref_field and alt_field.
 }
 \note{
-on_sample argument is just for multi-region from a single patient. You should
-always use \code{on_patient} to specify the matched sample for a single-region
-protocol if you want to correct indel phyloCCF.
+\code{on_sample} argument is just for multi-region from a single patient. You
+should always use \code{on_patient} to specify the matched sample for a
+single-region protocol if you want to correct indel phyloCCF.
 }
 \seealso{
 \itemize{

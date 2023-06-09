@@ -164,7 +164,7 @@ run_ccf <- function(
                 ..tmp_nsamples.. <- length(unique(data[[on_sample]]))
             }
             ubiq_mut <- data[, .SD[sum(obsVAF > 5L) == ..tmp_nsamples..],
-                by = c(on_patient, on_chr, mut_pos, ref_field)
+                by = c(on_chr, mut_pos, ref_field)
             ][!is.na(phyloCCF)] # nolint
             if (nrow(ubiq_mut) > 0L) {
                 cli::cli_inform("Correcting Indel phyloCCF")
