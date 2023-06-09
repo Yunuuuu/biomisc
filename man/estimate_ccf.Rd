@@ -12,11 +12,8 @@ estimate_ccf(
   chr_field = NULL,
   normal_cn = 2L,
   gender_field = NULL,
-  subclone_prop = 0.5,
-  min_absCCF_higher = NULL,
   min_subclonal = NULL,
-  subclone_correction = FALSE,
-  subclone_pvalue_correction = NULL,
+  conipher = FALSE,
   min_vaf_to_explain = NULL
 )
 }
@@ -47,27 +44,18 @@ otherwise, 2L will be used.}
 normal_cn is NULL. Default is "gender". Only "female" and "male" are
 supported in this column.}
 
-\item{subclone_prop}{Minimal subclone proportion to define subclone.}
-
-\item{min_absCCF_higher}{Minimal right-side 95\% confidence interval of
-absolute CCF value to define subclone.}
-
 \item{min_subclonal}{Minimal copy number to define subclone.}
 
-\item{subclone_correction}{A scalar logical indicates whether subclonal copy
-number correction be used.}
-
-\item{subclone_pvalue_correction}{The method of multiple testing correction
-be applied for the copy number correcting mutations. If NULL, no multiple
-testing correction will be used.}
+\item{conipher}{A scalar logical indicates whether calculate phyloCCF like
+CONIPHER. Details see
+\url{https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main}}
 
 \item{min_vaf_to_explain}{A numeric, the minimal vaf value to define
 subclone.}
 }
 \description{
-For CONIPHER anlayis, use subclone_prop = NULL, min_absCCF_higher = 1,
-min_subclonal = 0.05, subclone_correction = TRUE, subclone_pvalue_correction
-= "BH", min_vaf_to_explain = 0.05.
+For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
+min_vaf_to_explain = 0.05.
 }
 \seealso{
 \link{run_ccf}

@@ -587,12 +587,12 @@ test_that("subclone unit function works well", {
             tmp_CNts <- major_raw + minor_raw # nolint
             list(
                 mutCopyNum / best_cn, # nolint
-                calculate_obs_mut(
+                calculate_mut_multi(
                     CNts = tmp_CNts,
                     vafs = tmp_vafs[[1L]],
                     purity = purity
                 ) / best_cn,
-                calculate_obs_mut(
+                calculate_mut_multi(
                     CNts = tmp_CNts,
                     vafs = tmp_vafs[[2]],
                     purity = purity,
@@ -744,7 +744,7 @@ test_that("subclone unit function works well", {
             nMaj_A, nMaj_B,
             fracA = fracA, fracB = fracB,
             alt_counts = alt_counts, mutCopyNum = mutCopyNum,
-            subclone_correction = FALSE
+            conipher = FALSE
         ))
     }]
     pyClone.tsv[amp_mut_pvalue < 0.05 & mutCopyNum > 1L & !is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
@@ -753,7 +753,7 @@ test_that("subclone unit function works well", {
             fracA + fracB, fracC + fracD,
             fracA + fracD, fracC + fracB,
             alt_counts = alt_counts, mutCopyNum = mutCopyNum,
-            subclone_correction = FALSE
+            conipher = FALSE
         ))
     }]
     pyClone.tsv[amp_mut_pvalue < 0.05 & mutCopyNum > 1L, c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "expVAF") := {
@@ -769,7 +769,7 @@ test_that("subclone unit function works well", {
     # official function
     amplified.muts <- which(p.vals <= 0.05 & pyClone.tsv2$mutCopyNum > 1)
     # copy numbers of subclones can only differ by 1 or 0 (as assumed when calling subclones)
-    if (length(amplified.muts) > 0) {
+    if (length(amplified.muts) > 0L) {
         for (a in amplified.muts)
         {
             mut.info <- pyClone.tsv2[a, , drop = FALSE]

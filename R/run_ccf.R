@@ -107,9 +107,8 @@ run_ccf <- function(
 
 #' Estimating CCF (absolute and phylogenetic)
 #'
-#' For CONIPHER anlayis, use subclone_prop = NULL, min_absCCF_higher = 1,
-#' min_subclonal = 0.05, subclone_correction = TRUE, subclone_pvalue_correction
-#' = "BH", min_vaf_to_explain = 0.05.
+#' For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
+#' min_vaf_to_explain = 0.05.
 #' @param mut_cn_data A data.frame with mutation and copy number data. Copy
 #'  number often contain subclonal copy number as described in
 #'  [CONIPHER](https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1).
@@ -129,20 +128,15 @@ run_ccf <- function(
 #' @param gender_field A string specifying the chromosome column. Only used when
 #'   normal_cn is NULL. Default is "gender". Only "female" and "male" are
 #'   supported in this column.
-#' @param subclone_prop Minimal subclone proportion to define subclone.
-#' @param min_absCCF_higher Minimal right-side 95% confidence interval of
-#'   absolute CCF value to define subclone.
 #' @param min_subclonal Minimal copy number to define subclone.
-#' @param subclone_correction A scalar logical indicates whether subclonal copy
-#'  number correction be used.
-#' @param subclone_pvalue_correction The method of multiple testing correction
-#'  be applied for the copy number correcting mutations. If NULL, no multiple
-#'  testing correction will be used.
+#' @param conipher A scalar logical indicates whether calculate phyloCCF like
+#'  CONIPHER. Details see
+#'  <https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main> 
 #' @param min_vaf_to_explain A numeric, the minimal vaf value to define
 #'  subclone.
 #' @seealso [run_ccf]
 #' @export
-estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender_field = NULL, subclone_prop = 0.5, min_absCCF_higher = NULL, min_subclonal = NULL, subclone_correction = FALSE, subclone_pvalue_correction = NULL, min_vaf_to_explain = NULL) {
+estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, contigs = NULL, chr_field = NULL, normal_cn = 2L, gender_field = NULL, min_subclonal = NULL, conipher = FALSE, min_vaf_to_explain = NULL) {
     # check arguments firstly
     assert_class(purity_field, rlang::is_scalar_character,
         "scalar {.cls character}",
@@ -178,19 +172,11 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         null_ok = TRUE,
         cross_msg = NULL
     )
-    assert_class(subclone_prop, is_scalar_numeric,
-        "scalar {.cls numeric}",
-        null_ok = TRUE, cross_msg = NULL
-    )
-    assert_class(min_absCCF_higher, is_scalar_numeric,
-        "scalar {.cls numeric}",
-        null_ok = TRUE, cross_msg = NULL
-    )
     assert_class(min_subclonal, is_scalar_numeric,
         "scalar {.cls numeric}",
         null_ok = TRUE, cross_msg = NULL
     )
-    assert_class(subclone_correction, rlang::is_scalar_logical,
+    assert_class(conipher, rlang::is_scalar_logical,
         "scalar {.cls logical}",
         null_ok = TRUE, cross_msg = NULL
     )
@@ -292,27 +278,25 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     if (!is.null(min_vaf_to_explain)) {
         out[, is_subclone := is_subclone & obsVAF >= min_vaf_to_explain]
     }
-
-    # if the observed variant allele frequency was significantly different from
-    # that expected (P<0.01, using prop.test in R) given a clonal mutation, we
-    # determined whether a subclonal copy number event could result in a
-    # non-significant (P>0.01) difference between observed and expected VAFs. 
-    if (!is.null(subclone_pvalue_correction)) {
+    if (conipher) {
+        # if the observed variant allele frequency was significantly different
+        # from that expected (P<0.01, using prop.test in R) given a clonal
+        # mutation, we determined whether a subclonal copy number event could
+        # result in a non-significant (P>0.01) difference between observed and
+        # expected VAFs.
         out[, is_subclone := is_subclone & prop_test_pvalues(
             alt_counts, alt_counts + ref_counts, trim_value(expVAF),
             alternative = "less",
-            correction = subclone_pvalue_correction
+            correction = "BH"
         ) < 0.01]
-    }
-    if (!is.null(min_absCCF_higher)) {
-        out[, is_subclone := is_subclone & absCCF_higher < min_absCCF_higher]
-    }
-    if (!is.null(subclone_prop)) {
+        out[, is_subclone := is_subclone & absCCF_higher < 1L]
+    } else {
         out[
             ,
-            is_subclone := is_subclone & absolute_ccfs$prob.subclonal > subclone_prop
+            is_subclone := is_subclone & absolute_ccfs$prob.subclonal > 0.5
         ]
     }
+
     out[is_subclone & fracA == 1L, whichFrac := "A,B"]
     # nolint end
 
@@ -363,10 +347,10 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
         )
     ]
     out[, ..matched_rows.. := NULL] # nolint
-    if (subclone_correction) {
+    if (conipher) {
         out[
             explained_by_cn_pvalue > 0.01,
-            ..operated_rows.. := calculate_obs_mut(
+            ..operated_rows.. := calculate_mut_multi(
                 major_raw + minor_raw,
                 prop_test_ci(
                     alt_counts, alt_counts + ref_counts,
@@ -389,12 +373,12 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
             tmp_CNts <- major_raw + minor_raw # nolint
             list(
                 mutCopyNum / best_cn, # nolint
-                calculate_obs_mut(
+                calculate_mut_multi(
                     CNts = tmp_CNts,
                     vafs = tmp_vafs[[1L]],
                     purity = purity # nolint
                 ) / best_cn,
-                calculate_obs_mut(
+                calculate_mut_multi(
                     CNts = tmp_CNts,
                     vafs = tmp_vafs[[2L]],
                     purity = purity,
@@ -429,7 +413,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
             nMaj_A, nMaj_B,
             fracA = fracA, fracB = fracB,
             alt_counts = alt_counts, mutCopyNum = mutCopyNum,
-            subclone_correction = subclone_correction
+            conipher = conipher
         )
     }]
     out[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L & !is.na(fracC), c("no.chrs.bearing.mut", "best_cn") := {
@@ -438,7 +422,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
             fracA + fracB, fracC + fracD,
             fracA + fracD, fracC + fracB,
             alt_counts = alt_counts, mutCopyNum = mutCopyNum,
-            subclone_correction = subclone_correction
+            conipher = conipher
         )
     }]
     out[amp_mut_pvalue <= 0.05 & mutCopyNum > 1L, c("phyloCCF", "phyloCCF_lower", "phyloCCF_higher", "expVAF") := {
@@ -460,6 +444,7 @@ estimate_ccf <- function(mut_cn_data, sample_field = NULL, purity_field = NULL, 
     ]
     out[]
 }
+# SNV: width(ref) == width(alt) including snv, dbs, mbs
 
 #' min.subclonal was set to 0.1 in
 #' https://bitbucket.org/nmcgranahan/clonalneoantigenanalysispipeline/src/master/
@@ -608,7 +593,7 @@ define_normal_cn <- function(gender, chr) {
 }
 
 # Multiplicity of a mutation: the number of DNA copies bearing a mutation m.
-calculate_obs_mut <- function(CNts, vafs, purity, CNns = 2L) {
+calculate_mut_multi <- function(CNts, vafs, purity, CNns = 2L) {
     (vafs / purity) * ((purity * CNts) + CNns * (1L - purity))
 }
 
@@ -671,7 +656,7 @@ calculate_ccf <- function(alt_counts, ref_counts, CNts, purity, observed_vafs = 
     }
     vafs <- prop_test_ci(alt_counts, depths, expected_vafs)
     out_list <- lapply(list(obs_vafs, vafs[[1L]], vafs[[2L]]), function(vaf) {
-        calculate_obs_mut(
+        calculate_mut_multi(
             CNts = CNts, vafs = vaf,
             purity = purity, CNns = CNns
         )
@@ -740,7 +725,7 @@ calculate_best_cn_for_loss_mut <- function(
 calculate_best_cn_for_amp_mut <- function(
     A, B, C = NULL, D = NULL,
     fracA, fracB, fracC = NULL, fracD = NULL,
-    alt_counts, mutCopyNum, subclone_correction) {
+    alt_counts, mutCopyNum, conipher) {
     m_max_cn1 <- pmax(A, B)
     m_frac1_mut <- data.table::fifelse(A < B, fracB, fracA)
     m_max_cn2 <- pmin(A, B)
@@ -766,7 +751,7 @@ calculate_best_cn_for_amp_mut <- function(
         function(max_cn1, max_cn2, frac1_mut, frac2_mut,
                  max_cn3 = NULL, max_cn4 = NULL,
                  frac3_mut = NULL, frac4_mut = NULL,
-                 mut_cn, alt_count, subclone_correction = FALSE) {
+                 mut_cn, alt_count, conipher = FALSE) {
             best_err <- mut_cn - 1L
             allCNs <- best_cn <- 1L
             for (j in seq_len(max_cn1)) {
@@ -794,7 +779,7 @@ calculate_best_cn_for_amp_mut <- function(
                 }
             }
             out <- best_cn # for no.chrs.bearing.mut
-            if (subclone_correction) {
+            if (conipher) {
                 # copied from
                 # https://github.com/McGranahanLab/CONIPHER-wrapper/blob/b58235d1cb42d5c7fd54122dc6b9f5e6c4110a75/src/TRACERxHelperFunctions.R#L1030  # nolint
                 # let's just make sure we haven't created a subclonal mutation
@@ -813,7 +798,7 @@ calculate_best_cn_for_amp_mut <- function(
             }
             c(out, best_cn)
         }, c(arg_list, list(alt_count = alt_counts, mut_cn = mutCopyNum)),
-        MoreArgs = list(subclone_correction = subclone_correction)
+        MoreArgs = list(conipher = conipher)
     )
     data.table::transpose(out_list)
 }
