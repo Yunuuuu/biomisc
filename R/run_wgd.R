@@ -227,3 +227,9 @@ wgd_staus <- function(pvalue, ploidy) {
         default = "nGD"
     )
 }
+
+utils::globalVariables(c(
+    "total_aber", "wGD", "pvalue", "ploidy", 
+    "arm_major_ploidy", "arm_minor_ploidy",
+    "arm_total_ploidy"
+))
