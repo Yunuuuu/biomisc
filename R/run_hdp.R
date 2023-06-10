@@ -309,7 +309,7 @@ hdp_data <- function(
         exposures = exposures,
         signf_exposures = signf_exposures,
         signf_metrics = signf_metrics,
-        exclude_components = signf_metrics[(!sig_cohort), components], # nolint
+        excluded_components = signf_metrics[(!sig_cohort), unique(components)], # nolint
         numdata = vapply(dps, hdp::numdata, integer(1L)),
         nRMSE = nRMSE,
         cosineSimilarity = cosineSimilarity,
