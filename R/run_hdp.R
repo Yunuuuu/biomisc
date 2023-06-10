@@ -190,3 +190,152 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
     }
     dp_tree
 }
+
+#' Extract hdp results
+#' @param hdpsample A hdpSampleChain or hdpSampleMulti
+#' @param input_matrix A matrix of counts with one row for every sample (same
+#'  order as dpindex) and one column for every data category.
+#' @param dpindices Indices of DP nodes to extract
+#' @param incl_comp0 A scalar logical indicates whether component zero should be
+#'  included in the result
+#' @param sig_active_cutoff A numeric of the minimal weight to regard a
+#'  component as active.
+#' @param cohort_threshold A numeric of the minimal proportion to regard a
+#'  component as active.
+#' @export
+hdp_data <- function(
+    hdpsample, input_matrix, dpindices = NULL,
+    incl_comp0 = FALSE, sig_active_cutoff = 0.1,
+    cohort_threshold = 0.05) {
+    assert_class(
+        hdpsample,
+        function(x) {
+            methods::is(x, "hdpSampleChain") ||
+                methods::is(x, "hdpSampleMulti")
+        },
+        msg = "{.cls hdpSampleChain} or {.cls hdpSampleMulti}"
+    )
+    if (length(hdp::comp_categ_counts(hdpsample)) == 0L) {
+        cli::cli_abort("No component info for hdpsample. First run hdp_extract_components")
+    }
+    dp_distn <- hdp::comp_dp_distn(hdpsample)
+    comp_distn <- hdp::comp_categ_distn(hdpsample)
+
+    ndp <- nrow(dp_distn$mean)
+    ncomp <- ncol(dp_distn$mean) # nolint
+    if (methods::is(hdpsample, "hdpSampleChain")) {
+        dps <- hdp::dp(hdp::final_hdpState(hdpsample))
+        pps <- hdp::ppindex(hdp::final_hdpState(hdpsample))
+    } else if (methods::is(hdpsample, "hdpSampleMulti")) {
+        dps <- hdp::dp(hdp::final_hdpState(hdp::chains(hdpsample)[[1]]))
+        pps <- hdp::ppindex(hdp::final_hdpState(hdp::chains(hdpsample)[[1]]))
+    }
+    if (is.null(dpindices)) {
+        dpindices <- which(pps == max(pps))
+    } else if (!is.numeric(dpindices) ||
+        any(round(dpindices) == dpindices) ||
+        any(dpindices < 1L) || any(dpindices > ndp)) {
+        cli::cli_abort("dpindices must be integers between 1 and {ndp}")
+    }
+    dps <- dps[dpindices]
+    pps <- pps[dpindices]
+
+    # caculate signatures and exposures --------------------------------
+    signatures <- comp_distn$mean
+    exposures <- dp_distn$mean[dpindices, , drop = FALSE]
+    if (ncol(input_matrix) != ncol(signatures)) {
+        cli::cli_abort("{.arg input_matrix} is not compatible with {.arg hdpsample}")
+    }
+    colnames(signatures) <- colnames(input_matrix)
+    if (nrow(exposures) != nrow(input_matrix)) {
+        cli::cli_warn("{.arg dpindices} is not compatible with {.arg input_matrix}")
+    } else {
+        rownames(exposures) <- rownames(input_matrix)
+    }
+    reconstructed <- exposures %*% signatures
+
+    # reconstruction error --------------------------------------------
+    RMSE <- vapply(seq_len(nrow(input_matrix)), function(i) {
+        rmse(input_matrix[i, , drop = TRUE], reconstructed[i, , drop = TRUE])
+    }, numeric(1L))
+    nRMSE <- RMSE / rowMeans(input_matrix)
+    cosineSimilarity <- vapply(seq_len(nrow(input_matrix)), function(i) {
+        cos_sim(input_matrix[i, , drop = TRUE], reconstructed[i, , drop = TRUE])
+    }, numeric(1L))
+
+    # significant signature -------------------------------------------
+
+    signf_exposures <- exposures
+    cis <- dp_distn$cred.int[dpindices]
+    nonsig <- lapply(cis, function(x) which(x[1L, ] == 0L))
+    for (i in seq_along(nonsig)) {
+        signf_exposures[i, nonsig[[i]]] <- 0L
+    }
+    if (!incl_comp0) {
+        exposures <- exposures[
+            , colnames(exposures) != "0",
+            drop = FALSE
+        ]
+        signf_exposures <- signf_exposures[
+            , colnames(signf_exposures) != "0",
+            drop = FALSE
+        ]
+    }
+    signf_metrics <- data.table::as.data.table(signf_exposures,
+        keep.rownames = "sample_id"
+    )
+    signf_metrics <- data.table::melt(signf_metrics,
+        id.vars = "sample_id",
+        variable.name = "components",
+        variable.factor = FALSE,
+        value.name = "value"
+    )
+    signf_metrics$sig_active <- signf_metrics$value > sig_active_cutoff
+    ..tmp_cohort_threshold_number.. <- cohort_threshold * nrow(exposures)
+    signf_metrics[, active_samples := sum(sig_active, na.rm = TRUE), # nolint
+        by = "components"
+    ]
+    signf_metrics[
+        , sig_cohort := active_samples > ..tmp_cohort_threshold_number.., # nolint
+    ]
+
+    mutBurden <- data.table::data.table(
+        sample = rownames(input_matrix),
+        nMut = rowSums(input_matrix)
+    )
+    list(
+        reconstructed = reconstructed,
+        signatures = signatures,
+        exposures = exposures,
+        signf_exposures = signf_exposures,
+        signf_metrics = signf_metrics,
+        exclude_components = signf_metrics[(!sig_cohort), components], # nolint
+        numdata = vapply(dps, hdp::numdata, integer(1L)),
+        nRMSE = nRMSE,
+        cosineSimilarity = cosineSimilarity,
+        mutBurden = mutBurden,
+        exposures_counts = round(exposures * mutBurden$nMut),
+        signf_exposures_counts = round(signf_exposures * mutBurden$nMut)
+    )
+}
+
+utils::globalVariables(c(
+    "active_samples", "sig_active",
+    "sig_cohort", "components"
+))
+
+cos_sim <- function(x, y) {
+    crossprod(x, y) / sqrt(crossprod(x) * crossprod(y))
+}
+
+rmse <- function(actual, predicted) {
+    sqrt(mse(actual, predicted))
+}
+
+mse <- function(actual, predicted) {
+    mean(se(actual, predicted))
+}
+
+se <- function(actual, predicted) {
+    (actual - predicted)^2L
+}

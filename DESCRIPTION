@@ -43,7 +43,8 @@ Suggests:
     BSgenome.Hsapiens.UCSC.hg19,
     hdp,
     sequenza,
-    boot
+    boot,
+    methods
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
