@@ -172,10 +172,6 @@ run_ccf <- function(
     if (!all(data.table::between(out$purity, 0L, 1L))) {
         cli::cli_abort("purity must in [0, 1]")
     }
-    assert_nest(
-        out, "purity", group,
-        cross_format = "group", info_msg = info_msg
-    )
     if (!is.null(contigs)) {
         # filter contigs
         matched_contigs <- as.character(out[[on_chr]]) %chin%
