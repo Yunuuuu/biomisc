@@ -252,7 +252,7 @@ run_ccf <- function(
         "no.chrs.bearing.mut", "whichFrac", "CPNChange",
         kept_cols
     )
-    out[, .SD, .SDcols = intersect(names(out), columns)]
+    out[, .SD, .SDcols = intersect(columns, names(out))]
 }
 
 define_normal_cn <- function(gender, chr) {
