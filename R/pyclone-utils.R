@@ -259,6 +259,10 @@ mut_match_cn <- function(
     # Also keep the original column mut_pos, start_field and end_field
     cnv_data <- data.table::as.data.table(cnv_data)
     cnv_data$...start..___..pos... <- cnv_data[[start_field]]
+    # instead of use start_field directly since this column name may also exist
+    # in mut_data, we just create a backup to know which mutation has not a
+    # matched copy number, in this way, we can remove these rows.
+    cnv_data$...start..___..pos...2 <- cnv_data[[start_field]]
     cnv_data$...end..___..pos... <- cnv_data[[end_field]]
     mut_data <- data.table::as.data.table(mut_data)
     mut_data$...mut..___..pos... <- mut_data[[mut_pos]]
@@ -282,7 +286,8 @@ mut_match_cn <- function(
     }
     # warning if nomatch found, since we have ensure start_field in cnv_data
     # have no NA value, it's save to regard NA as nomatch
-    nomatch_rows <- is.na(out$...start..___..pos...)
+
+    nomatch_rows <- is.na(out$...start..___..pos...2)
     if (any(nomatch_rows)) {
         cli::cli_warn(
             "Cannot match copy number for {sum(nomatch_rows)}/{ntotal} mutations"
@@ -291,7 +296,7 @@ mut_match_cn <- function(
     if (is.null(nomatch)) out <- out[!nomatch_rows]
 
     # remove the created columns
-    out[, c("...start..___..pos...", "...end..___..pos...") := list(NULL, NULL)]
+    out[, c("...start..___..pos...", "...start..___..pos...2", "...end..___..pos...") := list(NULL, NULL, NULL)]
     # check the match works well
     failed_pos <- out[[mut_pos]] < out[[start_field]] |
         out[[mut_pos]] > out[[end_field]]
