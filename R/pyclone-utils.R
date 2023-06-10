@@ -282,7 +282,7 @@ mut_match_cn <- function(
     }
     # warning if nomatch found, since we have ensure start_field in cnv_data
     # have no NA value, it's save to regard NA as nomatch
-    nomatch_rows <- is.na(out[[start_field]])
+    nomatch_rows <- is.na(out$...start..___..pos...)
     if (any(nomatch_rows)) {
         cli::cli_warn(
             "Cannot match copy number for {sum(nomatch_rows)}/{ntotal} mutations"
