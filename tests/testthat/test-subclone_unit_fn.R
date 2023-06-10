@@ -516,7 +516,7 @@ test_that("subclone unit function works well", {
     }, numeric(1L))
     testthat::expect_equal(pyClone.tsv$Mt, mt2)
 
-    ## test
+    ## test bootstrap_cf
     bootstrap.cf <- function(Vaf, cellularity, CNn, CNt, depth.t) {
         # print(i)
         if (Vaf == 1) {

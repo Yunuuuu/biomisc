@@ -80,7 +80,9 @@ test_that("estimate_ccf function works well", {
     sample.purity <- region.seg.copy$ACF[1]
 
     # pyclone.table[, normal_cn := define_normal_cn(gender, chr)]
-    region.phyloCCF <- suppressWarnings(estimate_ccf(pyclone.table))
+    region.phyloCCF <- suppressWarnings(estimate_phylo_ccf(
+        data.table::copy(pyclone.table)
+    ))
     subclonalDissection <- function(region,
                                     complete.mutation.table,
                                     purity) {

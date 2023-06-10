@@ -59,8 +59,8 @@ test_that("estimate_ccf function works well", {
         ref_counts = ref_counts,
         alt_counts = alt_counts,
         normal_cn = 2L,
-        major_cn = pmax(nMinor, nMajor),
-        minor_cn = pmin(nMinor, nMajor),
+        # major_cn = pmax(nMinor, nMajor),
+        # minor_cn = pmin(nMinor, nMajor),
         major_raw = nAraw, minor_raw = nBraw,
         purity = ACF,
         ref = ref, alt = var, fracA, nMaj_A, nMin_A,
@@ -70,7 +70,7 @@ test_that("estimate_ccf function works well", {
     )]
 
     # filter pyclone data -------------------------------------------
-    pyclone.table <- pyclone.table[!is.na(pyclone.table$minor_cn)]
+    # pyclone.table <- pyclone.table[!is.na(pyclone.table$minor_cn)]
     pyclone.table <- pyclone.table[!is.na(pyclone.table$ref_counts)]
     pyclone.table <- pyclone.table[!duplicated(pyclone.table$mutation_id)]
     pyclone.table <- pyclone.table[ref_counts + alt_counts >= 1L]
@@ -79,7 +79,8 @@ test_that("estimate_ccf function works well", {
     sample.purity <- region.seg.copy$ACF[1]
 
     pyclone.table[, normal_cn := define_normal_cn("male", chr)]
-    out <- suppressWarnings(estimate_ccf(pyclone.table,
+    out <- suppressWarnings(estimate_phylo_ccf(
+        data.table::copy(pyclone.table),
         conipher = TRUE, min_subclonal = 0.05,
         min_vaf_to_explain = 0.05
     ))

@@ -47,6 +47,7 @@ Suggests:
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
+    Yunuuuu/sequenza,
     Rdatatable/data.table
 Depends: 
     R (>= 3.5.0)

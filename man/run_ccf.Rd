@@ -2,11 +2,12 @@
 % Please edit documentation in R/run_ccf.R
 \name{run_ccf}
 \alias{run_ccf}
-\title{Matching mutation Copy number and Estimating CCF (absolute and phylogenetic)}
+\title{Matching mutation Copy number and Estimating CCF}
 \usage{
 run_ccf(
   mut_data,
   cnv_data,
+  ccf_type = c("phyloCCF", "bootstrapCCF", "both"),
   on_patient = NULL,
   on_sample = NULL,
   purity_field = NULL,
@@ -14,10 +15,16 @@ run_ccf(
   mut_pos = "pos",
   start_field = "startpos",
   end_field = "endpos",
+  normal_cn = 2L,
+  gender_field = NULL,
+  contigs = 1:22,
+  ...,
   ref_field = NULL,
   alt_field = NULL,
   indel_field = NULL,
-  ...,
+  min_vaf_to_explain = NULL,
+  min_subclonal = NULL,
+  conipher = FALSE,
   nomatch = NULL,
   kept_cols = NULL
 )
@@ -26,6 +33,9 @@ run_ccf(
 \item{mut_data}{A data.frame of mutation data.}
 
 \item{cnv_data}{A data.frame of allele-specific CNV data.}
+
+\item{ccf_type}{which CCF should we estimate, one of "phyloCCF" (include both
+absolute and phylogenetic CCF) or "bootstrapCCF", or "both".}
 
 \item{on_patient}{A string (can be named), specifying the patient column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
@@ -48,6 +58,21 @@ contains the variants positions in the chromosome.}
 \code{cnv_data} that contains the start positions and end position of the genomic
 ranges.}
 
+\item{normal_cn}{A scalar number specifying the normal.copy number or a
+string indicating the normal_cn column in \code{cnv_data}.  It's save to use 2
+if you only analyze autosomes. Or you should use \code{gender_field} to define
+the \code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
+otherwise, 2L will be used.}
+
+\item{gender_field}{A string specifying the gender column. Only used when
+normal_cn is NULL. Default is "gender". Only "female" and "male" are
+supported in this column.}
+
+\item{contigs}{An atomic vector specifying the chromosome to analyze. If
+NULL, all chromosome will be used.}
+
+\item{...}{Not used currently}
+
 \item{ref_field, alt_field}{A string specifying the column of reference allele
 or variant allele in mut_data to estimate whether a variant is a indel or
 not. \code{alt_field} will only be used when \code{indel_field} is NULL. \code{ref_field}
@@ -56,25 +81,14 @@ must be specified when \code{indel_field} or \code{alt_field} is not NULL.}
 \item{indel_field}{A string specifying a logical column of mut_data which
 indicates whether or not a variant is a indel.}
 
-\item{...}{
-  Arguments passed on to \code{\link[=estimate_ccf]{estimate_ccf}}
-  \describe{
-    \item{\code{contigs}}{An atomic vector specifying the chromosome to analyze.}
-    \item{\code{chr_field}}{A string specifying the chromosome column. Only used when
-\code{contigs} is not NULL or \code{normal_cn} is NULL. Default is "chr".}
-    \item{\code{normal_cn}}{A scalar number specifying the normal.copy number or a
-string indicating the normal_cn column in \code{mut_cn_data}.  It's save to use 2
-if you only analyze autosomes. Or you should use \code{gender} to define the
-\code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
-otherwise, 2L will be used.}
-    \item{\code{gender}}{A string, only "female" and "male" are allowed.}
-    \item{\code{min_vaf_to_explain}}{A numeric, the minimal vaf value to define
+\item{min_vaf_to_explain}{A numeric, the minimal vaf value to define
 subclone.}
-    \item{\code{min_subclonal}}{Minimal copy number to define subclone.}
-    \item{\code{conipher}}{A scalar logical indicates whether calculate phyloCCF like
+
+\item{min_subclonal}{Minimal copy number to define subclone.}
+
+\item{conipher}{A scalar logical indicates whether calculate phyloCCF like
 CONIPHER. Details see
 \url{https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main}}
-  }}
 
 \item{nomatch}{When a row in \code{mut_data} has no match to \code{cnv_data},
 nomatch=NA means NA is returned. NULL (or 0 for backward compatibility) means
@@ -102,7 +116,8 @@ ref_field and alt_field.
 \note{
 \code{on_sample} argument is just for multi-region from a single patient. You
 should always use \code{on_patient} to specify the matched sample for a
-single-region protocol if you want to correct indel phyloCCF.
+single-region protocol if you use phyloCCF and want to correct indel
+phyloCCF.
 }
 \seealso{
 \itemize{
