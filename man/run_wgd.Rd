@@ -33,9 +33,9 @@ Whole-genome doubling.}
 \item{contigs}{The Chromosome names to define Whole-genome doubling.}
 
 \item{major_cn_field}{A string specifying the major_cn (allele-specific)
-column in seg_cnv. Default: "major_cn". Only used when minor_cn_field is
-NULL, in this way, wGD will be calculated based on Bielski's article. See
-references.}
+column in seg_cnv. Default: "major_cn". If iminor_cn_field is NULL,
+major_cn_field must exist, in this way, wGD will be calculated based on
+Bielski's article. See references.}
 
 \item{minor_cn_field, CNt_field, ploidy_field}{A string specifying the minor_cn
 (minor allele), total_cn (tumor absoltue total copy number) and ploidy
