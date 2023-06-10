@@ -59,10 +59,11 @@ contains the variants positions in the chromosome.}
 ranges.}
 
 \item{normal_cn}{A scalar number specifying the normal.copy number or a
-string indicating the normal_cn column in \code{cnv_data}.  It's save to use 2
-if you only analyze autosomes. Or you should use \code{gender_field} to define
-the \code{normal_cn}. For sex chromosomes and gender is "male", 1L will be used,
-otherwise, 2L will be used.}
+string indicating the normal_cn column in \code{mut_data} since it define normal
+copy number for every mutation. It's save to use 2 if you only analyze
+autosomes. Or you should use \code{gender_field} to define the \code{normal_cn}. For
+sex chromosomes and gender is "male", 1L will be used, otherwise, 2L will be
+used.}
 
 \item{gender_field}{A string specifying the gender column. Only used when
 normal_cn is NULL. Default is "gender". Only "female" and "male" are

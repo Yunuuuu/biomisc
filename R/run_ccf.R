@@ -15,10 +15,11 @@
 #' @param purity_field A string specifying the purity column (in `mut_data` or
 #'  `cnv_data`). Default is "purity".
 #' @param normal_cn A scalar number specifying the normal.copy number or a
-#'  string indicating the normal_cn column in `cnv_data`.  It's save to use 2
-#'  if you only analyze autosomes. Or you should use `gender_field` to define
-#'  the `normal_cn`. For sex chromosomes and gender is "male", 1L will be used,
-#'  otherwise, 2L will be used.
+#'  string indicating the normal_cn column in `mut_data` since it define normal
+#'  copy number for every mutation. It's save to use 2 if you only analyze
+#'  autosomes. Or you should use `gender_field` to define the `normal_cn`. For
+#'  sex chromosomes and gender is "male", 1L will be used, otherwise, 2L will be
+#'  used.
 #' @param gender_field A string specifying the gender column. Only used when
 #'   normal_cn is NULL. Default is "gender". Only "female" and "male" are
 #'   supported in this column.
@@ -186,7 +187,10 @@ run_ccf <- function(
     if (is.null(normal_cn)) {
         # assert every samples provided only one gender value
         gender_field <- gender_field %||% "gender"
-        assert_df_with_columns(out, gender_field, check_class = FALSE)
+        assert_df_with_columns(out, gender_field,
+            check_class = FALSE,
+            arg = c("mut_data", "cnv_data")
+        )
         if (!all(out[[gender_field]] %in% c("male", "female"))) {
             cli::cli_abort("Only {.val male} and {.val female} are supported in {.field {gender_field}} column")
         }
@@ -199,7 +203,10 @@ run_ccf <- function(
         if (is_scalar_numeric(normal_cn)) {
             out[, normal_cn := normal_cn]
         } else {
-            assert_df_with_columns(out, normal_cn, check_class = FALSE)
+            assert_df_with_columns(out, normal_cn,
+                check_class = FALSE,
+                arg = "mut_data"
+            )
             if (!is.numeric(out[[normal_cn]])) {
                 cli::cli_abort("{normal_cn} column in {.arg mut_data} or {.arg cnv_data} must be numeric")
             }
