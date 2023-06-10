@@ -5,12 +5,15 @@
 #' @param sample_field A string specifying the sample id column in seg_cnv.
 #' @param contigs The Chromosome names to define Whole-genome doubling.
 #' @param major_cn_field A string specifying the major_cn (allele-specific)
-#'  column in seg_cnv. Default: "major_cn".
+#'  column in seg_cnv. Default: "major_cn". Only used when minor_cn_field is
+#'  NULL, in this way, wGD will be calculated based on Bielski's article. See
+#'  references. 
 #' @param thresholds An integer vector specifying the thresholds to define
 #'  Whole-genome doubling.
 #' @param minor_cn_field,CNt_field,ploidy_field A string specifying the minor_cn
-#'  (minor allele), total_cn (segmented absoltue copy number) and ploidy column
-#'  in seg_cnv. Only used when `major_cn_field` is NULL.
+#'  (minor allele), total_cn (tumor absoltue total copy number) and ploidy
+#'  column in seg_cnv. If minor_cn_field is not NULL, wGD will be calculated
+#'  based on Sally M's article. See references. 
 #' @inheritParams run_arm_cnv
 #' @param perm_times An integer specifying the times of simulation genome.
 #' @references
