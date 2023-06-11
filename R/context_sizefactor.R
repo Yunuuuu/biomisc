@@ -21,7 +21,7 @@
 #' @param exome_ranges A [GenomicRanges][GenomicRanges::GRanges] Object define
 #' exome ranges.
 #' @return A numeric size factor for each mut_context
-#' @export 
+#' @export
 context_sizefactor <- function(context, method = c("genome", "exome", "exome2genome", "genome2exome"), ref_genome = NULL, exome_ranges = NULL, contigs = NULL) {
     assert_class(
         context, function(x) {
@@ -40,7 +40,10 @@ context_sizefactor <- function(context, method = c("genome", "exome", "exome2gen
 }
 
 calculate_context_sizefactor <- function(context, ref_genome, exome_ranges = NULL, method = NULL, contigs = NULL) {
-    method <- match.arg(method)
+    method <- match.arg(
+        method,
+        c("genome", "exome", "exome2genome", "genome2exome")
+    )
     context_width <- nchar(context)[1L]
     if (!is.null(contigs)) contigs <- as.character(contigs)
     if (grepl("genome", method, fixed = TRUE)) {
