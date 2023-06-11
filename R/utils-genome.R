@@ -178,6 +178,17 @@ map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
     x
 }
 
+
+#' Get available/installed genomes
+#' @param ref_genome BSgenome object or name of the installed BSgenome package.
+#'  Example: "hg38". Details see "genome" argument of
+#'  [getBSgenome][BSgenome::getBSgenome].
+#' @keywords internal
+get_genome <- function(ref_genome) {
+    ref_genome <- ref_genome %||% "hg19"
+    BSgenome::getBSgenome(ref_genome)
+}
+
 assert_range_unique <- function(gr, group = NULL, arg_group = rlang::caller_arg(group), call = parent.frame()) {
     if (is.null(group)) {
         if (any_overlap(gr)) {
