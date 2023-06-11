@@ -42,6 +42,7 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
     if (is.null(sample_field)) {
         sub_type_matrix <- c(table(snv_sub_type_context))
         sub_type_matrix <- matrix(sub_type_matrix, ncol = 1L)
+        rownames(sub_type_matrix) <- standard_snv_sub_context
     } else {
         sub_type_matrix <- table(
             snv_sub_type_context,
