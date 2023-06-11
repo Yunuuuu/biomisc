@@ -1,7 +1,7 @@
 #' Calculates trinucleotide (or more) context fraction
 #'
 #' Determines trinucleotide (or more) context fraction from a mutation counts
-#' list. 
+#' list.
 #' @param mut_data A data.frame of mutation data.
 #' @param sample_field A string specifying the sample id column in mut_data.
 #' @param chr_field,mut_pos A string, specifying the chromosome and variants
@@ -14,7 +14,7 @@
 #' Details see [context_sizefactor]
 #' @inheritParams context_sizefactor
 #' @return the mutation context matrix
-#' @export 
+#' @export
 snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr_field = "chr", mut_pos = "pos", ref_field = "ref", alt_field = "alt", extension = 1L, method = NULL, contigs = NULL, exome_ranges = NULL) {
     assert_df_with_columns(mut_data, c(
         sample_field, chr_field, mut_pos, ref_field, alt_field
@@ -48,6 +48,9 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
             snv_sub_type_context,
             S4Vectors::mcols(snv_context_data$mut)[[sample_field]]
         )
+        # convert table into matrix
+        names(dimnames(sub_type_matrix)) <- NULL
+        sub_type_matrix <- unclass(sub_type_matrix)
     }
 
     if (!is.null(method)) {
