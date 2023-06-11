@@ -29,8 +29,7 @@ context_sizefactor <- function(context, method = c("genome", "exome", "exome2gen
         },
         msg = "characters each element with the same number of strings", cross_msg = FALSE
     )
-    ref_genome <- ref_genome %||% "hg19"
-    ref_genome <- BSgenome::getBSgenome(ref_genome)
+    ref_genome <- get_genome(ref_genome)
     calculate_context_sizefactor(
         context, ref_genome,
         exome_ranges = exome_ranges,
