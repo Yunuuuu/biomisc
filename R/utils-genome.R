@@ -205,6 +205,14 @@ any_overlap <- function(gr) {
     any(S4Vectors::queryHits(hits) != S4Vectors::subjectHits(hits))
 }
 
+gr_extend <- function(x, extension = 1L, use.names = TRUE) {
+    GenomicRanges::update_ranges(x,
+        start = GenomicRanges::start(x) - extension,
+        end = GenomicRanges::end(x) + extension,
+        use.names = use.names
+    )
+}
+
 prepare_granges <- function(data, chr_field, start_field, end_field, other_fields = NULL, keep.extra.columns = TRUE, ignore.strand = TRUE, fun = NULL, call = parent.frame()) {
     assert_pkg("S4Vectors", fun = fun, frame = call)
     assert_pkg("GenomicRanges", fun = fun, frame = call)
