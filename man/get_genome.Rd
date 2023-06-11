@@ -8,7 +8,7 @@ get_genome(ref_genome)
 }
 \arguments{
 \item{ref_genome}{BSgenome object or name of the installed BSgenome package.
-Example: "hg38". Details see "genome" argument of
+Default: "hg19". Details see "genome" argument of
 \link[BSgenome:available.genomes]{getBSgenome}.}
 }
 \description{

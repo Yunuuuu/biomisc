@@ -181,7 +181,7 @@ map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
 
 #' Get available/installed genomes
 #' @param ref_genome BSgenome object or name of the installed BSgenome package.
-#'  Example: "hg38". Details see "genome" argument of
+#'  Default: "hg19". Details see "genome" argument of
 #'  [getBSgenome][BSgenome::getBSgenome].
 #' @keywords internal
 get_genome <- function(ref_genome) {
