@@ -90,9 +90,9 @@ run_motif_fisher <- function(
     )
     assert_class(
         background_snv, function(x) {
-            is.character(x) && all(x %chin% names(substitution_pairs))
+            is.character(x) && all(x %chin% names(standard_snv_sub))
         },
-        msg = "{.cls character} (among {.val {unique(names(substitution_pairs))}})",
+        msg = "{.cls character} (among {.val {unique(names(standard_snv_sub))}})",
         cross_msg = NULL, null_ok = TRUE
     )
 
@@ -107,10 +107,10 @@ run_motif_fisher <- function(
     background_snv_type <- background_snv %||%
         grep(
             sprintf("^(%s)", paste0(signature_mut_bases, collapse = "|")),
-            names(substitution_pairs),
+            names(standard_snv_sub),
             value = TRUE, perl = TRUE
         )
-    background_snv_type <- unique(standardize_substitution(background_snv_type))
+    background_snv_type <- unique(standardize_snv_sub(background_snv_type))
 
     # check signature_motif, background_snv, signature_mut_bases are compipable
     signature_motif_mut_bases <- unique(substring(signature_motif, 2L, 2L))
@@ -210,7 +210,7 @@ run_motif_fisher <- function(
         sample = mut_gr$sample,
         Biostrings::alphabetFrequency(bg)[, Biostrings::DNA_BASES],
         Biostrings::trinucleotideFrequency(bg),
-        define_snv_motif(motif, mut_gr$ref, mut_gr$alt)
+        define_snv_sub_tri_context(motif, mut_gr$ref, mut_gr$alt)
     )
     cli::cli_inform(c(
         i = "Using {.val {background_snv_type}} to define {.field background_mut_freq}",

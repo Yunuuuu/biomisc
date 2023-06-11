@@ -1,6 +1,19 @@
-make_snv_nucleotide <- function(extension = 1L) {
+# for mutation (including SNV, DBS, MBS)
+# for substitution (sub), we indicates with string ">"
+combine_mut_context <- function(context, sub, extension = 1L) {
+    paste0(
+        Biostrings::substring(context, 1L, extension),
+        "[", sub, "]",
+        Biostrings::substring(
+            context, Biostrings::nchar(context) - extension,
+            Biostrings::nchar(context)
+        )
+    )
+}
+
+standard_snv_context <- function(extension = 1L) {
     pairs_list <- c(
-        rep_len(list(Biostrings::DNA_BASES), extension), 
+        rep_len(list(Biostrings::DNA_BASES), extension),
         list(c("T", "C")),
         rep_len(list(Biostrings::DNA_BASES), extension)
     )
@@ -9,15 +22,11 @@ make_snv_nucleotide <- function(extension = 1L) {
     unlist(n_nucleotide, recursive = FALSE, use.names = FALSE)
 }
 
-standardize_substitution <- function(x) {
-    unname(substitution_pairs[x])
-}
-
 # values should be the standardized substitution
 # names are substitution can be found out
 #' @keywords internal
-#' @noRd 
-substitution_pairs <- structure(
+#' @noRd
+standard_snv_sub <- structure(
     c(
         "T>C", "T>C", "C>T", "C>T", "T>A", "T>A", "T>G", "T>G",
         "C>A", "C>A", "C>G", "C>G"
@@ -28,41 +37,127 @@ substitution_pairs <- structure(
     )
 )
 
-define_snv_motif <- function(motif, ref, alt, motif_extension = 1L) {
-    substitution <- paste0(ref, ">", alt)
+standardize_snv_sub <- function(x) {
+    unname(standard_snv_sub[x])
+}
 
-    substitution_motif <- combine_snv_motif(
-        substitution, motif, motif_extension
+sub_context <- function(chr, pos, ref, alt, strand = "+", ref_genome = NULL, extension = 1L, bg_extension = NULL) {
+    # get ref_genome
+    ref_genome <- ref_genome %||% "hg19"
+    ref_genome <- BSgenome::getBSgenome(ref_genome)
+
+    # create mutation GenomicRanges
+    mut_gr <- GenomicRanges::makeGRangesFromDataFrame(
+        data.frame(
+            chr = chr, start = pos,
+            end = pos + nchar(ref) - 1L,
+            ref = ref, alt = alt, strand = strand
+        ),
+        keep.extra.columns = TRUE,
+        ignore.strand = TRUE,
+        seqnames.field = "chr",
+        start.field = "start",
+        end.field = "end",
+        strand.field = "strand",
+        starts.in.df.are.0based = FALSE
+    )
+
+    # match seqlevelstyle between mut_gr and ref_genome
+    ref_genome_style <- GenomeInfoDb::seqlevelsStyle(ref_genome)
+    mut_gr <- map_seqnames(mut_gr, ref_genome_style, "chr")
+    GenomeInfoDb::seqlevels(mut_gr) <- GenomeInfoDb::seqlevels(ref_genome)
+    suppressWarnings(
+        GenomeInfoDb::seqinfo(mut_gr) <- GenomeInfoDb::seqinfo(ref_genome)
+    )
+    # remove out-of ranges mutations
+    out_ranges <- GenomicRanges::trim(mut_gr) != mut_gr
+    if (any(out_ranges)) {
+        cli::cli_warn("Removing {.val {sum(out_ranges)}} ({format_percent(mean(out_ranges))}) out-of-bound mutations compared with {.arg ref_genome}")
+    }
+    mut_gr <- mut_gr[!out_ranges]
+
+    # Get context
+    context <- suppressWarnings(gr_extend(mut_gr, extension = extension))
+    good_ranges <- GenomicRanges::trim(context) == context
+    mut_gr <- mut_gr[good_ranges]
+    context <- BSgenome::getSeq(
+        x = ref_genome, context[good_ranges],
+        as.character = FALSE
+    )
+
+    # check mutation reference allele match the second base in context
+    matched_ranges <- mut_gr$ref == as.character(
+        Biostrings::subseq(context, extension + 1L, extension + 1L)
+    )
+    if (any(!matched_ranges)) {
+        cli::cli_warn("Removing {.val {sum(!matched_ranges)}} ({format_percent(mean(!matched_ranges))}) mutations whose reference allele cannot match the {.arg ref_genome}")
+    }
+    mut_gr <- mut_gr[matched_ranges]
+    context <- context[matched_ranges]
+
+    if (is.null(bg_extension)) {
+        bg <- suppressWarnings(gr_extend(mut_gr, extension = bg_extension))
+        # omit out-of-bound ranges
+        trimed_bg <- GenomicRanges::trim(bg)
+        good_ranges <- trimed_bg == bg
+        bg <- BSgenome::getSeq(
+            x = ref_genome, trimed_bg, as.character = FALSE
+        )
+    } else {
+        bg <- NULL
+    }
+
+    sub <- paste0(mut_gr$ref, ">", mut_gr$alt)
+    sub_type <- standardize_snv_sub(sub)
+    # need to reverse-complement triplet for mutated purines (not just the
+    # middle base) which ones need to be reverse-complemented
+    need_complement <- sub_type != sub
+    sub_type_context <- context
+    sub_type_context[need_complement] <- Biostrings::reverseComplement(
+        sub_type_context[need_complement]
+    )
+    list(
+        mut = mut_gr, sub = sub,
+        sub_type = sub_type,
+        context = context,
+        sub_type_context = sub_type_context,
+        bg_context = bg
+    )
+}
+
+define_snv_sub_tri_context <- function(motif, ref, alt) {
+    sub <- paste0(ref, ">", alt)
+
+    sub_motif <- combine_mut_context(
+        motif, sub, 1L
     )
 
     # need to reverse-complement triplet for mutated purines (not just the
     # middle base) which ones need to be reverse-complemented
-    substitution_type <- standardize_substitution(substitution)
-    substitution_type_motif <- substitution_motif
+    sub_type <- standardize_snv_sub(sub)
+    sub_type_motif <- sub_motif
     need_complement <- which(ref %chin% c("G", "A"))
-    complemented_motif <- Biostrings::reverseComplement(motif)
-    substitution_type_motif[need_complement] <- combine_snv_motif(
-        substitution_type[need_complement],
-        complemented_motif[need_complement],
-        motif_extension
+    sub_type_motif[need_complement] <- combine_mut_context(
+        Biostrings::reverseComplement(motif)[need_complement],
+        sub_type[need_complement], 1L
     )
     data.table::data.table(
-        Substitution = factor(substitution,
-            levels = names(substitution_pairs)
+        Substitution = factor(sub,
+            levels = names(standard_snv_sub)
         ),
-        SubstitutionMotif = factor(substitution_motif,
-            levels = snv_motif
+        SubstitutionMotif = factor(sub_motif,
+            levels = snv_sub_tri_context
         ),
-        SubstitutionType = factor(substitution_type,
-            levels = unique(substitution_pairs)
+        SubstitutionType = factor(sub_type,
+            levels = unique(standard_snv_sub)
         ),
-        SubstitutionTypeMotif = factor(substitution_type_motif,
-            levels = snv_type_motif
+        SubstitutionTypeMotif = factor(sub_type_motif,
+            levels = standard_snv_sub_tri_context
         )
     )
 }
 
-snv_motif <- c(
+snv_sub_tri_context <- c(
     "C[G>A]A", "T[C>G]C", "A[G>A]C", "T[C>T]A", "T[G>C]A", "C[G>A]C",
     "A[A>G]C", "T[G>A]G", "G[G>A]A", "G[C>T]G", "T[G>A]A", "T[C>A]T",
     "C[C>T]A", "G[G>C]A", "T[C>A]C", "T[C>T]G", "A[G>C]A", "G[C>T]T",
@@ -98,7 +193,7 @@ snv_motif <- c(
 )
 
 # Possible substitution types after being referred to by the pyrimidine of the mutated Watson-Crick base pair
-snv_type_motif <- c(
+standard_snv_sub_tri_context <- c(
     "A[C>A]A", "A[C>A]C", "A[C>A]G", "A[C>A]T", "C[C>A]A", "C[C>A]C",
     "C[C>A]G", "C[C>A]T", "G[C>A]A", "G[C>A]C", "G[C>A]G", "G[C>A]T",
     "T[C>A]A", "T[C>A]C", "T[C>A]G", "T[C>A]T", "A[C>G]A", "A[C>G]C",
@@ -116,14 +211,3 @@ snv_type_motif <- c(
     "C[T>G]A", "C[T>G]C", "C[T>G]G", "C[T>G]T", "G[T>G]A", "G[T>G]C",
     "G[T>G]G", "G[T>G]T", "T[T>G]A", "T[T>G]C", "T[T>G]G", "T[T>G]T"
 )
-
-combine_snv_motif <- function(substitution, motif, motif_extension = 1L) {
-    paste0(
-        Biostrings::substring(motif, 1L, motif_extension),
-        "[", substitution, "]",
-        Biostrings::substring(
-            motif, motif_extension + 2L,
-            motif_extension * 2L + 1L
-        )
-    )
-}
