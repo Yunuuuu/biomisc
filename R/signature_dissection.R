@@ -139,10 +139,12 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
         }
     }
     list(
+        original = signature,
         signature_fraction = signature_fraction,
-        subset_fraction = subset_fraction, reconstruction = reconstruction,
+        subset_fraction = subset_fraction, 
+        reconstruction = reconstruction,
         cosine_similarity = cosine_similarity,
-        signature = reconstruction %||% signature
+        final = reconstruction %||% signature
     )
 }
 
