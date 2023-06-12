@@ -129,7 +129,8 @@ run_signature_dissection <- function(signature, targets, cos_sim_threthold = 0.9
     list(
         signature_fraction = signature_fraction,
         subset_fraction = subset_fraction, reconsbs = reconsbs,
-        cosine_similarity = cosine_similarity
+        cosine_similarity = cosine_similarity,
+        signature = reconsbs %||% signature
     )
 }
 
