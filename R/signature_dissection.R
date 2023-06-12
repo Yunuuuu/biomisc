@@ -118,16 +118,18 @@ run_signature_dissection <- function(signature, targets, cos_sim_threthold = 0.9
     # --> skip if only one COMSIC signature is assigned
     if (length(subset_fraction$target) == 1L && unique) {
         reconsbs <- NULL
+        cosine_similarity <- NULL
     } else {
         reconsbs <- .mapply(function(target, fraction) {
             targets[target, , drop = TRUE] * fraction
         }, subset_fraction, NULL)
         reconsbs <- Reduce(`+`, reconsbs)
+        cosine_similarity <- cos_sim(reconsbs, signature)
     }
     list(
         signature_fraction = signature_fraction,
         subset_fraction = subset_fraction, reconsbs = reconsbs,
-        cosineSimilarities = cos_sim(reconsbs, signature)
+        cosine_similarity = cosine_similarity
     )
 }
 
