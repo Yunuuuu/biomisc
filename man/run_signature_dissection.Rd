@@ -8,11 +8,12 @@ signatures}
 run_signature_dissection(
   signature,
   targets,
+  prior = NULL,
   cos_sim_threthold = 0.9,
   emfrac_threshold = 0.1,
   maxiter = 1000L,
   alpha_threshold = 1e-05,
-  unique = FALSE
+  unique = !is.null(prior)
 )
 }
 \arguments{
@@ -20,6 +21,9 @@ run_signature_dissection(
 
 \item{targets}{A signature matrix with sinature in row and data items in
 column (othen COSMIC).}
+
+\item{prior}{A string specifying the prior name in targets of current
+signature.}
 
 \item{cos_sim_threthold}{If the cosine similarity is below a certain
 threshold (0.95 seems to work well), we then apply an expectation
