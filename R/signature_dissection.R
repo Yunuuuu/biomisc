@@ -55,9 +55,6 @@
 run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_threthold = 0.9, emfrac_threshold = 0.1, maxiter = 1000L, alpha_threshold = 1e-5, unique = !is.null(prior)) {
     assert_class(signature, is.numeric, "numeric")
     assert_class(targets, is.matrix, "matrix")
-    assert_class(prior, function(x) {
-        rlang::is_scalar_character(x) && prior %chin% rownames(targets)
-    }, "scalar {.cls character} in {.code rownames(targets)}", null_ok = TRUE)
     if (anyNA(signature)) {
         cli::cli_warn(c(
             "Found {NA} value in {.arg signature}",
@@ -71,12 +68,16 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
     if (is.null(rownames(targets))) {
         rownames(targets) <- paste0("Signature", seq_len(nrow(targets)))
     }
+    assert_class(prior, function(x) {
+        rlang::is_scalar_character(x) && prior %chin% rownames(targets)
+    }, "scalar {.cls character} in {.code rownames(targets)}", null_ok = TRUE)
     signature_fraction <- run_em(signature, targets,
         maxiter = maxiter, threshold = alpha_threshold
     )
     cos_sim_out <- vapply(seq_len(nrow(targets)), function(i) {
         cos_sim(targets[i, , drop = TRUE], signature)
-    }, numeric(1L), USE.NAMES = TRUE)
+    }, numeric(1L), USE.NAMES = FALSE)
+    names(cos_sim_out) <- rownames(targets)
     if (!is.null(prior) && cos_sim_out[prior] > cos_sim_threthold) {
         subset_fraction <- data.table::data.table(
             target = prior, fraction = 1L,
