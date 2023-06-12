@@ -80,10 +80,9 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
     names(cos_sim_out) <- rownames(targets)
     if (!is.null(prior) && cos_sim_out[prior] > cos_sim_threthold) {
         subset_fraction <- data.table::data.table(
-            target = prior, fraction = 1L,
-            cos_sim = cos_sim_out[prior]
+            target = prior, fraction = 1L
         )
-        reconsbs <- NULL
+        reconstruction <- NULL
         cosine_similarity <- cos_sim_out[prior]
     } else {
         is_sig <- which(cos_sim_out > cos_sim_threthold)
@@ -92,8 +91,7 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
             cos_sim_idx <- which.max(cos_sim_out)
             target <- rownames(targets)[cos_sim_idx]
             subset_fraction <- data.table::data.table(
-                target = target, fraction = 1L,
-                cos_sim = cos_sim_out[cos_sim_idx]
+                target = target, fraction = 1L
             )
         } else {
             # re-run EM only with signatures with fraction greater than
@@ -124,27 +122,27 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
                 x$cos_sim[[1L]]
             }, numeric(1L))
             subset_fraction <- pairwise_test[[which.max(re_cos_sim_out)]]
+            subset_fraction <- subset_fraction[, !"cos_sim"]
         }
-        subset_fraction <- subset_fraction[, !"cos_sim"]
         # reconstitute HDP signatures using the identified COSMIC sigs and calculate
         # the cosine similarity between the original and the reconstituted sig.
         # --> skip if only one COMSIC signature is assigned
         if (length(subset_fraction$target) == 1L && unique) {
-            reconsbs <- NULL
+            reconstruction <- NULL
             cosine_similarity <- cos_sim_out[subset_fraction$target]
         } else {
-            reconsbs <- .mapply(function(target, fraction) {
+            reconstruction <- .mapply(function(target, fraction) {
                 targets[target, , drop = TRUE] * fraction
             }, subset_fraction, NULL)
-            reconsbs <- Reduce(`+`, reconsbs)
-            cosine_similarity <- cos_sim(reconsbs, signature)
+            reconstruction <- Reduce(`+`, reconstruction)
+            cosine_similarity <- c(cos_sim(reconstruction, signature))
         }
     }
     list(
         signature_fraction = signature_fraction,
-        subset_fraction = subset_fraction, reconsbs = reconsbs,
+        subset_fraction = subset_fraction, reconstruction = reconstruction,
         cosine_similarity = cosine_similarity,
-        signature = reconsbs %||% signature
+        signature = reconstruction %||% signature
     )
 }
 
