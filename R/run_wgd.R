@@ -152,7 +152,7 @@ run_wgd <- function(
         ]
         out[total_aber > 0L,
             c("A_prob", "B_prob") := lapply(.SD, function(x) {
-                abs(x - 1L) / total_aber
+                abs(x) / total_aber
             }),
             .SDcols = c("A", "B")
         ]
@@ -201,7 +201,6 @@ calculate_wgd <- function(events, arm_major_ploidy, total_aber, perm_times) {
             )
             pvalue <- mean(perm_wgd_events >= obs_wgd_event)
         }
-        pvalue <- pvalue
     }
     c(pvalue = pvalue, out_list)
 }
