@@ -98,7 +98,7 @@ test_that("run_signature_dissection works", {
                 # }
 
                 reconstr <- results[1] * psbs[, sig_pairs[i, 1]] + results[2] * psbs[, sig_pairs[i, 2]]
-                cosSim <- lsa::cosine(reconstr, output_signature)
+                cosSim <- cos_sim(reconstr, output_signature)
                 out <- data.frame(hdp = x, cosmic = names(results), fraction = as.numeric(results), cosineSimilarity = cosSim)
                 return(out)
             })
