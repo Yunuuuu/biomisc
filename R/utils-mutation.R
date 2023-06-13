@@ -133,20 +133,20 @@ snv_sub_context <- function(mut_data, chr_field = "chr", mut_pos = "pos", ref_fi
         S4Vectors::mcols(mut_gr)[[ref_field]], ">",
         S4Vectors::mcols(mut_gr)[[alt_field]]
     )
-    sub_type <- standardize_snv_sub(sub)
+    standard_snv_sub <- standardize_snv_sub(sub)
     # need to reverse-complement triplet for mutated purines (not just the
     # middle base) which ones need to be reverse-complemented
-    need_complement <- which(sub_type != sub)
-    sub_type_context <- context
-    sub_type_context[need_complement] <- Biostrings::reverseComplement(
-        sub_type_context[need_complement]
+    need_complement <- which(standard_snv_sub != sub)
+    standard_snv_context <- context
+    standard_snv_context[need_complement] <- Biostrings::reverseComplement(
+        standard_snv_context[need_complement]
     )
     list(
         mut = mut_gr,
         sub = sub,
         context = context,
-        sub_type = sub_type,
-        sub_type_context = sub_type_context,
+        standard_snv_sub = standard_snv_sub,
+        standard_snv_context = standard_snv_context,
         bg_context = bg
     )
 }

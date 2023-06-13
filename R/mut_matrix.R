@@ -32,8 +32,8 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
         bg_extension = NULL
     )
     snv_sub_context <- combine_sub_context(
-        snv_context_data$sub_type_context,
-        sub = snv_context_data$sub_type,
+        snv_context_data$standard_snv_context,
+        sub = snv_context_data$standard_snv_sub,
         extension = extension
     )
     standard_snv_sub_context <- enumerate_standard_snv_sub_context(extension)
