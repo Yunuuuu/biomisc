@@ -110,7 +110,7 @@ run_wgd <- function(
         as.character(GenomeInfoDb::seqnames(arm_cytoband)) %chin% contigs
     ]
     out <- seg_to_arm_seg(
-        seg_cnv = out,
+        seg_data = out,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
         group_fields = group_fields,
@@ -233,5 +233,5 @@ wgd_staus <- function(pvalue, ploidy) {
 utils::globalVariables(c(
     "total_aber", "wGD", "pvalue", "ploidy", 
     "arm_major_ploidy", "arm_minor_ploidy",
-    "arm_total_ploidy"
+    "arm_total_ploidy", "width", "arm_width", "CNV"
 ))

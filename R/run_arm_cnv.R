@@ -29,7 +29,7 @@
 #'   ploidy ("abs" cnv_mode) derived from [run_absolute][ABSOLUTE::RunAbsolute]
 #'   algorithm. Or you can also provide a string to specifying the ploidy column
 #'   in `seg_cnv`. If NULL, the weighted median by aberrant genome width will be
-#'   returned. 
+#'   returned.
 #' @author Yun \email{yunyunpp96@@outlook.com}
 #' @return A [data.table][data.table::data.table] containing
 #' Chromosome-arm-levels copy number.
@@ -131,7 +131,7 @@ run_arm_cnv <- function(
         S4Vectors::mcols(arm_cytoband)[[arm_field]] %in% arms
     ]
     out <- seg_to_arm_seg(
-        seg_cnv = seg_cnv,
+        seg_data = seg_cnv,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
         group_fields = group_fields,
@@ -178,4 +178,3 @@ run_arm_cnv <- function(
         ]
     }
 }
-utils::globalVariables(c("CNV", "width", "arm_width"))
