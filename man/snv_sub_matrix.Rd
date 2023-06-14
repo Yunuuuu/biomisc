@@ -15,7 +15,8 @@ snv_sub_matrix(
   extension = 1L,
   method = NULL,
   contigs = NULL,
-  exome_ranges = NULL
+  exome_ranges = NULL,
+  pruning_mode = "error"
 )
 }
 \arguments{
@@ -44,6 +45,12 @@ factor to normalize the context matrix.}
 
 \item{exome_ranges}{A \link[GenomicRanges:GRanges-class]{GenomicRanges} Object define
 exome ranges.}
+
+\item{pruning_mode}{When some of the seqlevels to drop from \code{exome_ranges}
+are in use (i.e. have ranges on them), the ranges on these sequences need to
+be removed before the seqlevels can be dropped. We call this pruning. The
+pruning_mode argument controls how to prune x. See
+\link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
 }
 \value{
 the mutation context matrix

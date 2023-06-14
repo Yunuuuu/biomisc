@@ -15,7 +15,7 @@
 #' @inheritParams context_sizefactor
 #' @return the mutation context matrix
 #' @export
-snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr_field = "chr", mut_pos = "pos", ref_field = "ref", alt_field = "alt", extension = 1L, method = NULL, contigs = NULL, exome_ranges = NULL) {
+snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr_field = "chr", mut_pos = "pos", ref_field = "ref", alt_field = "alt", extension = 1L, method = NULL, contigs = NULL, exome_ranges = NULL, pruning_mode = "error") {
     assert_df_with_columns(mut_data, c(
         sample_field, chr_field, mut_pos, ref_field, alt_field
     ))
@@ -58,7 +58,8 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
         sub_type_matrix <- sub_type_matrix *
             calculate_context_sizefactor(snv_context,
                 method = method, contigs = contigs,
-                ref_genome = ref_genome, exome_ranges = exome_ranges
+                ref_genome = ref_genome, exome_ranges = exome_ranges,
+                pruning_mode = pruning_mode
             )
     }
     sub_type_matrix
