@@ -225,7 +225,6 @@ gr_extend <- function(x, extension = 1L, use.names = TRUE) {
 }
 
 prepare_granges <- function(data, chr_field, start_field, end_field, other_fields = NULL, keep.extra.columns = TRUE, ignore.strand = TRUE, fun = NULL, call = parent.frame()) {
-    assert_pkg("S4Vectors", fun = fun, frame = call)
     assert_pkg("GenomicRanges", fun = fun, frame = call)
     assert_class(chr_field, rlang::is_scalar_character,
         "scalar {.cls character}",
