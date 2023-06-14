@@ -111,18 +111,18 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
     out
 }
 
-seg_to_arm_seg <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL, other_fields = character()) {
+seg_to_arm_seg <- function(seg_data, arm_cytoband, arm_field, group_fields = NULL, other_fields = character()) {
     # find ouverlap index --------------------------------
     overlap_hits <- silent_expr(
         GenomicRanges::findOverlaps(
-            seg_cnv, arm_cytoband,
+            seg_data, arm_cytoband,
             type = "any"
         ),
         "Each of the 2 combined objects has sequence levels not in the other:",
         fixed = TRUE
     )
     if (length(overlap_hits) == 0L) {
-        cli::cli_abort("No match between {.arg seg_cnv} and {.arg arm_cytoband}")
+        cli::cli_abort("No match between {.arg seg_data} and {.arg arm_cytoband}")
     }
     seg_hits <- S4Vectors::queryHits(overlap_hits)
     cytoband_hits <- S4Vectors::subjectHits(overlap_hits)
@@ -130,7 +130,7 @@ seg_to_arm_seg <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL
     # extract intersected ranges ------------------------
     intersect_region <- silent_expr(
         GenomicRanges::pintersect(
-            seg_cnv[seg_hits], arm_cytoband[cytoband_hits],
+            seg_data[seg_hits], arm_cytoband[cytoband_hits],
             drop.nohit.ranges = FALSE,
             ignore.strand = FALSE,
             strict.strand = FALSE
@@ -150,7 +150,7 @@ seg_to_arm_seg <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL
     # ensure everything in the output
     other_fields <- c(other_fields, group_fields)
     if (length(other_fields)) {
-        other_data <- data.table::as.data.table(seg_cnv[seg_hits])
+        other_data <- data.table::as.data.table(seg_data[seg_hits])
         other_data <- other_data[, .SD, .SDcols = other_fields]
     }
     out <- cbind(out, other_data)
@@ -170,9 +170,13 @@ seg_to_arm_seg <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL
     data.table::setcolorder(out, "arm_width", after = "arm")
 }
 
-map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
+map_seqnames <- function(x, style, arg = rlang::caller_arg(x), style_arg = NULL) {
     if (all(GenomeInfoDb::seqlevelsStyle(x) != style)) {
-        cli::cli_inform("Mapping seqnames of {.arg {arg}} to {style} style")
+        msg <- "Mapping seqnames of {.arg {arg}} to {style} style"
+        if (!is.null(style_arg)) {
+            msg <- paste(msg, "of {.arg style_arg}")
+        }
+        cli::cli_inform(msg)
         GenomeInfoDb::seqlevelsStyle(x) <- style
     }
     x
@@ -185,6 +189,7 @@ map_seqnames <- function(x, style, arg = rlang::caller_arg(x)) {
 #'  [getBSgenome][BSgenome::getBSgenome].
 #' @keywords internal
 get_genome <- function(ref_genome) {
+    assert_pkg("BSgenome")
     ref_genome <- ref_genome %||% "hg19"
     BSgenome::getBSgenome(ref_genome)
 }
