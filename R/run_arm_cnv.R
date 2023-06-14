@@ -22,12 +22,14 @@
 #'   centromere, namely genomic ranges interseted with "acen" arm of
 #'   ref_cytoband.  Default: `TRUE`.
 #' @param threshold The fraction to define Chromosome arm-level aneuploidy
-#'   profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).
+#'   profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode). If NULL,
+#'   the fraction of aberrant genome will be returned.
 #' @param ploidy_field A single numeric indicates the ploidy to define
 #'   Chromosome arm-level aneuploidy profiling.  Cohen-Sharir uses background
 #'   ploidy ("abs" cnv_mode) derived from [run_absolute][ABSOLUTE::RunAbsolute]
 #'   algorithm. Or you can also provide a string to specifying the ploidy column
-#'   in `seg_cnv`.
+#'   in `seg_cnv`. If NULL, the weighted median by aberrant genome width will be
+#'   returned. 
 #' @author Yun \email{yunyunpp96@@outlook.com}
 #' @return A [data.table][data.table::data.table] containing
 #' Chromosome-arm-levels copy number.
@@ -60,9 +62,12 @@ run_arm_cnv <- function(
     other_fields <- cnv_field
     group_fields <- sample_field
     if (cnv_mode == "abs") {
-        assert_class(ploidy_field, function(x) {
-            rlang::is_scalar_character(x) || is_scalar_numeric(x)
-        }, "scalar {.cls numeric} or {.cls chacter}", cross_msg = NULL)
+        assert_class(ploidy_field,
+            function(x) {
+                rlang::is_scalar_character(x) || is_scalar_numeric(x)
+            }, "scalar {.cls numeric} or {.cls chacter}",
+            cross_msg = NULL, null_ok = TRUE
+        )
         if (is.character(ploidy_field)) {
             assert_nest(seg_cnv, ploidy_field, group = sample_field)
             group_fields <- c(sample_field, ploidy_field)
@@ -133,15 +138,14 @@ run_arm_cnv <- function(
         other_fields = cnv_field
     )
     data.table::setnames(out, cnv_field, "CNV")
-    if (cnv_mode == "abs" && is.character(ploidy_field)) {
-        data.table::setnames(out, ploidy_field, "ploidy")
-    }
-    switch(cnv_mode,
-        rel = out[, list(arm_cnv = as.integer(
-            sum(abs(CNV) * width / arm_width, na.rm = TRUE) > threshold # nolint
-        )), by = c(sample_field, "chr", "arm")],
+    if (cnv_mode == "abs" && !is.null(ploidy_field)) {
+        if (is.character(ploidy_field)) {
+            data.table::setnames(out, ploidy_field, "ploidy")
+        } else {
+            out[, ploidy := ploidy_field]
+        }
         # https://github.com/broadinstitute/Aneuploidy_dependencies/blob/master/make_CCLE_arm_calls.R
-        abs = out[,
+        out[,
             {
                 median_weighted <- matrixStats::weightedMedian(
                     CNV, w = width, na.rm = TRUE # nolint styler: off
@@ -152,7 +156,26 @@ run_arm_cnv <- function(
             },
             by = c(sample_field, "chr", "arm")
         ]
-    )
+    } else if (cnv_mode == "abs") {
+        out[,
+            list(arm_cnv = matrixStats::weightedMedian(
+                    CNV, w = width, na.rm = TRUE # nolint styler: off
+            )),
+            by = c(sample_field, "chr", "arm")
+        ]
+    } else if (cnv_mode == "rel" && !is.null(threshold)) {
+        out[,
+            list(
+                arm_cnv = as.integer(
+                    sum(abs(CNV) * width / arm_width, na.rm = TRUE) > threshold
+                )
+            ),
+            by = c(sample_field, "chr", "arm")
+        ]
+    } else {
+        out[, list(arm_cnv = CNV * width / arm_width),
+            by = c(sample_field, "chr", "arm")
+        ]
+    }
 }
-
 utils::globalVariables(c("CNV", "width", "arm_width"))

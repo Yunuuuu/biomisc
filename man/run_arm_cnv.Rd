@@ -36,7 +36,8 @@ amp).}
 Chromosome arm-level aneuploidy profiling.  Cohen-Sharir uses background
 ploidy ("abs" cnv_mode) derived from \link[ABSOLUTE:RunAbsolute]{run_absolute}
 algorithm. Or you can also provide a string to specifying the ploidy column
-in \code{seg_cnv}.}
+in \code{seg_cnv}. If NULL, the weighted median by aberrant genome width will be
+returned.}
 
 \item{chr_field, start_field, end_field}{A string specifying the column of the
 chromosome name, start positions and end positions of the genomic ranges in
@@ -64,7 +65,8 @@ centromere, namely genomic ranges interseted with "acen" arm of
 ref_cytoband.  Default: \code{TRUE}.}
 
 \item{threshold}{The fraction to define Chromosome arm-level aneuploidy
-profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).}
+profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode). If NULL,
+the fraction of aberrant genome will be returned.}
 }
 \value{
 A \link[data.table:data.table]{data.table} containing
