@@ -109,7 +109,7 @@ run_wgd <- function(
     arm_cytoband <- arm_cytoband[
         as.character(GenomeInfoDb::seqnames(arm_cytoband)) %chin% contigs
     ]
-    out <- seg_to_arm(
+    out <- seg_to_arm_seg(
         seg_cnv = out,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,

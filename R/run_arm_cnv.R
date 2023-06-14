@@ -130,7 +130,7 @@ run_arm_cnv <- function(
     arm_cytoband <- arm_cytoband[
         S4Vectors::mcols(arm_cytoband)[[arm_field]] %in% arms
     ]
-    out <- seg_to_arm(
+    out <- seg_to_arm_seg(
         seg_cnv = seg_cnv,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,

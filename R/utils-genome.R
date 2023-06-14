@@ -111,7 +111,7 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
     out
 }
 
-seg_to_arm <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL, other_fields = character()) {
+seg_to_arm_seg <- function(seg_cnv, arm_cytoband, arm_field, group_fields = NULL, other_fields = character()) {
     # find ouverlap index --------------------------------
     overlap_hits <- silent_expr(
         GenomicRanges::findOverlaps(
