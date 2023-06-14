@@ -162,10 +162,17 @@ seg_to_arm_seg <- function(seg_data, arm_cytoband, arm_field, group_fields = NUL
         c("seqnames", arm_field, "width"), c("chr", "arm", "arm_width")
     )
     ref_cytoband_dt <- ref_cytoband_dt[, c("chr", "arm", "arm_width")]
-    out <- out[,
-        .SD[ref_cytoband_dt, on = c("chr", "arm"), allow.cartesian = FALSE],
-        by = group_fields
-    ]
+    if (is.null(group_fields)) {
+        out <- out[ref_cytoband_dt,
+            on = c("chr", "arm"),
+            allow.cartesian = FALSE
+        ]
+    } else {
+        out <- out[,
+            .SD[ref_cytoband_dt, on = c("chr", "arm"), allow.cartesian = FALSE],
+            by = group_fields
+        ]
+    }
     # finally, move arm_width next to arm column
     data.table::setcolorder(out, "arm_width", after = "arm")
 }
