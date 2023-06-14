@@ -16,13 +16,18 @@
 #'   the trinucleotide's occurence in the exome.
 #'
 #'   Details see <https://github.com/raerose01/deconstructSigs>
+#' @param exome_ranges A [GenomicRanges][GenomicRanges::GRanges] Object define
+#'  exome ranges.
 #' @param contigs An atomic vector specifying the chromosome to define the  size
 #' factor to normalize the context matrix.
-#' @param exome_ranges A [GenomicRanges][GenomicRanges::GRanges] Object define
-#' exome ranges.
+#' @param pruning_mode When some of the seqlevels to drop from `exome_ranges`
+#'  are in use (i.e. have ranges on them), the ranges on these sequences need to
+#'  be removed before the seqlevels can be dropped. We call this pruning. The
+#'  pruning_mode argument controls how to prune x. See
+#'  [seqinfo][GenomeInfoDb::seqinfo] pruning.mode
 #' @return A numeric size factor for each mut_context
 #' @export
-context_sizefactor <- function(context, method = c("genome", "exome", "exome2genome", "genome2exome"), ref_genome = NULL, exome_ranges = NULL, contigs = NULL) {
+context_sizefactor <- function(context, method = c("genome", "exome", "exome2genome", "genome2exome"), ref_genome = NULL, exome_ranges = NULL, contigs = NULL, pruning_mode = "error") {
     assert_class(
         context, function(x) {
             all(nchar(context) == nchar(context)[1L])
@@ -34,22 +39,34 @@ context_sizefactor <- function(context, method = c("genome", "exome", "exome2gen
         context, ref_genome,
         exome_ranges = exome_ranges,
         method = method,
-        contigs = contigs
+        contigs = contigs,
+        pruning_mode = pruning_mode
     )
 }
 
-calculate_context_sizefactor <- function(context, ref_genome, exome_ranges = NULL, method = NULL, contigs = NULL) {
+calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_ranges = NULL, method = NULL, contigs = NULL, pruning_mode = "error") {
     method <- match.arg(
         method,
         c("genome", "exome", "exome2genome", "genome2exome")
     )
     context_width <- nchar(context)[1L]
-    if (!is.null(contigs)) contigs <- as.character(contigs)
+    if (grepl("genome", method, fixed = TRUE)) {
+        seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_genome)
+        seqstyle_arg <- "ref_genome"
+    } else {
+        seqstyle <- GenomeInfoDb::seqlevelsStyle(exome_ranges)
+        seqstyle_arg <- "exome_ranges"
+    }
+    if (length(seqstyle) > 1L) {
+        cli::cli_abort(" the styles of the seqlevels in {.arg {seqstyle_arg}} is not unique")
+    }
+    if (!is.null(contigs)) {
+        contigs <- as.character(contigs)
+        contigs <- map_seqnames(contigs, seqstyle, style_arg = seqstyle_arg)
+    }
     if (grepl("genome", method, fixed = TRUE)) {
         if (is.null(contigs)) {
             contigs <- GenomeInfoDb::seqnames(ref_genome)
-        } else {
-            contigs <- intersect(GenomeInfoDb::seqnames(ref_genome), contigs)
         }
         pcounts_wgs <- Biostrings::oligonucleotideFrequency(
             BSgenome::getSeq(ref_genome, contigs, strand = "+"),
@@ -72,15 +89,15 @@ calculate_context_sizefactor <- function(context, ref_genome, exome_ranges = NUL
         counts_wgs <- pcounts_wgs[context] + ncounts_wgs[context]
     }
     if (grepl("exome", method, fixed = TRUE)) {
-        exome_ranges <- map_seqnames(
-            exome_ranges,
-            GenomeInfoDb::seqlevelsStyle(ref_genome)
+        exome_ranges <- map_seqnames(exome_ranges,
+            seqstyle,
+            style_arg = seqstyle_arg
         )
         exome_ranges <- GenomicRanges::reduce(exome_ranges)
         if (!is.null(contigs)) {
             exome_ranges <- GenomeInfoDb::keepSeqlevels(
                 exome_ranges, contigs,
-                pruning.mode = "tidy"
+                pruning.mode = pruning_mode
             )
         }
         GenomicRanges::strand(exome_ranges) <- "+"

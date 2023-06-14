@@ -9,7 +9,8 @@ context_sizefactor(
   method = c("genome", "exome", "exome2genome", "genome2exome"),
   ref_genome = NULL,
   exome_ranges = NULL,
-  contigs = NULL
+  contigs = NULL,
+  pruning_mode = "error"
 )
 }
 \arguments{
@@ -42,6 +43,12 @@ exome ranges.}
 
 \item{contigs}{An atomic vector specifying the chromosome to define the  size
 factor to normalize the context matrix.}
+
+\item{pruning_mode}{When some of the seqlevels to drop from \code{exome_ranges}
+are in use (i.e. have ranges on them), the ranges on these sequences need to
+be removed before the seqlevels can be dropped. We call this pruning. The
+pruning_mode argument controls how to prune x. See
+\link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
 }
 \value{
 A numeric size factor for each mut_context
