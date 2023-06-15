@@ -264,23 +264,17 @@ hdp_data <- function(
     }, numeric(1L))
 
     # significant signature -------------------------------------------
-
     signf_exposures <- exposures
     cis <- dp_distn$cred.int[dpindices]
     nonsig <- lapply(cis, function(x) which(x[1L, ] == 0L))
     for (i in seq_along(nonsig)) {
         signf_exposures[i, nonsig[[i]]] <- 0L
     }
-    if (!incl_comp0) {
-        exposures <- exposures[
-            , colnames(exposures) != "0",
-            drop = FALSE
-        ]
-        signf_exposures <- signf_exposures[
-            , colnames(signf_exposures) != "0",
-            drop = FALSE
-        ]
-    }
+    signf_exposures <- signf_exposures[
+        , colnames(signf_exposures) != "0",
+        drop = FALSE
+    ]
+    signf_signatures <- signatures[rownames(signatures) != "0", , drop = FALSE]
     signf_metrics <- data.table::as.data.table(signf_exposures,
         keep.rownames = "sample_id"
     )
@@ -298,7 +292,14 @@ hdp_data <- function(
     signf_metrics[
         , sig_cohort := active_samples > ..tmp_cohort_threshold_number.., # nolint
     ]
-
+    excluded_components <- signf_metrics[(!sig_cohort), unique(components)]
+    signf_signatures <- signf_signatures[
+        !signf_signatures %in% excluded_components, , drop = FALSE
+    ]
+    signf_exposures <- signf_exposures[
+        , !colnames(signf_exposures) %in% excluded_components,
+        drop = FALSE
+    ]
     mutBurden <- data.table::data.table(
         sample = rownames(input_matrix),
         nMut = rowSums(input_matrix)
@@ -307,15 +308,16 @@ hdp_data <- function(
         reconstructed = reconstructed,
         signatures = signatures,
         exposures = exposures,
-        signf_exposures = signf_exposures,
-        signf_metrics = signf_metrics,
-        excluded_components = signf_metrics[(!sig_cohort), unique(components)], # nolint
         numdata = vapply(dps, hdp::numdata, integer(1L)),
+        exposures_counts = round(exposures * mutBurden$nMut),
+        signf_signatures = signf_signatures,
+        signf_exposures = signf_exposures,
+        signf_exposures_counts = round(signf_exposures * mutBurden$nMut),
+        signf_metrics = signf_metrics,
+        excluded_components = excluded_components,
         RMSE = RMSE, nRMSE = nRMSE,
         cosineSimilarity = cosineSimilarity,
-        mutBurden = mutBurden,
-        exposures_counts = round(exposures * mutBurden$nMut),
-        signf_exposures_counts = round(signf_exposures * mutBurden$nMut)
+        mutBurden = mutBurden
     )
 }
 
