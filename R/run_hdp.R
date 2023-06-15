@@ -196,8 +196,6 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
 #' @param input_matrix A matrix of counts with one row for every sample (same
 #'  order as dpindex) and one column for every data category.
 #' @param dpindices Indices of DP nodes to extract
-#' @param incl_comp0 A scalar logical indicates whether component zero should be
-#'  included in the result
 #' @param sig_active_cutoff A numeric of the minimal weight to regard a
 #'  component as active.
 #' @param cohort_threshold A numeric of the minimal proportion to regard a
@@ -205,7 +203,7 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
 #' @export
 hdp_data <- function(
     hdpsample, input_matrix, dpindices = NULL,
-    incl_comp0 = FALSE, sig_active_cutoff = 0.1,
+    sig_active_cutoff = 0.1,
     cohort_threshold = 0.05) {
     assert_class(
         hdpsample,

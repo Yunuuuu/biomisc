@@ -8,7 +8,6 @@ hdp_data(
   hdpsample,
   input_matrix,
   dpindices = NULL,
-  incl_comp0 = FALSE,
   sig_active_cutoff = 0.1,
   cohort_threshold = 0.05
 )
@@ -20,9 +19,6 @@ hdp_data(
 order as dpindex) and one column for every data category.}
 
 \item{dpindices}{Indices of DP nodes to extract}
-
-\item{incl_comp0}{A scalar logical indicates whether component zero should be
-included in the result}
 
 \item{sig_active_cutoff}{A numeric of the minimal weight to regard a
 component as active.}
