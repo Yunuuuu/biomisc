@@ -292,7 +292,7 @@ hdp_data <- function(
     ]
     excluded_components <- signf_metrics[(!sig_cohort), unique(components)]
     signf_signatures <- signf_signatures[
-        !signf_signatures %in% excluded_components, , drop = FALSE
+        !rownames(signf_signatures) %in% excluded_components, , drop = FALSE
     ]
     signf_exposures <- signf_exposures[
         , !colnames(signf_exposures) %in% excluded_components,
