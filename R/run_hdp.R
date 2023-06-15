@@ -231,7 +231,7 @@ hdp_data <- function(
     if (is.null(dpindices)) {
         dpindices <- which(pps == max(pps))
     } else if (!is.numeric(dpindices) ||
-        any(round(dpindices) == dpindices) ||
+        !any(round(dpindices) == dpindices) ||
         any(dpindices < 1L) || any(dpindices > ndp)) {
         cli::cli_abort("dpindices must be integers between 1 and {ndp}")
     }
