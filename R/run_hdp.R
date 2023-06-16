@@ -239,7 +239,7 @@ hdp_data <- function(
         pps <- hdp::ppindex(hdp::final_hdpState(hdp::chains(hdpsample)[[1]]))
     }
     if (is.null(dpindices)) {
-        dpindices <- (length(pps) - ncol(signatures) + 1L):length(pps)
+        dpindices <- (length(pps) - nrow(input_matrix) + 1L):length(pps)
     } else if (!is.numeric(dpindices) ||
         !any(round(dpindices) == dpindices) ||
         any(dpindices < 1L) || any(dpindices > ndp)) {
