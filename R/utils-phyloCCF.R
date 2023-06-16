@@ -15,7 +15,7 @@ estimate_phylo_ccf <- function(
     mut_cn_data, patient_field = NULL, sample_field = NULL,
     chr_field = NULL, pos_field = NULL, ref_field = NULL,
     alt_field = NULL, indel_field = NULL,
-    min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE) {
+    min_vaf_to_explain = NULL, conipher = FALSE) {
     assert_class(
         ref_field, rlang::is_scalar_character,
         "scalar {.cls character}",
@@ -30,10 +30,6 @@ estimate_phylo_ccf <- function(
         indel_field, rlang::is_scalar_character,
         "scalar {.cls character}",
         cross_msg = NULL, null_ok = TRUE
-    )
-    assert_class(min_subclonal, is_scalar_numeric,
-        "scalar {.cls numeric}",
-        null_ok = TRUE, cross_msg = NULL
     )
     assert_class(min_vaf_to_explain, is_scalar_numeric,
         "scalar {.cls numeric}",
@@ -138,11 +134,11 @@ estimate_phylo_ccf <- function(
         )
     ]
     out[, ..tmp_matched_rows.. := ..tmp_best_cn.. == 1L]
-    if (!is.null(min_subclonal)) {
+    if (conipher) {
         out[
             ,
             ..tmp_matched_rows.. := ..tmp_matched_rows.. |
-                ..tmp_best_cn.. >= (1 - min_subclonal)
+                ..tmp_best_cn.. >= (1 - 0.05)
         ]
     }
     out[
@@ -286,57 +282,62 @@ estimate_phylo_ccf <- function(
         data.table::setnames(out, indel_field, "..tmp_is_indel..")
     }
     if (!is.null(out$..tmp_is_indel..) && any(out$..tmp_is_indel..)) {
-        if (is.null(patient_field)) {
-            out_list <- list(out)
+        # we keep backup sample numbers of every patient
+        if (is.null(sample_field)) {
+            out[, ..tmp_nsamples.. := 1L] # nolint
         } else {
-            out_list <- split(out, by = patient_field, drop = TRUE)
-        }
-        out_list <- lapply(out_list, function(data) {
-            if (is.null(sample_field)) {
-                ..tmp_nsamples.. <- 1L
+            if (is.null(patient_field)) {
+                out[, ..tmp_nsamples.. := length(unique(.SD[[1L]])), # nolint
+                    .SDcols = sample_field
+                ]
             } else {
-                ..tmp_nsamples.. <- length(unique(data[[sample_field]]))
-            }
-            ubiq_mut <- data[, .SD[sum(obsVAF > 5L) == ..tmp_nsamples..],
-                by = c(chr_field, pos_field, ref_field)
-            ][!is.na(phyloCCF)] # nolint
-            if (nrow(ubiq_mut) > 0L) {
-                cli::cli_inform("Correcting Indel phyloCCF")
-                if (sample_field) {
-                    ..tmp_indel_cf.. <- ubiq_mut[, list(
-                        ..tmp_correction_factor =
-                            stats::median(phyloCCF[!..tmp_is_indel..]) / # nolint
-                                stats::median(phyloCCF[..tmp_is_indel..])
-                    )]
-                } else {
-                    ..tmp_indel_cf.. <- ubiq_mut[, list(
-                        ..tmp_correction_factor =
-                            stats::median(phyloCCF[!..tmp_is_indel..]) / # nolint
-                                stats::median(phyloCCF[..tmp_is_indel..])
-                    ), by = sample_field]
-                }
-                if (is.null(sample_field)) {
-                    ..tmp_indel_cf.. <- ..tmp_indel_cf..$..tmp_correction_factor
-                    ..tmp_indel_cf.. <- rep_len(..tmp_indel_cf.., nrow(data))
-                } else {
-                    ..tmp_indel_cf.. <- structure(
-                        ..tmp_indel_cf..$..tmp_correction_factor,
-                        names = ..tmp_indel_cf..[[sample_field]]
-                    )
-                    ..tmp_indel_cf.. <- ..tmp_indel_cf..[data[[sample_field]]]
-                }
-                data[
-                    (..tmp_is_indel..), # nolint
-                    phyloCCF := phyloCCF * ..tmp_indel_cf..[..tmp_is_indel..] # nolint
-                ]
-                data[
-                    (..tmp_is_indel..), # nolint
-                    mutCopyNum := mutCopyNum * ..tmp_indel_cf..[..tmp_is_indel..]
+                out[, ..tmp_nsamples.. := length(unique(.SD[[1L]])), # nolint
+                    .SDcols = sample_field, by = patient_field
                 ]
             }
-            data[, ..tmp_is_indel.. := NULL] # nolint
-        })
-        out <- data.table::rbindlist(out_list, use.names = TRUE)
+        }
+        # then, we identify ubiquitous mutations
+        ubiq_mut <- out[, .SD[sum(obsVAF > 5L) == ..tmp_nsamples..[1L]], # nolint
+            by = c(patient_field, chr_field, pos_field, ref_field)
+        ][!is.na(phyloCCF)] # nolint
+
+        if (nrow(ubiq_mut)) {
+            cli::cli_inform("Correcting Indel phyloCCF")
+            # nolint start
+            # for each sample, we calcualte indel correction factor based on
+            # ubiquitous mutation
+            if (is.null(sample_field) && is.null(patient_field)) {
+                ..tmp_indel_cf.. <- ubiq_mut[
+                    ,
+                    stats::median(phyloCCF[!..tmp_is_indel..]) /
+                        stats::median(phyloCCF[..tmp_is_indel..])
+                ]
+                out[, ..tmp_correction_factor.. := ..tmp_indel_cf..]
+            } else {
+                ..tmp_indel_cf.. <- ubiq_mut[, list(
+                    ..tmp_correction_factor.. =
+                        stats::median(phyloCCF[!..tmp_is_indel..]) /
+                            stats::median(phyloCCF[..tmp_is_indel..])
+                ), by = c(patient_field, sample_field)]
+                out <- ..tmp_indel_cf..[out,
+                    on = c(patient_field, sample_field)
+                ]
+            }
+            # for each indel, we use correction factor to
+            # correct phyloCCF and mutCopyNum
+            out[
+                (..tmp_is_indel..),
+                phyloCCF := phyloCCF * ..tmp_correction_factor..
+            ]
+            out[
+                (..tmp_is_indel..),
+                mutCopyNum := mutCopyNum * ..tmp_correction_factor..
+            ]
+            out[, ..tmp_correction_factor.. := NULL]
+        }
+        out[, ..tmp_is_indel.. := NULL]
+        out[, ..tmp_nsamples.. := NULL]
+        # nolint end
     }
     out
 }
@@ -356,7 +357,7 @@ utils::globalVariables(c(
     "..tmp_mut_multi..", "..tmp_is_indel..",
     "..tmp_is_subclone..", "..tmp_amp_mut_pvalue..",
     "..tmp_explained_by_cn_pvalue..", "..tmp_expProp..",
-    "..tmp_best_cn.."
+    "..tmp_best_cn..", "..tmp_correction_factor..", "..tmp_nsamples.."
 ))
 
 #' min.subclonal was set to 0.1 in

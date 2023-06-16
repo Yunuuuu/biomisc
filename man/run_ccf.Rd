@@ -23,7 +23,6 @@ run_ccf(
   alt_field = NULL,
   indel_field = NULL,
   min_vaf_to_explain = NULL,
-  min_subclonal = NULL,
   conipher = FALSE,
   nomatch = NULL,
   kept_cols = NULL
@@ -85,8 +84,6 @@ indicates whether or not a variant is a indel.}
 \item{min_vaf_to_explain}{A numeric, the minimal vaf value to define
 subclone.}
 
-\item{min_subclonal}{Minimal copy number to define subclone.}
-
 \item{conipher}{A scalar logical indicates whether calculate phyloCCF like
 CONIPHER. Details see
 \url{https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main}}
@@ -110,9 +107,8 @@ Following methods to define subclone and clone.
 \item define early or late with Mt or phyloCCF.
 }
 
-For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
-min_vaf_to_explain = 0.05. And you should provide indel_field or both
-ref_field and alt_field.
+For CONIPHER anlayis, use conipher = TRUE, min_vaf_to_explain = 0.05. And you
+should provide indel_field or both ref_field and alt_field.
 }
 \note{
 \code{on_sample} argument is just for multi-region from a single patient. You

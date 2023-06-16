@@ -81,8 +81,7 @@ test_that("estimate_ccf function works well", {
     pyclone.table[, normal_cn := define_normal_cn("male", chr)]
     out <- suppressWarnings(estimate_phylo_ccf(
         data.table::copy(pyclone.table),
-        conipher = TRUE, min_subclonal = 0.05,
-        min_vaf_to_explain = 0.05
+        conipher = TRUE, min_vaf_to_explain = 0.05
     ))
     calculate_phylo_ccf_withBH <- function(region,
                                            complete.mutation.table,

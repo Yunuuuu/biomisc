@@ -5,9 +5,8 @@
 #' - define clone and subclone based on absCCF or mut_multi_btstr
 #' - define early or late with Mt or phyloCCF.
 #'
-#' For CONIPHER anlayis, use min_subclonal = 0.05, conipher = TRUE,
-#' min_vaf_to_explain = 0.05. And you should provide indel_field or both
-#' ref_field and alt_field.
+#' For CONIPHER anlayis, use conipher = TRUE, min_vaf_to_explain = 0.05. And you
+#' should provide indel_field or both ref_field and alt_field.
 #'
 #' @inheritParams identify_mut_cn
 #' @param ccf_type which CCF should we estimate, one of "phyloCCF" (include both
@@ -34,7 +33,6 @@
 #' indicates whether or not a variant is a indel.
 #' @param min_vaf_to_explain A numeric, the minimal vaf value to define
 #'  subclone.
-#' @param min_subclonal Minimal copy number to define subclone.
 #' @param conipher A scalar logical indicates whether calculate phyloCCF like
 #'  CONIPHER. Details see
 #'  <https://github.com/McGranahanLab/CONIPHER-wrapper/tree/main>
@@ -69,7 +67,7 @@ run_ccf <- function(
     # arguments for ccf_type = phyloCCF
     ref_field = NULL,
     alt_field = NULL, indel_field = NULL,
-    min_vaf_to_explain = NULL, min_subclonal = NULL, conipher = FALSE,
+    min_vaf_to_explain = NULL, conipher = FALSE,
     # Other arguments
     nomatch = NULL, kept_cols = NULL) {
     ccf_type <- match.arg(ccf_type)
@@ -226,7 +224,7 @@ run_ccf <- function(
             ref_field = ref_field,
             alt_field = alt_field, indel_field = indel_field,
             min_vaf_to_explain = min_vaf_to_explain,
-            min_subclonal = min_subclonal, conipher = conipher
+            conipher = conipher
         )
         columns <- c(columns, "minor_cn", "major_cn", ref_field, alt_field)
     }
