@@ -121,6 +121,8 @@ run_hdp <- function(
         if (i == number_groups) {
             idx <- rep_len(1L, numdp)
             # the first parent idx should run over the length of current ppindex
+            # like in some ways there are some priors, but shouldn't run over
+            # the unique number
             ppidx <- rep_len(length(hdp::ppindex(hdp_data)), numdp)
         } else {
             # only include the first parent in the next column
@@ -133,6 +135,7 @@ run_hdp <- function(
             idx <- as.integer(idx)
             ppidx <- idx + max(hdp::ppindex(hdp_data))
         }
+        # all children with the same parent should have same concentration
         num_conparam <- length(unique(idx))
         hdp_data <- hdp::hdp_addconparam(hdp_data,
             alphaa = rep_len(1L, num_conparam),
@@ -175,7 +178,7 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
         dp_tree <- data.table::as.data.table(dp_tree)
         if (!setequal(dp_tree[[1L]], rownames(matrix))) {
             cli::cli_abort(
-                "The first column of {.arg arg1} must contain all samples (rownames) in {.arg arg2}",
+                "The first column of {.arg {arg1}} must contain all samples (rownames) in {.arg {arg2}}",
                 call = call
             )
         }
