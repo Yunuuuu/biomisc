@@ -87,6 +87,8 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
     } else {
         is_sig <- which(cos_sim_out > cos_sim_threthold)
         nsig <- length(is_sig)
+        # if we provide prior, we ensure only 1 significant exist
+        # otherwise, we breakdown current signature
         if ((unique && nsig == 1L) || (!unique && nsig > 0L)) {
             cos_sim_idx <- which.max(cos_sim_out)
             target <- rownames(targets)[cos_sim_idx]
