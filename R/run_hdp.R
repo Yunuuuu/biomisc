@@ -219,9 +219,16 @@ hdp_data <- function(
     if (length(hdp::comp_categ_counts(hdpsample)) == 0L) {
         cli::cli_abort("No component info for hdpsample. First run hdp_extract_components")
     }
-    dp_distn <- hdp::comp_dp_distn(hdpsample)
+    # define signature
     comp_distn <- hdp::comp_categ_distn(hdpsample)
+    signatures <- comp_distn$mean
+    if (ncol(input_matrix) != ncol(signatures)) {
+        cli::cli_abort("{.arg input_matrix} is not compatible with {.arg hdpsample}")
+    }
+    colnames(signatures) <- colnames(input_matrix)
 
+    # define exposure
+    dp_distn <- hdp::comp_dp_distn(hdpsample)
     ndp <- nrow(dp_distn$mean)
     ncomp <- ncol(dp_distn$mean) # nolint
     if (methods::is(hdpsample, "hdpSampleChain")) {
@@ -232,7 +239,7 @@ hdp_data <- function(
         pps <- hdp::ppindex(hdp::final_hdpState(hdp::chains(hdpsample)[[1]]))
     }
     if (is.null(dpindices)) {
-        dpindices <- which(pps == max(pps))
+        dpindices <- (length(pps) - ncol(signatures) + 1L):length(pps)
     } else if (!is.numeric(dpindices) ||
         !any(round(dpindices) == dpindices) ||
         any(dpindices < 1L) || any(dpindices > ndp)) {
@@ -242,12 +249,7 @@ hdp_data <- function(
     pps <- pps[dpindices]
 
     # caculate signatures and exposures --------------------------------
-    signatures <- comp_distn$mean
     exposures <- dp_distn$mean[dpindices, , drop = FALSE]
-    if (ncol(input_matrix) != ncol(signatures)) {
-        cli::cli_abort("{.arg input_matrix} is not compatible with {.arg hdpsample}")
-    }
-    colnames(signatures) <- colnames(input_matrix)
     if (nrow(exposures) != nrow(input_matrix)) {
         cli::cli_warn("{.arg dpindices} is not compatible with {.arg input_matrix}")
     } else {
