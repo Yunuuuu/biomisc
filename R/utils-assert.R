@@ -88,7 +88,7 @@ assert_pkg <- function(pkg, fun = NULL, frame = rlang::caller_env()) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
         if (is.null(fun)) {
             fun_call <- rlang::frame_call(frame = frame)
-            fun <- rlang::as_string(fun_call[[1L]])
+            fun <- rlang::as_label(fun_call[[1L]])
         }
         cli::cli_abort(
             "{.pkg {pkg}} must be installed to use {.fn {fun}}.",
