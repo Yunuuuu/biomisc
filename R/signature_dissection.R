@@ -42,7 +42,7 @@
 #' @param maxiter An integer specifying the maximal iteration times
 #' @param alpha_threshold The minimal error threthold, smaller, the results will
 #'  be more accurate.
-#' @param unique A scalar logical indicates whether significant (higher than
+#' @param only_one A scalar logical indicates whether significant (higher than
 #'  `cos_sim_threthold`) should be unique, we should set to `TRUE` for priors
 #'  signature.
 #' @seealso
@@ -52,7 +52,7 @@
 #' and impact of subclonal selection in TRACERx. Nature 616, 525–533 (2023).
 #' https://doi.org/10.1038/s41586-023-05783-5
 #' @export
-run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_threthold = 0.9, emfrac_threshold = 0.1, maxiter = 1000L, alpha_threshold = 1e-5, unique = !is.null(prior)) {
+run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_threthold = 0.9, emfrac_threshold = 0.1, maxiter = 1000L, alpha_threshold = 1e-5, only_one = !is.null(prior)) {
     assert_class(signature, is.numeric, "numeric")
     assert_class(targets, is.matrix, "matrix")
     if (anyNA(signature)) {
@@ -89,7 +89,7 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
         nsig <- length(is_sig)
         # if we provide prior, we ensure only 1 significant exist
         # otherwise, we breakdown current signature
-        if ((unique && nsig == 1L) || (!unique && nsig > 0L)) {
+        if ((only_one && nsig == 1L) || (!only_one && nsig > 0L)) {
             cos_sim_idx <- which.max(cos_sim_out)
             target <- rownames(targets)[cos_sim_idx]
             subset_fraction <- data.table::data.table(
@@ -129,7 +129,7 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
         # reconstitute HDP signatures using the identified COSMIC sigs and calculate
         # the cosine similarity between the original and the reconstituted sig.
         # --> skip if only one COMSIC signature is assigned
-        if (length(subset_fraction$target) == 1L && unique) {
+        if (length(subset_fraction$target) == 1L && only_one) {
             reconstruction <- NULL
             cosine_similarity <- cos_sim_out[subset_fraction$target]
         } else {

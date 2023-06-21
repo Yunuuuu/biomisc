@@ -116,7 +116,7 @@ test_that("run_signature_dissection works", {
             as.data.frame(
                 run_signature_dissection(
                     mutations[, check_sig], signatures,
-                    unique = FALSE
+                    only_one = FALSE
                 )$subset_fraction[, list(
                     cosmic = target, fraction = fraction
                 )]

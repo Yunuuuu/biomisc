@@ -13,7 +13,7 @@ run_signature_dissection(
   emfrac_threshold = 0.1,
   maxiter = 1000L,
   alpha_threshold = 1e-05,
-  unique = !is.null(prior)
+  only_one = !is.null(prior)
 )
 }
 \arguments{
@@ -38,7 +38,7 @@ dessection again.}
 \item{alpha_threshold}{The minimal error threthold, smaller, the results will
 be more accurate.}
 
-\item{unique}{A scalar logical indicates whether significant (higher than
+\item{only_one}{A scalar logical indicates whether significant (higher than
 \code{cos_sim_threthold}) should be unique, we should set to \code{TRUE} for priors
 signature.}
 }
