@@ -38,10 +38,7 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     if (!all(as.character(arm_values) %chin% arm_levels)) {
         cli::cli_abort("Only values of {.val {arm_levels}} are supported in column specified in {.arg arm_field}.")
     }
-    arms <- as.character(arms)
-    if (!all(arms %chin% arm_levels)) {
-        cli::cli_abort("Only values of {.val {arm_levels}} are supported in {.arg arms}.")
-    }
+    assert_in(arms, arm_levels)
     arm_values <- factor(arm_values, arm_levels)
     arm_values <- droplevels(arm_values)
 
