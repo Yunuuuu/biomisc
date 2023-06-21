@@ -39,13 +39,12 @@ summarize_arm <- function(
         "scalar {.cls character}",
         cross_msg = NULL, null_ok = TRUE
     )
-    group_fields <- sample_field
     seg_data <- prepare_granges(
         data = seg_data,
         chr_field = chr_field,
         start_field = start_field,
         end_field = end_field,
-        other_fields = c(other_fields, group_fields),
+        other_fields = c(other_fields, sample_field),
         keep.extra.columns = TRUE,
         ignore.strand = TRUE
     )
@@ -100,7 +99,7 @@ summarize_arm <- function(
         seg_data = seg_data,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
-        group_fields = group_fields,
+        group_fields = sample_field,
         other_fields = other_fields
     )
     out[]
