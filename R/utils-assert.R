@@ -166,3 +166,13 @@ assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), 
         cli::cli_abort(c(msg, cross_msg, i = info_msg), call = call)
     }
 }
+
+assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call= parent.frame()) {
+    missing_items <- setdiff(x, y)
+    if (length(missing_items)) {
+        cli::cli_abort(c(
+            "value allowed in {.arg {arg_x}}: {.val {y}}",
+            x = "erroneous value{?s}: {.val {missing_items}}"
+        ))
+    }
+}
