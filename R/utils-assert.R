@@ -1,4 +1,3 @@
-
 #' Report if an argument is a specific class
 #'
 #' @keywords internal
@@ -167,12 +166,15 @@ assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), 
     }
 }
 
-assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call= parent.frame()) {
+assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call = parent.frame()) {
     missing_items <- setdiff(x, y)
     if (length(missing_items)) {
-        cli::cli_abort(c(
-            "value allowed in {.arg {arg_x}}: {.val {y}}",
-            x = "erroneous value{?s}: {.val {missing_items}}"
-        ))
+        cli::cli_abort(
+            c(
+                "value allowed in {.arg {arg_x}}: {.val {y}}",
+                x = "erroneous value{?s}: {.val {missing_items}}"
+            ),
+            call = call
+        )
     }
 }
