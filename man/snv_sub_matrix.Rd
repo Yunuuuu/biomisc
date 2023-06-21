@@ -50,7 +50,7 @@ exome ranges.}
 are in use (i.e. have ranges on them), the ranges on these sequences need to
 be removed before the seqlevels can be dropped. We call this pruning. The
 pruning_mode argument controls how to prune x. See
-\link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
+\link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode argument.}
 }
 \value{
 the mutation context matrix
