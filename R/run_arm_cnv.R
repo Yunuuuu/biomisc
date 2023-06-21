@@ -74,7 +74,7 @@ run_arm_cnv <- function(
         cli::cli_abort("CNV values must be numeric")
     }
     if (cnv_mode == "abs") {
-        if (!all(out$CNV >= 0L)) {
+        if (!all(out$CNV >= 0L, na.rm = TRUE)) {
             cli::cli_abort("Copy number values must be positive or 0L in {.val {cnv_mode}} CNV mode")
         }
     } else {
