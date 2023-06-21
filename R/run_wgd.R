@@ -15,6 +15,7 @@
 #'  based on Sally M's article. See references.
 #' @param perm_times An integer specifying the times of simulation genome.
 #' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields -group_fields -filter_centromere
+#' @note You should use contigs = 1:22 to restrict analysis only in autosomes.
 #' @references
 #' - Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling shapes the
 #'   evolution and prognosis of advanced cancers. Nat Genet 50, 1189–1195
@@ -48,14 +49,14 @@ run_wgd <- function(
         cross_msg = NULL
     )
     if (is.null(minor_cn_field)) {
-        group_fields <- NULL   
+        group_fields <- NULL
     } else {
         group_fields <- ploidy_field
     }
     out <- summarize_arm(
         seg_data = seg_data,
         sample_field = sample_field,
-        other_fields = c(major_cn_field, minor_cn_field, CNt_field), ...,
+        other_fields = c(minor_cn_field, major_cn_field, CNt_field), ...,
         filter_centromere = FALSE,
         group_fields = group_fields
     )

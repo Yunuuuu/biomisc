@@ -43,7 +43,7 @@ run_arm_cnv <- function(
         "scalar {.cls character}",
         cross_msg = NULL
     )
-    other_fields <- cnv_field
+    group_fields <- NULL
     if (cnv_mode == "abs") {
         assert_class(ploidy_field,
             function(x) {
@@ -53,7 +53,7 @@ run_arm_cnv <- function(
         )
         if (is.character(ploidy_field)) {
             assert_nest(seg_data, ploidy_field, group = sample_field)
-            other_fields <- c(cnv_field, ploidy_field)
+            group_fields <- ploidy_field
         }
     } else {
         assert_class(
@@ -65,7 +65,8 @@ run_arm_cnv <- function(
     out <- summarize_arm(
         seg_data = seg_data,
         sample_field = sample_field,
-        other_fields = other_fields,
+        other_fields = cnv_field,
+        group_fields = group_fields,
         ...
     )
     data.table::setnames(out, cnv_field, "CNV")

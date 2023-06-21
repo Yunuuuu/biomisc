@@ -6,7 +6,9 @@ test_that("run_wgd (Craig M. mode) works", {
         run_wgd(
             seg.mat.copy,
             sample_field = "sample",
-            major_cn_field = "nMajor", ploidy_field = "Ploidy"
+            major_cn_field = "nMajor", ploidy_field = "Ploidy",
+            contigs = 1:22,
+            pruning_mode = "tidy"
         ),
         style = "serialize"
     )
@@ -18,7 +20,9 @@ test_that("run_wgd (Sally M. mode) works", {
             seg.mat.copy,
             sample_field = "sample",
             major_cn_field = "nMajor", minor_cn_field = "nMinor",
-            ploidy_field = "Ploidy"
+            ploidy_field = "Ploidy",
+            contigs = 1:22,
+            pruning_mode = "tidy"
         ),
         style = "serialize"
     )

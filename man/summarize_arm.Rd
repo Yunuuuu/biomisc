@@ -16,9 +16,9 @@ summarize_arm(
   arm_field = NULL,
   arms = c("p", "q"),
   ...,
+  group_fields = NULL,
   filter_centromere = TRUE,
-  pruning_mode = "error",
-  group_fields = NULL
+  pruning_mode = "error"
 )
 }
 \arguments{
@@ -50,6 +50,10 @@ arm) are supported.}
 
 \item{...}{Not used currently.}
 
+\item{group_fields}{A character vector indicates other sample-specific (each
+sample only have one unique value) columns in seg_data to kept in the final
+result. like "ploidy", "purity".}
+
 \item{filter_centromere}{Whether to include or exclude segments across
 centromere, namely genomic ranges interseted with "acen" arm of
 ref_cytoband.  Default: \code{TRUE}.}
@@ -59,10 +63,6 @@ are in use (i.e. have ranges on them), the ranges on these sequences need to
 be removed before the seqlevels can be dropped. We call this pruning. The
 pruning_mode argument controls how to prune x. See
 \link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
-
-\item{group_fields}{A character vector indicates other sample-specific (each
-sample only have one unique value) columns in seg_data to kept in the final
-result. like "ploidy", "purity".}
 }
 \value{
 A \link[data.table:data.table]{data.table} containing Chromosome-arm

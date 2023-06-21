@@ -15,6 +15,9 @@
 #' @param contigs A character vector specifying the chromosome to summarize.
 #' @inheritParams get_arm_ranges
 #' @param ... Not used currently.
+#' @param group_fields A character vector indicates other sample-specific (each
+#'  sample only have one unique value) columns in seg_data to kept in the final
+#'  result. like "ploidy", "purity".
 #' @param filter_centromere Whether to include or exclude segments across
 #'   centromere, namely genomic ranges interseted with "acen" arm of
 #'   ref_cytoband.  Default: `TRUE`.
@@ -23,9 +26,6 @@
 #'  be removed before the seqlevels can be dropped. We call this pruning. The
 #'  pruning_mode argument controls how to prune x. See
 #'  [seqinfo][GenomeInfoDb::seqinfo] pruning.mode
-#' @param group_fields A character vector indicates other sample-specific (each
-#'  sample only have one unique value) columns in seg_data to kept in the final
-#'  result. like "ploidy", "purity".
 #' @author Yun \email{yunyunpp96@@outlook.com}
 #' @return A [data.table][data.table::data.table] containing Chromosome-arm
 #'  level data.
@@ -35,8 +35,7 @@ summarize_arm <- function(
     chr_field = "chr", start_field = "startpos", end_field = "endpos",
     ref_cytoband = "hg38", contigs = NULL,
     arm_field = NULL, arms = c("p", "q"), ...,
-    filter_centromere = TRUE, pruning_mode = "error",
-    group_fields = NULL) {
+    group_fields = NULL, filter_centromere = TRUE, pruning_mode = "error") {
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_pkg("S4Vectors")
@@ -49,12 +48,13 @@ summarize_arm <- function(
         cross_msg = NULL, null_ok = TRUE
     )
     assert_df_with_columns(seg_data,
-        c(other_fields, chr_field, start_field, end_field),
-        arg = rlang::caller_arg(data), check_class = TRUE
+        c(other_fields, chr_field, start_field, end_field, group_fields),
+        check_class = TRUE
     )
     if (!is.null(group_fields)) {
         lapply(as.character(group_fields),
-            assert_nest, data = seg_data,
+            assert_nest,
+            data = seg_data,
             group = sample_field
         )
     }

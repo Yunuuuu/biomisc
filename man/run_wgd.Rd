@@ -63,6 +63,9 @@ based on Sally M's article. See references.}
 \description{
 Infer Whole-genome doubling
 }
+\note{
+You should use contigs = 1:22 to restrict analysis only in autosomes.
+}
 \references{
 \itemize{
 \item Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling shapes the
