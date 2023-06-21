@@ -113,12 +113,12 @@ snv_sub_context <- function(mut_data, chr_field = "chr", mut_pos = "pos", ref_fi
     mut_gr <- mut_gr[matched_ranges]
 
     # Get context
-    context <- suppressWarnings(gr_extend(mut_gr, extension = extension))
+    context <- suppressWarnings(granges_extend(mut_gr, extension = extension))
     good_ranges <- GenomicRanges::trim(context) == context
     mut_gr <- mut_gr[good_ranges]
     context <- BSgenome::getSeq(x = ref_genome, context[good_ranges])
     if (!is.null(bg_extension)) {
-        bg <- suppressWarnings(gr_extend(mut_gr, extension = bg_extension))
+        bg <- suppressWarnings(granges_extend(mut_gr, extension = bg_extension))
         # omit out-of-bound ranges
         trimed_bg <- GenomicRanges::trim(bg)
         good_ranges <- trimed_bg == bg

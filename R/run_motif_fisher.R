@@ -175,8 +175,8 @@ run_motif_fisher <- function(
     mut_gr <- mut_gr[!out_ranges]
 
     # Get motif and background base sequencing
-    motif <- suppressWarnings(gr_extend(mut_gr, extension = 1L))
-    bg <- suppressWarnings(gr_extend(mut_gr, extension = bg_extension))
+    motif <- suppressWarnings(granges_extend(mut_gr, extension = 1L))
+    bg <- suppressWarnings(granges_extend(mut_gr, extension = bg_extension))
 
     # omit out-of-bound ranges
     good_ranges <- GenomicRanges::trim(bg) == bg

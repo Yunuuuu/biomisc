@@ -155,7 +155,7 @@ seg_to_arm_seg <- function(seg_data, arm_cytoband, arm_field, group_fields = NUL
     }
     out <- cbind(out, other_data)
 
-    # ensure every reference arm has a value
+    # ensure every reference arm is in the out result
     ref_cytoband_dt <- unique(data.table::as.data.table(arm_cytoband))
     data.table::setnames(
         ref_cytoband_dt,
@@ -203,7 +203,7 @@ get_genome <- function(ref_genome) {
 
 assert_range_unique <- function(gr, group = NULL, arg_group = rlang::caller_arg(group), call = parent.frame()) {
     if (is.null(group)) {
-        if (any_overlap(gr)) {
+        if (granges_any_overlap(gr)) {
             cli::cli_abort(c(
                 "Find overlapped ranges",
                 i = "try to set {.arg {arg_group}}"
@@ -212,7 +212,7 @@ assert_range_unique <- function(gr, group = NULL, arg_group = rlang::caller_arg(
     } else {
         gr_list <- split(gr, S4Vectors::mcols(gr)[[group]], drop = TRUE)
         failed_samples <- names(gr_list)[
-            vapply(gr_list, any_overlap, logical(1L))
+            vapply(gr_list, granges_any_overlap, logical(1L))
         ]
         if (length(failed_samples)) {
             cli::cli_abort(
@@ -223,12 +223,12 @@ assert_range_unique <- function(gr, group = NULL, arg_group = rlang::caller_arg(
     }
 }
 
-any_overlap <- function(gr) {
+granges_any_overlap <- function(gr) {
     hits <- GenomicRanges::findOverlaps(gr, gr)
     any(S4Vectors::queryHits(hits) != S4Vectors::subjectHits(hits))
 }
 
-gr_extend <- function(x, extension = 1L, use.names = TRUE) {
+granges_extend <- function(x, extension = 1L, use.names = TRUE) {
     GenomicRanges::update_ranges(x,
         start = GenomicRanges::start(x) - extension,
         end = GenomicRanges::end(x) + extension,
