@@ -5,68 +5,63 @@
 \title{Caculate Chromosome-arm-levels copy number variation}
 \usage{
 run_arm_cnv(
-  seg_cnv,
+  seg_data,
   sample_field = NULL,
   cnv_field,
-  ploidy_field = 2L,
-  chr_field = "chr",
-  start_field = "startpos",
-  end_field = "endpos",
-  ref_cytoband = "hg38",
-  arm_field = NULL,
-  arms = c("p", "q"),
   cnv_mode = c("rel", "abs"),
-  ...,
-  filter_centromere = TRUE,
-  threshold = 0.9
+  ploidy_field = 2L,
+  threshold = 0.9,
+  ...
 )
 }
 \arguments{
-\item{seg_cnv}{A \link{data.frame} obeject with CNV values in
+\item{seg_data}{A \link{data.frame} obeject with CNV values in
 "cnv_field" column (absolute segment copy number determined by ABSOLUTE
 algorithm, which is the sum of allelic copy numbers, or relative segment
 copy number defined with -1 meaning del, 0 meaning neutral and 1 meaning
 amp).}
 
-\item{sample_field}{A string indicates the sample Id column in seg_cnv.}
+\item{sample_field}{A string indicates the sample Id column in seg_data.}
 
 \item{cnv_field}{A scalar character gives the column containing CNV values.}
+
+\item{cnv_mode}{One of "rel" and "abs" correspongding to what Shukla, A and
+Cohen-Sharir have presented respectively.}
 
 \item{ploidy_field}{A single numeric indicates the ploidy to define
 Chromosome arm-level aneuploidy profiling.  Cohen-Sharir uses background
 ploidy ("abs" cnv_mode) derived from \link[ABSOLUTE:RunAbsolute]{run_absolute}
 algorithm. Or you can also provide a string to specifying the ploidy column
-in \code{seg_cnv}. If NULL, the weighted median by aberrant genome width will be
-returned.}
+in \code{seg_cnv}.}
 
-\item{chr_field, start_field, end_field}{A string specifying the column of the
+\item{threshold}{The fraction to define Chromosome arm-level aneuploidy
+profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode).}
+
+\item{...}{
+  Arguments passed on to \code{\link[=summarize_arm]{summarize_arm}}
+  \describe{
+    \item{\code{chr_field,start_field,end_field}}{A string specifying the column of the
 chromosome name, start positions and end positions of the genomic ranges in
-seg_cnv.}
-
-\item{ref_cytoband}{A scalar string \code{"hg19"} or \code{"hg38"}, in this way, see
+seg_data.}
+    \item{\code{ref_cytoband}}{A scalar string \code{"hg19"} or \code{"hg38"}, in this way, see
 \link{get_cytoband}, or you can provided a self-defined
 \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject containing the
 Cytoband reference.}
-
-\item{arm_field}{A scalar string indicates the column containing the
+    \item{\code{contigs}}{A character vector specifying the chromosome to summarize.}
+    \item{\code{filter_centromere}}{Whether to include or exclude segments across
+centromere, namely genomic ranges interseted with "acen" arm of
+ref_cytoband.  Default: \code{TRUE}.}
+    \item{\code{pruning_mode}}{When some of the seqlevels to drop from \code{ref_cytoband}
+are in use (i.e. have ranges on them), the ranges on these sequences need to
+be removed before the seqlevels can be dropped. We call this pruning. The
+pruning_mode argument controls how to prune x. See
+\link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
+    \item{\code{arm_field}}{A scalar string indicates the column containing the
 chromosome arm. If \code{NULL}, the internal will search the first column starts
 with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
 arm) are supported.}
-
-\item{arms}{A character specifying the arms to return.}
-
-\item{cnv_mode}{One of "rel" and "abs" correspongding to what Shukla, A and
-Cohen-Sharir have presented respectively.}
-
-\item{...}{Not used currently.}
-
-\item{filter_centromere}{Whether to include or exclude segments across
-centromere, namely genomic ranges interseted with "acen" arm of
-ref_cytoband.  Default: \code{TRUE}.}
-
-\item{threshold}{The fraction to define Chromosome arm-level aneuploidy
-profiling, Shukla, A. used 0.9 as the cut-off ("rel" cnv_mode). If NULL,
-the fraction of aberrant genome will be returned.}
+    \item{\code{arms}}{A character specifying the arms to return.}
+  }}
 }
 \value{
 A \link[data.table:data.table]{data.table} containing
