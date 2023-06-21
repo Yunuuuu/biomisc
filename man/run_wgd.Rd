@@ -5,32 +5,51 @@
 \title{Infer Whole-genome doubling}
 \usage{
 run_wgd(
-  seg_cnv,
+  seg_data,
   sample_field = NULL,
+  ...,
   thresholds = 2:3,
-  contigs = 1:22,
   major_cn_field = "major_cn",
   minor_cn_field = NULL,
   CNt_field = NULL,
   ploidy_field = "ploidy",
-  chr_field = "chr",
-  start_field = "startpos",
-  end_field = "endpos",
-  ref_cytoband = "hg38",
-  arm_field = NULL,
   perm_times = 10000L
 )
 }
 \arguments{
-\item{seg_cnv}{A \link{data.frame} obeject with following columns
+\item{seg_data}{A \link{data.frame} obeject with following columns
 (arguments ends with "_field").}
 
 \item{sample_field}{A string specifying the sample id column in seg_cnv.}
 
+\item{...}{
+  Arguments passed on to \code{\link[=summarize_arm]{summarize_arm}}
+  \describe{
+    \item{\code{chr_field,start_field,end_field}}{A string specifying the column of the
+chromosome name, start positions and end positions of the genomic ranges in
+seg_data.}
+    \item{\code{ref_cytoband}}{A scalar string \code{"hg19"} or \code{"hg38"}, in this way, see
+\link{get_cytoband}, or you can provided a self-defined
+\link[GenomicRanges:GRanges-class]{GenomicRanges} obeject containing the
+Cytoband reference.}
+    \item{\code{contigs}}{A character vector specifying the chromosome to summarize.}
+    \item{\code{filter_centromere}}{Whether to include or exclude segments across
+centromere, namely genomic ranges interseted with "acen" arm of
+ref_cytoband.  Default: \code{TRUE}.}
+    \item{\code{pruning_mode}}{When some of the seqlevels to drop from \code{ref_cytoband}
+are in use (i.e. have ranges on them), the ranges on these sequences need to
+be removed before the seqlevels can be dropped. We call this pruning. The
+pruning_mode argument controls how to prune x. See
+\link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
+    \item{\code{arm_field}}{A scalar string indicates the column containing the
+chromosome arm. If \code{NULL}, the internal will search the first column starts
+with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
+arm) are supported.}
+    \item{\code{arms}}{A character specifying the arms to return.}
+  }}
+
 \item{thresholds}{An integer vector specifying the thresholds to define
 Whole-genome doubling.}
-
-\item{contigs}{The Chromosome names to define Whole-genome doubling.}
 
 \item{major_cn_field}{A string specifying the major_cn (allele-specific)
 column in seg_cnv. Default: "major_cn". If iminor_cn_field is NULL,
@@ -41,20 +60,6 @@ Bielski's article. See references.}
 (minor allele), total_cn (tumor absoltue total copy number) and ploidy
 column in seg_cnv. If minor_cn_field is not NULL, wGD will be calculated
 based on Sally M's article. See references.}
-
-\item{chr_field, start_field, end_field}{A string specifying the column of the
-chromosome name, start positions and end positions of the genomic ranges in
-seg_cnv.}
-
-\item{ref_cytoband}{A scalar string \code{"hg19"} or \code{"hg38"}, in this way, see
-\link{get_cytoband}, or you can provided a self-defined
-\link[GenomicRanges:GRanges-class]{GenomicRanges} obeject containing the
-Cytoband reference.}
-
-\item{arm_field}{A scalar string indicates the column containing the
-chromosome arm. If \code{NULL}, the internal will search the first column starts
-with "arm" (ignore letter case). Only values of "p", "q", "acen" and "" (no
-arm) are supported.}
 
 \item{perm_times}{An integer specifying the times of simulation genome.}
 }

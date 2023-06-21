@@ -1,21 +1,20 @@
 #' Infer Whole-genome doubling
 #'
-#' @param seg_cnv A [data.frame][data.frame] obeject with following columns
+#' @param seg_data A [data.frame][data.frame] obeject with following columns
 #'  (arguments ends with "_field").
 #' @param sample_field A string specifying the sample id column in seg_cnv.
-#' @param contigs The Chromosome names to define Whole-genome doubling.
 #' @param major_cn_field A string specifying the major_cn (allele-specific)
 #'  column in seg_cnv. Default: "major_cn". If iminor_cn_field is NULL,
 #'  major_cn_field must exist, in this way, wGD will be calculated based on
-#'  Bielski's article. See references. 
+#'  Bielski's article. See references.
 #' @param thresholds An integer vector specifying the thresholds to define
 #'  Whole-genome doubling.
 #' @param minor_cn_field,CNt_field,ploidy_field A string specifying the minor_cn
 #'  (minor allele), total_cn (tumor absoltue total copy number) and ploidy
 #'  column in seg_cnv. If minor_cn_field is not NULL, wGD will be calculated
-#'  based on Sally M's article. See references. 
-#' @inheritParams run_arm_cnv
+#'  based on Sally M's article. See references.
 #' @param perm_times An integer specifying the times of simulation genome.
+#' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields
 #' @references
 #' - Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling shapes the
 #'   evolution and prognosis of advanced cancers. Nat Genet 50, 1189–1195
@@ -25,12 +24,9 @@
 #'   <https://doi.org/10.1158/2159-8290.CD-13-0285>
 #' @export
 run_wgd <- function(
-    seg_cnv, sample_field = NULL,
-    thresholds = 2:3, contigs = 1:22,
-    major_cn_field = "major_cn", minor_cn_field = NULL,
-    CNt_field = NULL, ploidy_field = "ploidy",
-    chr_field = "chr", start_field = "startpos", end_field = "endpos",
-    ref_cytoband = "hg38", arm_field = NULL, perm_times = 10000L) {
+    seg_data, sample_field = NULL, ...,
+    thresholds = 2:3, major_cn_field = "major_cn", minor_cn_field = NULL,
+    CNt_field = NULL, ploidy_field = "ploidy", perm_times = 10000L) {
     assert_class(sample_field, rlang::is_scalar_character,
         "scalar {.cls character}",
         null_ok = TRUE,
@@ -56,65 +52,15 @@ run_wgd <- function(
         null_ok = is.null(minor_cn_field),
         cross_msg = NULL
     )
-    assert_class(seg_cnv, is_class = "data.frame")
-    if (is.null(minor_cn_field)) {
-        group_fields <- sample_field
-        other_fields <- major_cn_field
-    } else {
-        if (is.null(CNt_field)) {
-            CNt_field <- "CNt"
-            seg_cnv$CNt <- seg_cnv[[major_cn_field]] + seg_cnv[[minor_cn_field]]
-        }
-        group_fields <- c(sample_field, ploidy_field)
-        other_fields <- c(minor_cn_field, CNt_field)
-        assert_nest(seg_cnv, ploidy_field, group = sample_field)
-    }
-    out <- prepare_granges(
-        data = seg_cnv,
-        chr_field = chr_field,
-        start_field = start_field,
-        end_field = end_field,
-        other_fields = c(group_fields, other_fields),
-        keep.extra.columns = TRUE,
-        ignore.strand = TRUE
-    )
-    assert_range_unique(out, group = sample_field)
-
-    # prepare cytoband data ------------------------
-    if (rlang::is_scalar_character(ref_cytoband) &&
-        any(ref_cytoband == c("hg19", "hg38"))) {
-        ref_cytoband <- get_cytoband(ref_cytoband, add_arm = TRUE)
-        arm_field <- "arm"
-    } else if (!inherits(ref_cytoband, "GenomicRanges")) {
-        cli::cli_abort(
-            '{.arg ref_cytoband} must be a scalar character ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
-        )
-    }
-    cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
-    out <- map_seqnames(out, cytoband_seqstyle)
-    contigs <- map_seqnames(as.character(contigs),
-        cytoband_seqstyle,
-        arg = "contigs"
-    )
-    arm_cytoband <- get_arm_ranges(ref_cytoband,
-        arm_field = arm_field, arms = c("p", "q")
-    )
-    missing_contigs <- setdiff(contigs, GenomeInfoDb::seqnames(arm_cytoband)) # nolint
-    if (length(missing_contigs) > 0L) {
-        cli::cli_abort(c(
-            "Cannot find all contigs in {.arg ref_cytoband}",
-            x = "missing contig{?s}: {.val {missing_contigs}}"
-        ))
-    }
-    arm_cytoband <- arm_cytoband[
-        as.character(GenomeInfoDb::seqnames(arm_cytoband)) %chin% contigs
-    ]
-    out <- seg_to_arm_seg(
-        seg_data = out,
-        arm_cytoband = arm_cytoband,
-        arm_field = arm_field,
-        group_fields = group_fields,
-        other_fields = other_fields
+    assert_nest(seg_data, ploidy_field, group = sample_field)
+    out <- summarize_arm(
+        seg_data = seg_data,
+        sample_field = sample_field,
+        other_fields = c(
+            major_cn_field,
+            minor_cn_field, CNt_field, ploidy_field
+        ),
+        ...
     )
     if (is.null(minor_cn_field)) {
         data.table::setnames(out, major_cn_field, "major_cn")
@@ -231,7 +177,7 @@ wgd_staus <- function(pvalue, ploidy) {
 }
 
 utils::globalVariables(c(
-    "total_aber", "wGD", "pvalue", "ploidy", 
+    "total_aber", "wGD", "pvalue", "ploidy",
     "arm_major_ploidy", "arm_minor_ploidy",
     "arm_total_ploidy", "width", "arm_width", "CNV"
 ))
