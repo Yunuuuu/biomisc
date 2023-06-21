@@ -1,10 +1,10 @@
 #' Caculate Chromosome-arm-levels copy number variation
 #'
 #' @param seg_data A [data.frame][data.frame] obeject with segmented chromosome
-#' data.
+#'  data.
 #' @param sample_field A string indicates the sample Id column in seg_data.
-#' @param other_fields A character vector indicates other column in seg_data to
-#' keep in the final result.
+#' @param other_fields A character vector indicates other columns in seg_data to
+#'  kept in the final result.
 #' @param chr_field,start_field,end_field A string specifying the column of the
 #'  chromosome name, start positions and end positions of the genomic ranges in
 #'  seg_data.
@@ -23,6 +23,9 @@
 #'  be removed before the seqlevels can be dropped. We call this pruning. The
 #'  pruning_mode argument controls how to prune x. See
 #'  [seqinfo][GenomeInfoDb::seqinfo] pruning.mode
+#' @param group_fields A character vector indicates other sample-specific (each
+#'  sample only have one unique value) columns in seg_data to kept in the final
+#'  result. like "ploidy", "purity".
 #' @author Yun \email{yunyunpp96@@outlook.com}
 #' @return A [data.table][data.table::data.table] containing Chromosome-arm
 #'  level data.
@@ -32,7 +35,9 @@ summarize_arm <- function(
     chr_field = "chr", start_field = "startpos", end_field = "endpos",
     ref_cytoband = "hg38", contigs = NULL,
     arm_field = NULL, arms = c("p", "q"), ...,
-    filter_centromere = TRUE, pruning_mode = "error") {
+    filter_centromere = TRUE, pruning_mode = "error",
+    group_fields = NULL) {
+    assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_pkg("S4Vectors")
     assert_class(sample_field, rlang::is_scalar_character,
@@ -43,12 +48,21 @@ summarize_arm <- function(
         "scalar {.cls logical}",
         cross_msg = NULL, null_ok = TRUE
     )
+    assert_df_with_columns(seg_data,
+        c(other_fields, chr_field, start_field, end_field),
+        arg = rlang::caller_arg(data), check_class = TRUE
+    )
+    if (!is.null(group_fields)) {
+        lapply(as.character(group_fields),
+            assert_nest, data = seg_data,
+            group = sample_field
+        )
+    }
     seg_ranges <- prepare_granges(
         data = seg_data,
         chr_field = chr_field,
         start_field = start_field,
         end_field = end_field,
-        other_fields = c(other_fields, sample_field),
         keep.extra.columns = TRUE,
         ignore.strand = TRUE
     )
@@ -103,11 +117,41 @@ summarize_arm <- function(
         seg_ranges = seg_ranges,
         arm_cytoband = arm_cytoband,
         arm_field = arm_field,
-        group_fields = sample_field,
+        group_fields = c(sample_field, group_fields),
         other_fields = other_fields,
         arg1 = "seg_data", arg2 = "ref_cytoband"
     )
     out[]
+}
+
+prepare_granges <- function(data, chr_field, start_field, end_field, keep.extra.columns = TRUE, ignore.strand = TRUE, call = parent.frame()) {
+    assert_class(chr_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        arg = rlang::caller_arg(chr_field),
+        cross_msg = NULL, call = call
+    )
+    assert_class(start_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        arg = rlang::caller_arg(start_field),
+        cross_msg = NULL, call = call
+    )
+    assert_class(end_field, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        arg = rlang::caller_arg(end_field),
+        cross_msg = NULL, call = call
+    )
+    GenomicRanges::makeGRangesFromDataFrame(
+        df = as.data.frame(data,
+            check.names = FALSE,
+            make.names = FALSE,
+            stringsAsFactors = FALSE
+        ),
+        keep.extra.columns = keep.extra.columns,
+        seqnames.field = chr_field,
+        start.field = start_field,
+        end.field = end_field,
+        ignore.strand = ignore.strand
+    )
 }
 
 seg_to_arm_seg <- function(seg_ranges, arm_cytoband, arm_field, group_fields = NULL, other_fields = character(), arg1 = rlang::caller_arg(seg_ranges), arg2 = rlang::caller_arg(arm_cytoband), call = parent.frame()) {

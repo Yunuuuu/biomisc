@@ -16,7 +16,7 @@
 #'   ploidy ("abs" cnv_mode) derived from [run_absolute][ABSOLUTE::RunAbsolute]
 #'   algorithm. Or you can also provide a string to specifying the ploidy column
 #'   in `seg_cnv`.
-#' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields
+#' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields -group_fields
 #' @author Yun \email{yunyunpp96@@outlook.com}
 #' @return A [data.table][data.table::data.table] containing
 #' Chromosome-arm-levels copy number.

@@ -17,7 +17,8 @@ summarize_arm(
   arms = c("p", "q"),
   ...,
   filter_centromere = TRUE,
-  pruning_mode = "error"
+  pruning_mode = "error",
+  group_fields = NULL
 )
 }
 \arguments{
@@ -26,8 +27,8 @@ data.}
 
 \item{sample_field}{A string indicates the sample Id column in seg_data.}
 
-\item{other_fields}{A character vector indicates other column in seg_data to
-keep in the final result.}
+\item{other_fields}{A character vector indicates other columns in seg_data to
+kept in the final result.}
 
 \item{chr_field, start_field, end_field}{A string specifying the column of the
 chromosome name, start positions and end positions of the genomic ranges in
@@ -58,6 +59,10 @@ are in use (i.e. have ranges on them), the ranges on these sequences need to
 be removed before the seqlevels can be dropped. We call this pruning. The
 pruning_mode argument controls how to prune x. See
 \link[GenomeInfoDb:seqinfo]{seqinfo} pruning.mode}
+
+\item{group_fields}{A character vector indicates other sample-specific (each
+sample only have one unique value) columns in seg_data to kept in the final
+result. like "ploidy", "purity".}
 }
 \value{
 A \link[data.table:data.table]{data.table} containing Chromosome-arm

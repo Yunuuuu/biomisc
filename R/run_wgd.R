@@ -14,7 +14,7 @@
 #'  column in seg_cnv. If minor_cn_field is not NULL, wGD will be calculated
 #'  based on Sally M's article. See references.
 #' @param perm_times An integer specifying the times of simulation genome.
-#' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields
+#' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields -group_fields -filter_centromere
 #' @references
 #' - Bielski, C.M., Zehir, A., Penson, A.V. et al. Genome doubling shapes the
 #'   evolution and prognosis of advanced cancers. Nat Genet 50, 1189–1195
@@ -47,20 +47,17 @@ run_wgd <- function(
         null_ok = !(!is.null(minor_cn_field) && is.null(major_cn_field)),
         cross_msg = NULL
     )
-    assert_class(ploidy_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        null_ok = is.null(minor_cn_field),
-        cross_msg = NULL
-    )
-    assert_nest(seg_data, ploidy_field, group = sample_field)
+    if (is.null(minor_cn_field)) {
+        group_fields <- NULL   
+    } else {
+        group_fields <- ploidy_field
+    }
     out <- summarize_arm(
         seg_data = seg_data,
         sample_field = sample_field,
-        other_fields = c(
-            major_cn_field,
-            minor_cn_field, CNt_field, ploidy_field
-        ),
-        ...
+        other_fields = c(major_cn_field, minor_cn_field, CNt_field), ...,
+        filter_centromere = FALSE,
+        group_fields = group_fields
     )
     if (is.null(minor_cn_field)) {
         data.table::setnames(out, major_cn_field, "major_cn")
@@ -73,6 +70,10 @@ run_wgd <- function(
             by = sample_field, .SDcols = names(thresholds)
         ]
     } else {
+        if (is.null(CNt_field)) {
+            CNt_field <- "CNt"
+            out$CNt <- out[[major_cn_field]] + out[[minor_cn_field]]
+        }
         data.table::setnames(
             out, c(minor_cn_field, CNt_field, ploidy_field),
             c("arm_minor_ploidy", "arm_total_ploidy", "ploidy")

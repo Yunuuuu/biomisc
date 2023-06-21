@@ -33,9 +33,6 @@ seg_data.}
 \link[GenomicRanges:GRanges-class]{GenomicRanges} obeject containing the
 Cytoband reference.}
     \item{\code{contigs}}{A character vector specifying the chromosome to summarize.}
-    \item{\code{filter_centromere}}{Whether to include or exclude segments across
-centromere, namely genomic ranges interseted with "acen" arm of
-ref_cytoband.  Default: \code{TRUE}.}
     \item{\code{pruning_mode}}{When some of the seqlevels to drop from \code{ref_cytoband}
 are in use (i.e. have ranges on them), the ranges on these sequences need to
 be removed before the seqlevels can be dropped. We call this pruning. The
