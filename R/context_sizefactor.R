@@ -20,31 +20,35 @@
 #'  exome ranges.
 #' @param contigs An atomic vector specifying the chromosome to define the  size
 #' factor to normalize the context matrix.
+#' @param strand A character vector indicates the strand in which to calculate
+#' the context frequency. Both positive and negtive strands.
 #' @param pruning_mode When some of the seqlevels to drop from `exome_ranges`
 #'  are in use (i.e. have ranges on them), the ranges on these sequences need to
 #'  be removed before the seqlevels can be dropped. We call this pruning. The
 #'  pruning_mode argument controls how to prune x. See
-#'  [seqinfo][GenomeInfoDb::seqinfo] pruning.mode
+#'  [seqinfo][GenomeInfoDb::seqinfo] pruning.mode argument.
 #' @return A numeric size factor for each mut_context
 #' @export
-context_sizefactor <- function(context, method = c("genome", "exome", "exome2genome", "genome2exome"), ref_genome = NULL, exome_ranges = NULL, contigs = NULL, pruning_mode = "error") {
+context_sizefactor <- function(context, method = c("genome", "exome", "exome2genome", "genome2exome"), ref_genome = NULL, exome_ranges = NULL, contigs = NULL, strand = c("+", "-"), pruning_mode = "error") {
     assert_class(
         context, function(x) {
             all(nchar(context) == nchar(context)[1L])
         },
         msg = "characters each element with the same number of strings", cross_msg = FALSE
     )
+    assert_in(strand, c("+", "-"))
     ref_genome <- get_genome(ref_genome)
     calculate_context_sizefactor(
         context, ref_genome,
         exome_ranges = exome_ranges,
         method = method,
         contigs = contigs,
+        strand = strand,
         pruning_mode = pruning_mode
     )
 }
 
-calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_ranges = NULL, method = NULL, contigs = NULL, pruning_mode = "error") {
+calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_ranges = NULL, method = NULL, contigs = NULL, strand = c("+", "-"), pruning_mode = "error") {
     method <- match.arg(
         method,
         c("genome", "exome", "exome2genome", "genome2exome")
@@ -68,17 +72,14 @@ calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_range
         if (is.null(contigs)) {
             contigs <- GenomeInfoDb::seqnames(ref_genome)
         }
-        pcounts_wgs <- Biostrings::oligonucleotideFrequency(
-            BSgenome::getSeq(ref_genome, contigs, strand = "+"),
-            width = context_width
-        )
-        pcounts_wgs <- colSums(pcounts_wgs)
-        ncounts_wgs <- Biostrings::oligonucleotideFrequency(
-            BSgenome::getSeq(ref_genome, contigs, strand = "-"),
-            width = context_width
-        )
-        ncounts_wgs <- colSums(ncounts_wgs)
-        wgs_contexts <- intersect(names(pcounts_wgs), names(ncounts_wgs))
+        counts_wgs <- lapply(strand, function(x) {
+            counts <- Biostrings::oligonucleotideFrequency(
+                BSgenome::getSeq(ref_genome, contigs, strand = x),
+                width = context_width
+            )
+            colSums(counts)
+        })
+        wgs_contexts <- Reduce(intersect, lapply(counts_wgs, names))
         wgs_missing_contexts <- setdiff(context, wgs_contexts) # nolint
         if (length(wgs_missing_contexts) > 0L) {
             cli::cli_abort(c(
@@ -86,7 +87,7 @@ calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_range
                 x = "missing context{?s}: {.val {wgs_missing_contexts}}"
             ))
         }
-        counts_wgs <- pcounts_wgs[context] + ncounts_wgs[context]
+        counts_wgs <- Reduce(`+`, lapply(counts_wgs, `[`, context))
     }
     if (grepl("exome", method, fixed = TRUE)) {
         exome_ranges <- map_seqnames(exome_ranges,
@@ -100,19 +101,15 @@ calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_range
                 pruning.mode = pruning_mode
             )
         }
-        GenomicRanges::strand(exome_ranges) <- "+"
-        pcounts_wes <- Biostrings::oligonucleotideFrequency(
-            BSgenome::getSeq(ref_genome, exome_ranges),
-            width = context_width
-        )
-        pcounts_wes <- colSums(pcounts_wes)
-        GenomicRanges::strand(exome_ranges) <- "-"
-        ncounts_wes <- Biostrings::oligonucleotideFrequency(
-            BSgenome::getSeq(ref_genome, exome_ranges),
-            width = context_width
-        )
-        ncounts_wes <- colSums(ncounts_wes)
-        wes_contexts <- intersect(names(pcounts_wes), names(ncounts_wes))
+        counts_wes <- lapply(strand, function(x) {
+            GenomicRanges::strand(exome_ranges) <- x
+            counts <- Biostrings::oligonucleotideFrequency(
+                BSgenome::getSeq(ref_genome, exome_ranges),
+                width = context_width
+            )
+            colSums(counts)
+        })
+        wes_contexts <- Reduce(intersect, lapply(counts_wes, names))
         wes_missing_contexts <- setdiff(context, wes_contexts) # nolint
         if (length(wes_missing_contexts) > 0L) {
             cli::cli_abort(c(
@@ -120,7 +117,7 @@ calculate_context_sizefactor <- function(context, ref_genome = NULL, exome_range
                 x = "missing context{?s}: {.val {wes_missing_contexts}}"
             ))
         }
-        counts_wes <- pcounts_wes[context] + ncounts_wes[context]
+        counts_wes <- Reduce(`+`, lapply(counts_wes, `[`, context))
     }
     switch(method,
         # return mut counts divided by number of times that trinucleotide context is observed in the genome
