@@ -90,7 +90,7 @@ run_motif_fisher <- function(
     )
     assert_class(
         background_snv, function(x) {
-            is.character(x) && all(x %chin% names(standard_snv_sub))
+            is.character(x) && all(x %chin% names(standard_snv_sub_pairs))
         },
         msg = "{.cls character} (among {.val {unique(names(standard_snv_sub))}})",
         cross_msg = NULL, null_ok = TRUE
@@ -107,7 +107,7 @@ run_motif_fisher <- function(
     background_snv_type <- background_snv %||%
         grep(
             sprintf("^(%s)", paste0(signature_mut_bases, collapse = "|")),
-            names(standard_snv_sub),
+            names(standard_snv_sub_pairs),
             value = TRUE, perl = TRUE
         )
     background_snv_type <- unique(standardize_snv_sub(background_snv_type))

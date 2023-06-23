@@ -15,7 +15,7 @@ combine_sub_context <- function(context, sub, extension = 1L) {
 # names are substitution can be found out
 #' @keywords internal
 #' @noRd
-standard_snv_sub <- structure(
+standard_snv_sub_pairs <- structure(
     c(
         "T>C", "T>C", "C>T", "C>T", "T>A", "T>A", "T>G", "T>G",
         "C>A", "C>A", "C>G", "C>G"
@@ -43,14 +43,14 @@ enumerate_standard_snv_context <- function(extension = 1L) {
 
 enumerate_standard_snv_sub_context <- function(extension = 1L) {
     enumerate_mut_context(
-        paste0("[", unique(standard_snv_sub), "]"),
+        paste0("[", unique(standard_snv_sub_pairs), "]"),
         extension = extension
     )
 }
 
 enumerate_snv_sub_context <- function(extension = 1L) {
     enumerate_mut_context(
-        paste0("[", unique(names(standard_snv_sub)), "]"),
+        paste0("[", unique(names(standard_snv_sub_pairs)), "]"),
         extension = extension
     )
 }
@@ -67,7 +67,7 @@ sub_context_to_mut_context <- function(sub_context) {
 }
 
 standardize_snv_sub <- function(x) {
-    unname(standard_snv_sub[x])
+    unname(standard_snv_sub_pairs[x])
 }
 
 snv_sub_context <- function(mut_data, chr_field = "chr", mut_pos = "pos", ref_field = "ref", alt_field = "alt", strand = "+", ref_genome, extension = 1L, bg_extension = NULL) {
@@ -82,9 +82,8 @@ snv_sub_context <- function(mut_data, chr_field = "chr", mut_pos = "pos", ref_fi
         starts.in.df.are.0based = FALSE
     )
     mut_gr <- mut_gr[
-        nchar(S4Vectors::mcols(mut_gr)[[ref_field]]) ==
-            nchar(S4Vectors::mcols(mut_gr)[[alt_field]]) &
-            nchar(S4Vectors::mcols(mut_gr)[[ref_field]]) == 1L
+        S4Vectors::mcols(mut_gr)[[alt_field]] %in% Biostrings::DNA_BASES &
+            S4Vectors::mcols(mut_gr)[[ref_field]] %in% Biostrings::DNA_BASES
     ]
     GenomicRanges::strand(mut_gr) <- strand
 
@@ -167,13 +166,13 @@ define_snv_sub_tri_context <- function(motif, ref, alt) {
     )
     data.table::data.table(
         Substitution = factor(sub,
-            levels = names(standard_snv_sub)
+            levels = names(standard_snv_sub_pairs)
         ),
         SubstitutionMotif = factor(sub_motif,
             levels = enumerate_snv_sub_context()
         ),
         SubstitutionType = factor(sub_type,
-            levels = unique(standard_snv_sub)
+            levels = unique(standard_snv_sub_pairs)
         ),
         SubstitutionTypeMotif = factor(sub_type_motif,
             levels = enumerate_standard_snv_sub_context()

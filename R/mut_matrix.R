@@ -31,21 +31,25 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
         extension = extension,
         bg_extension = NULL
     )
-    snv_sub_context <- combine_sub_context(
+    standard_snv_sub_context <- combine_sub_context(
         snv_context_data$standard_snv_context,
         sub = snv_context_data$standard_snv_sub,
         extension = extension
     )
-    standard_snv_sub_context <- enumerate_standard_snv_sub_context(extension)
-    snv_sub_type_context <- factor(snv_sub_context, standard_snv_sub_context)
+    all_standard_snv_sub_context <- enumerate_standard_snv_sub_context(
+        extension
+    )
+    standard_snv_sub_context <- factor(
+        standard_snv_sub_context, all_standard_snv_sub_context
+    )
 
     if (is.null(sample_field)) {
-        sub_type_matrix <- c(table(snv_sub_type_context))
+        sub_type_matrix <- c(table(standard_snv_sub_context))
         sub_type_matrix <- matrix(sub_type_matrix, ncol = 1L)
-        rownames(sub_type_matrix) <- standard_snv_sub_context
+        rownames(sub_type_matrix) <- all_standard_snv_sub_context
     } else {
         sub_type_matrix <- table(
-            snv_sub_type_context,
+            standard_snv_sub_context,
             S4Vectors::mcols(snv_context_data$mut)[[sample_field]]
         )
         # convert table into matrix
@@ -54,7 +58,7 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
     }
 
     if (!is.null(method)) {
-        snv_context <- sub_context_to_mut_context(standard_snv_sub_context)
+        snv_context <- sub_context_to_mut_context(all_standard_snv_sub_context)
         sub_type_matrix <- sub_type_matrix *
             calculate_context_sizefactor(snv_context,
                 method = method, contigs = contigs,
