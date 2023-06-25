@@ -39,23 +39,12 @@ snv_sub_matrix <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr
     all_standard_snv_sub_context <- enumerate_standard_snv_sub_context(
         extension
     )
-    standard_snv_sub_context <- factor(
-        standard_snv_sub_context, all_standard_snv_sub_context
-    )
-
-    if (is.null(sample_field)) {
-        sub_type_matrix <- c(table(standard_snv_sub_context))
-        sub_type_matrix <- matrix(sub_type_matrix, ncol = 1L)
-        rownames(sub_type_matrix) <- all_standard_snv_sub_context
-    } else {
-        sub_type_matrix <- table(
-            standard_snv_sub_context,
+    sub_type_matrix <- table_counts(
+        standard_snv_sub_context,
+        all_standard_snv_sub_context,
+        sample_field %|n|%
             S4Vectors::mcols(snv_context_data$mut)[[sample_field]]
-        )
-        # convert table into matrix
-        names(dimnames(sub_type_matrix)) <- NULL
-        sub_type_matrix <- unclass(sub_type_matrix)
-    }
+    )
 
     if (!is.null(method)) {
         snv_context <- sub_context_to_mut_context(all_standard_snv_sub_context)
