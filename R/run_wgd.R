@@ -2,16 +2,16 @@
 #'
 #' @param seg_data A [data.frame][data.frame] obeject with following columns
 #'  (arguments ends with "_field").
-#' @param sample_field A string specifying the sample id column in seg_cnv.
+#' @param sample_field A string specifying the sample id column in seg_data.
 #' @param major_cn_field A string specifying the major_cn (allele-specific)
-#'  column in seg_cnv. Default: "major_cn". If iminor_cn_field is NULL,
+#'  column in seg_data. Default: "major_cn". If iminor_cn_field is NULL,
 #'  major_cn_field must exist, in this way, wGD will be calculated based on
 #'  Bielski's article. See references.
 #' @param thresholds An integer vector specifying the thresholds to define
 #'  Whole-genome doubling.
 #' @param minor_cn_field,CNt_field,ploidy_field A string specifying the minor_cn
 #'  (minor allele), total_cn (tumor absoltue total copy number) and ploidy
-#'  column in seg_cnv. If minor_cn_field is not NULL, wGD will be calculated
+#'  column in seg_data. If minor_cn_field is not NULL, wGD will be calculated
 #'  based on Sally M's article. See references.
 #' @param perm_times An integer specifying the times of simulation genome.
 #' @inheritDotParams summarize_arm -seg_data -sample_field -other_fields -group_fields -filter_centromere

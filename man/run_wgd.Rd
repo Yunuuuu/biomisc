@@ -20,7 +20,7 @@ run_wgd(
 \item{seg_data}{A \link{data.frame} obeject with following columns
 (arguments ends with "_field").}
 
-\item{sample_field}{A string specifying the sample id column in seg_cnv.}
+\item{sample_field}{A string specifying the sample id column in seg_data.}
 
 \item{...}{
   Arguments passed on to \code{\link[=summarize_arm]{summarize_arm}}
@@ -49,13 +49,13 @@ arm) are supported.}
 Whole-genome doubling.}
 
 \item{major_cn_field}{A string specifying the major_cn (allele-specific)
-column in seg_cnv. Default: "major_cn". If iminor_cn_field is NULL,
+column in seg_data. Default: "major_cn". If iminor_cn_field is NULL,
 major_cn_field must exist, in this way, wGD will be calculated based on
 Bielski's article. See references.}
 
 \item{minor_cn_field, CNt_field, ploidy_field}{A string specifying the minor_cn
 (minor allele), total_cn (tumor absoltue total copy number) and ploidy
-column in seg_cnv. If minor_cn_field is not NULL, wGD will be calculated
+column in seg_data. If minor_cn_field is not NULL, wGD will be calculated
 based on Sally M's article. See references.}
 
 \item{perm_times}{An integer specifying the times of simulation genome.}
