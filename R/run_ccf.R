@@ -171,12 +171,14 @@ run_ccf <- function(
     if (!all(data.table::between(out$purity, 0L, 1L))) {
         cli::cli_abort("purity must in [0, 1]")
     }
+    all_seqs <- as.character(out[[on_chr]])
     if (!is.null(contigs)) {
         # filter contigs
-        seqstyle <- GenomeInfoDb::seqlevelsStyle(out[[on_chr]])
-        contigs <- map_seqnames(contigs, seqstyle)
-        matched_contigs <- out[[on_chr]] %in% contigs
+        contigs <- as.character(contigs)
+        contigs <- map_seqnames(contigs, GenomeInfoDb::seqlevelsStyle(all_seqs))
+        matched_contigs <- all_seqs %chin% contigs
         out <- out[matched_contigs]
+        all_seqs <- all_seqs[matched_contigs]
     }
 
     if (nrow(out) == 0L) {
@@ -188,7 +190,6 @@ run_ccf <- function(
         cli::cli_abort(msg)
     }
 
-    all_seqs <- out[[on_chr]]
     allosomes <- GenomeInfoDb::seqlevelsInGroup(all_seqs, group = "sex")
     autosomes <- GenomeInfoDb::seqlevelsInGroup(all_seqs, group = "auto")
     if (!all(all_seqs %in% c(allosomes, autosomes))) {
