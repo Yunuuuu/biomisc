@@ -62,7 +62,7 @@ run_ccf <- function(
     on_patient = NULL, on_sample = NULL,
     purity_field = NULL, on_chr = "chr", mut_pos = "pos",
     start_field = "startpos", end_field = "endpos",
-    normal_cn = 2L, gender_field = NULL, contigs = 1:22,
+    normal_cn = 2L, gender_field = NULL, contigs = NULL,
     ...,
     # arguments for ccf_type = phyloCCF
     ref_field = NULL,

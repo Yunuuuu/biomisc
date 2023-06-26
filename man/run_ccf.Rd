@@ -17,7 +17,7 @@ run_ccf(
   end_field = "endpos",
   normal_cn = 2L,
   gender_field = NULL,
-  contigs = 1:22,
+  contigs = NULL,
   ...,
   ref_field = NULL,
   alt_field = NULL,
