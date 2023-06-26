@@ -366,7 +366,6 @@ utils::globalVariables(c(
 #' @keywords validated
 #' @noRd
 define_subclone_cn <- function(seg, min_subclonal = 0.01) {
-    seg <- data.table::as.data.table(seg)
     seg[, c("nMaj1", "nMin1") := lapply(.SD, floor),
         .SDcols = c("nAraw", "nBraw")
     ]

@@ -35,7 +35,7 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     arm_values <- S4Vectors::mcols(ref_ranges)[[arm_field]]
     arm_levels <- c("p", "acen", "q", "")
 
-    if (!all(as.character(arm_values) %chin% arm_levels)) {
+    if (!all(arm_values %in% arm_levels)) {
         cli::cli_abort("Only values of {.val {arm_levels}} are supported in column specified in {.arg arm_field}.")
     }
     assert_in(arms, arm_levels)
