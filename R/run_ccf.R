@@ -70,6 +70,7 @@ run_ccf <- function(
     min_vaf_to_explain = NULL, conipher = FALSE,
     # Other arguments
     nomatch = NULL, kept_cols = NULL) {
+    assert_pkg("GenomeInfoDb")
     ccf_type <- match.arg(ccf_type)
     rlang::check_dots_empty()
 
@@ -172,9 +173,29 @@ run_ccf <- function(
     }
     if (!is.null(contigs)) {
         # filter contigs
-        matched_contigs <- as.character(out[[on_chr]]) %chin%
-            as.character(contigs)
+        seqstyle <- GenomeInfoDb::seqlevelsStyle(out[[on_chr]])
+        contigs <- map_seqnames(contigs, seqstyle)
+        matched_contigs <- out[[on_chr]] %in% contigs
         out <- out[matched_contigs]
+    }
+
+    if (nrow(out) == 0L) {
+        msg <- "No mutation to proceed"
+        if (!is.null(contigs) && !any(matched_contigs)) {
+            msg <- paste(msg, "after filtering by {.arg contigs}")
+            msg <- c(msg, i = "Please check {.arg contigs}")
+        }
+        cli::cli_abort(msg)
+    }
+
+    all_seqs <- out[[on_chr]]
+    allosomes <- GenomeInfoDb::seqlevelsInGroup(all_seqs, group = "sex")
+    autosomes <- GenomeInfoDb::seqlevelsInGroup(all_seqs, group = "auto")
+    if (!all(all_seqs %in% c(allosomes, autosomes))) {
+        cli::cli_abort(c(
+            "Find chromosomes not in {.filed allosomes} and {.field autosomes}",
+            i = "Please check {.code ?GenomeInfoDb::seqlevelsInGroup} for definition of {.filed allosomes} and {.field autosomes}"
+        ))
     }
 
     # define normal_cn
@@ -192,7 +213,9 @@ run_ccf <- function(
             out, gender_field, group,
             cross_format = "group", info_msg = info_msg
         )
-        out$normal_cn <- define_normal_cn(out[[gender_field]], out[[on_chr]])
+        out$normal_cn <- define_normal_cn(
+            out[[gender_field]], all_seqs, allosomes
+        )
     } else {
         if (is_scalar_numeric(normal_cn)) {
             out[, normal_cn := normal_cn]
@@ -253,17 +276,8 @@ run_ccf <- function(
     out[, .SD, .SDcols = intersect(columns, names(out))]
 }
 
-define_normal_cn <- function(gender, chr) {
-    allosomes <- GenomeInfoDb::seqlevelsInGroup(chr, group = "sex")
-    autosomes <- GenomeInfoDb::seqlevelsInGroup(chr, group = "auto")
-    if (!all(as.character(chr) %chin% c(allosomes, autosomes))) {
-        cli::cli_abort(c(
-            "Find chromosomes not in {.filed allosomes} and {.field autosomes}",
-            i = "Please check {.code ?GenomeInfoDb::seqlevelsInGroup} for definition of {.filed allosomes} and {.field autosomes}"
-        ))
-    }
-    data.table::fifelse(
-        gender == "male" & as.character(chr) %chin% allosomes,
-        1L, 2L
-    )
+define_normal_cn <- function(gender, chr, allosomes = NULL) {
+    allosomes <- allosomes %||%
+        GenomeInfoDb::seqlevelsInGroup(chr, group = "sex")
+    data.table::fifelse(gender == "male" & chr %in% allosomes, 1L, 2L)
 }
