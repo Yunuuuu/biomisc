@@ -25,7 +25,7 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
         if (!length(arm_field)) {
             cli::cli_abort(c(
                 "Cannot determine right {.arg arm_field}",
-                "i" = "try to set {.arg arm_field}"
+                "i" = "try to set {.arg arm_field} manually"
             ))
         }
         arm_field <- arm_field[[1L]]
@@ -34,53 +34,40 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     }
     arm_values <- S4Vectors::mcols(ref_ranges)[[arm_field]]
     arm_levels <- c("p", "acen", "q", "")
-
-    if (!all(arm_values %in% arm_levels)) {
-        cli::cli_abort("Only values of {.val {arm_levels}} are supported in column specified in {.arg arm_field}.")
-    }
+    assert_in(arm_values, arm_levels,
+        arg_x = sprintf("{.arg %s}", arm_field)
+    )
     assert_in(arms, arm_levels)
     arm_values <- factor(arm_values, arm_levels)
     arm_values <- droplevels(arm_values)
 
     # we split ref_ranges by `chr` and `arm` and then combine ranges in
     # each groups if there aren't any intervals.
-    split_data <- data.table::data.table(
-        chr = as.character(GenomeInfoDb::seqnames(ref_ranges)),
-        arm = arm_values
+    chr_values <- as.character(GenomeInfoDb::seqnames(ref_ranges))
+    split_data <- paste0(chr_values, arm_values)
+    split_data <- factor(
+        split_data,
+        unique(split_data[
+            order(GenomeInfoDb::rankSeqlevels(chr_values), arm_values)
+        ])
     )
 
-    # we create factor levels to determine proper order, we order chr_arm pairs
-    # by chromosome firstly and then by arm.
-    # for chr, we order it by integer portion and then by character
-    chr_arm_pair <- data.table::copy(split_data)
-    chr_arm_pair <- unique(chr_arm_pair)
-    # nolint start
-    chr_arm_pair[, seq_chr := sub("^chr", "", chr, perl = TRUE)]
-    suppressWarnings(chr_arm_pair[, seq_int := as.integer(seq_chr)])
-    chr_arm_pair[, chr_arm_order := order(seq_int, seq_chr, arm)]
-    chr_arm_levels <- chr_arm_pair[, paste0(chr, arm)[chr_arm_order]]
-    # nolint end
-
-    split_factor <- factor(
-        paste0(split_data[["chr"]], split_data[["arm"]]),
-        chr_arm_levels
-    )
-    ref_ranges <- GenomicRanges::split(ref_ranges, split_factor, drop = TRUE)
-    arm_gr_ranges <- S4Vectors::endoapply(ref_ranges, function(chr_cytoband) {
+    ref_ranges <- GenomicRanges::split(ref_ranges, split_data, drop = TRUE)
+    out <- S4Vectors::endoapply(ref_ranges, function(chr_cytoband) {
         gr <- GenomicRanges::reduce(chr_cytoband)
         S4Vectors::mcols(gr)[[arm_field]] <- unique(
             S4Vectors::mcols(chr_cytoband)[[arm_field]]
         )
         gr
     })
-    if (any(lengths(arm_gr_ranges) > 1L)) {
+    if (any(lengths(out) > 1L)) {
         cli::cli_warn(
             "Cannot combine all ranges into one arm-level ranges",
             "i" = "Please check if {.arg ref_ranges} has intervals"
         )
     }
-    arm_gr_ranges <- unlist(arm_gr_ranges, use.names = TRUE)
-    arm_gr_ranges[S4Vectors::mcols(arm_gr_ranges)[[arm_field]] %in% arms]
+    out <- unlist(out, use.names = TRUE)
+    out[S4Vectors::mcols(out)[[arm_field]] %in% arms]
 }
 
 #' Get UCSC cytoband data
@@ -100,7 +87,10 @@ get_cytoband <- function(x = "hg38", add_arm = TRUE) {
         S4Vectors::mcols(out)$arm <- factor(
             data.table::fifelse(
                 S4Vectors::mcols(out)$gieStain == "acen", "acen",
-                sub("^([pq])[0-9.]+", "\\1", S4Vectors::mcols(out)$name)
+                sub("^([pq])[0-9.]+", "\\1",
+                    S4Vectors::mcols(out)$name,
+                    perl = TRUE
+                )
             ),
             levels = c("p", "acen", "q", "")
         )
