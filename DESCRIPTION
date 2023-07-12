@@ -29,8 +29,6 @@ Suggests:
     stats,
     utils,
     biomaRt,
-    pracma,
-    quadprog,
     roxygen2,
     testthat (>= 3.0.0),
     curl,
