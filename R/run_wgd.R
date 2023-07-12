@@ -51,6 +51,7 @@ run_wgd <- function(
     if (is.null(minor_cn_field)) {
         group_fields <- NULL
     } else {
+        assert_pkg("matrixStats")
         group_fields <- ploidy_field
     }
     out <- summarize_arm(
