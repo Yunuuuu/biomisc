@@ -7,7 +7,7 @@
 run_ccf(
   mut_data,
   cnv_data,
-  ccf_type = c("phyloCCF", "bootstrapCCF", "both"),
+  ccf_type = "phyloCCF",
   on_patient = NULL,
   on_sample = NULL,
   purity_field = NULL,
@@ -34,7 +34,8 @@ run_ccf(
 \item{cnv_data}{A data.frame of allele-specific CNV data.}
 
 \item{ccf_type}{which CCF should we estimate, one of "phyloCCF" (include both
-absolute and phylogenetic CCF) or "bootstrapCCF", or "both".}
+absolute and phylogenetic CCF) or "bootstrapCCF". You can provide
+c("phyloCCF", "bootstrapCCF") to calculate both.}
 
 \item{on_patient}{A string (can be named), specifying the patient column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
