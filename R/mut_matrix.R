@@ -39,7 +39,7 @@ prepare_snv_signature <- function(mut_data, sample_field = NULL, ref_genome = NU
     all_standard_snv_sub_context <- enumerate_standard_snv_sub_context(
         extension
     )
-    sub_type_matrix <- table_counts(
+    out <- table_counts(
         standard_snv_sub_context,
         all_standard_snv_sub_context,
         sample_field %|n|%
@@ -48,12 +48,12 @@ prepare_snv_signature <- function(mut_data, sample_field = NULL, ref_genome = NU
 
     if (!is.null(method)) {
         snv_context <- sub_context_to_mut_context(all_standard_snv_sub_context)
-        sub_type_matrix <- sub_type_matrix *
+        out <- out *
             calculate_context_sizefactor(snv_context,
                 method = method, contigs = contigs,
                 ref_genome = ref_genome, exome_ranges = exome_ranges,
                 pruning_mode = pruning_mode
             )
     }
-    sub_type_matrix
+    out
 }
