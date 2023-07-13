@@ -10,7 +10,8 @@
 #'
 #' @inheritParams identify_mut_cn
 #' @param ccf_type which CCF should we estimate, one of "phyloCCF" (include both
-#' absolute and phylogenetic CCF) or "bootstrapCCF", or "both".
+#' absolute and phylogenetic CCF) or "bootstrapCCF". You can provide
+#' c("phyloCCF", "bootstrapCCF") to calculate both.
 #' @param purity_field A string specifying the purity column (in `mut_data` or
 #'  `cnv_data`). Default is "purity".
 #' @param normal_cn A scalar number specifying the normal.copy number or a
@@ -58,7 +59,7 @@
 #' @export
 run_ccf <- function(
     mut_data, cnv_data,
-    ccf_type = c("phyloCCF", "bootstrapCCF", "both"),
+    ccf_type = "phyloCCF",
     on_patient = NULL, on_sample = NULL,
     purity_field = NULL, on_chr = "chr", mut_pos = "pos",
     start_field = "startpos", end_field = "endpos",
@@ -71,10 +72,10 @@ run_ccf <- function(
     # Other arguments
     nomatch = NULL, kept_cols = NULL) {
     assert_pkg("GenomeInfoDb")
-    ccf_type <- match.arg(ccf_type)
     rlang::check_dots_empty()
 
     # check arguments firstly
+    assert_in(ccf_type, c("phyloCCF", "bootstrapCCF"))
     assert_class(on_patient, rlang::is_scalar_character,
         "scalar {.cls character}",
         null_ok = TRUE, cross_msg = NULL
@@ -120,11 +121,13 @@ run_ccf <- function(
         names(on_chr) %||% on_chr, mut_pos,
         "ref_counts", "alt_counts"
     ))
-    cnv_columns <- switch(ccf_type,
-        phyloCCF = c("nAraw", "nBraw"),
-        bootstrapCCF = c("nMinor", "nMajor"),
-        both = c("nAraw", "nBraw", "nMinor", "nMajor")
-    )
+    cnv_columns <- NULL
+    if (any(ccf_type == "phyloCCF")) {
+        cnv_columns <- c(cnv_columns, c("nAraw", "nBraw"))
+    }
+    if (any(ccf_type == "bootstrapCCF")) {
+        cnv_columns <- c(cnv_columns, c("nMinor", "nMajor"))
+    }
     assert_df_with_columns(cnv_data, c(
         on_patient, on_sample, on_chr, start_field, end_field, cnv_columns
     ))
@@ -134,7 +137,7 @@ run_ccf <- function(
     mut_data <- data.table::as.data.table(mut_data)
     cnv_data <- data.table::as.data.table(cnv_data)
 
-    if (ccf_type != "bootstrapCCF") {
+    if (any(ccf_type == "phyloCCF")) {
         # define subclone copy number
         cnv_data <- define_subclone_cn(cnv_data, min_subclonal = 0.01)
     }
@@ -235,7 +238,7 @@ run_ccf <- function(
         on_patient, on_sample, "purity", start_field, end_field,
         on_chr, mut_pos, "alt_counts", "ref_counts"
     )
-    if (any(ccf_type == c("phyloCCF", "both"))) {
+    if (any(ccf_type == "phyloCCF")) {
         data.table::setnames(
             out, c("nAraw", "nBraw"),
             c("major_raw", "minor_raw")
@@ -252,7 +255,7 @@ run_ccf <- function(
         )
         columns <- c(columns, "minor_cn", "major_cn", ref_field, alt_field)
     }
-    if (any(ccf_type == c("bootstrapCCF", "both"))) {
+    if (any(ccf_type == "bootstrapCCF")) {
         assert_pkg("sequenza")
         assert_pkg("boot")
         data.table::setnames(
