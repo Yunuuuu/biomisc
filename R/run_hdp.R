@@ -3,10 +3,7 @@
 #' Run a Gibbs sampler over the activated DP nodes of a Hierarchichal Dirichlet
 #' Process.  Each iteration re-assigns the cluster allocation of every data
 #' item.  Run `burnin` iterations, and then collect `n` samples from the chain
-#' with `space` iterations between each collected sample. Can collect multiple
-#' independent HDP sampling chains in a hdpSampleMulti object via
-#' [hdp_multi_chain][hdp::hdp_multi_chain]. Components are extracted via
-#' [hdp_extract_components][hdp::hdp_extract_components].
+#' with `space` iterations between each collected sample.
 #'
 #' @param matrix A matrix of counts with one row for every sample (same order
 #'   as dpindex) and one column for every data category.
@@ -31,8 +28,7 @@
 #' @inheritDotParams hdp::hdp_posterior -hdp -seed
 #' @param seed The seed that can be set to reproduce output.
 #' @seealso [hdp_posterior][hdp::hdp_posterior]
-#' @return A list of [hdp::hdpSampleChain-class] object with the salient
-#' information from each posterior sample.
+#' @return A `HDP` object.
 #' @examples
 #' run_hdp(
 #'     matrix = hdp::example_data_hdp_prior,
@@ -160,7 +156,7 @@ run_hdp <- function(
     ############
 
     # run chain sampling
-    lapply(seq_len(n_posterior), function(i) {
+    posteriors <- lapply(seq_len(n_posterior), function(i) {
         # with different dp_activate seeds to start the clustering from a
         # different random starting point each time.
         new_hdp_data <- hdp::dp_activate(
@@ -170,6 +166,15 @@ run_hdp <- function(
         )
         hdp::hdp_posterior(hdp = new_hdp_data, ...)
     })
+
+    structure(
+        list(
+            input = matrix, priors = priors,
+            posteriors = posteriors,
+            components = NULL, statistics = NULL
+        ),
+        class = "HDP"
+    )
 }
 
 hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree), arg2 = rlang::caller_arg(matrix), call = parent.frame()) {
@@ -194,28 +199,105 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
     dp_tree
 }
 
+print.HDP <- function(x) {
+    cli::cli_text("A {.cls HDP} object with {.val {length(x$posteriors)}} Posterior sampling chain{?s}")
+    if (!is.null(x$statistics)) {
+        stats <- x$statistics
+        comps <- sort(rownames(stats$signatures))
+        new_components <- comps[startsWith(comps, "N")]
+        prior_components <- comps[startsWith(comps, "P")]
+        components_to_nsamples <- colSums(stats$signif_exposures > 0L)
+        components_to_counts <- colSums(stats$signif_exposures_counts)
+
+        if (length(prior_components)) {
+            values <- paste(
+                "A total of {.val {",
+                components_to_counts[prior_components], 
+                "}} count{?s} in {.val {",
+                components_to_nsamples[prior_components], 
+                "}} sample{?s}"
+            )
+            names(values) <- prior_components
+            cli::cli_text("Components in Priors")
+            cli::cli_dl(values)
+        }
+        if (length(new_components)) {
+            values <- paste(
+                "A total of {.val {",
+                components_to_counts[new_components], 
+                "}} count{?s} in {.val {",
+                components_to_nsamples[new_components], 
+                "}} sample{?s}"
+            )
+            names(values) <- new_components
+            cli::cli_text("New identified Components")
+            cli::cli_dl(values)
+        }
+    }
+    invisible(x)
+}
+
+`$.HDP` <- function(x, i) {
+    NextMethod()
+}
+`$<-.HDP` <- function(x, i, value) {
+    NextMethod()
+}
+`[[.HDP` <- function(x, i) {
+    NextMethod()
+}
+`[[<-.HDP` <- function(x, i, value) {
+    NextMethod()
+}
+`[.HDP` <- function(x, i) {
+    NextMethod()
+}
+`[<-.HDP` <- function(x, i, value) {
+    NextMethod()
+}
+
+#############################################################################
 #' Extract hdp results
-#' @param hdpsample A hdpSampleChain or hdpSampleMulti
-#' @param input_matrix A matrix of counts with one row for every sample (same
-#'  order as dpindex) and one column for every data category.
-#' @param dpindices Indices of DP nodes to extract
-#' @param sig_active_cutoff A numeric of the minimal weight to regard a
-#'  component as active.
-#' @param cohort_threshold A numeric of the minimal proportion to regard a
-#'  component as active.
-#' @export
-hdp_data <- function(
-    hdpsample, input_matrix, dpindices = NULL,
-    sig_active_cutoff = 0.1,
-    cohort_threshold = 0.05) {
-    assert_class(
-        hdpsample,
-        function(x) {
-            methods::is(x, "hdpSampleChain") ||
-                methods::is(x, "hdpSampleMulti")
-        },
-        msg = "{.cls hdpSampleChain} or {.cls hdpSampleMulti}"
+#'
+#' This involves collecting multiple independent HDP sampling chains into an
+#' hdpSampleMulti object using [hdp_multi_chain][hdp::hdp_multi_chain].
+#' Components are then extracted using
+#' [hdp_extract_components][hdp::hdp_extract_components].
+#' @param x A `HDP` object returned by [run_hdp].
+#' @param ...
+#'  * dpindices: Indices of DP nodes to extract. Default: `NULL`.
+#'  * sig_active_cutoff: A numeric of the minimal weight to regard a component
+#'  as active. Default: `0.1`.
+#'  * remove_zero_lower_ci: A scalar logical indicates exposures with
+#'    zero lower confidence interval should be removed.
+#'  * cohort_threshold: A numeric of the minimal proportion (if <1L) or number
+#'    of samples (if >= 1L) to regard a component as active. Default: `0.05`.
+#' @return A `HDP` object with `components` and `statistics` added.
+hdp_data <- function(x, ...) {
+    assert_pkg("hdp")
+    hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
+    x$components <- hdp::hdp_extract_components(hdp_multi_chain)
+    x$statistics <- hdp_data_internal(
+        hdpsample = x$components,
+        input_matrix = x$input, ...
     )
+    x
+}
+
+hdp_data_internal <- function(
+    hdpsample, input_matrix, dpindices = NULL,
+    sig_active_cutoff = 0.1, remove_zero_lower_ci = TRUE,
+    cohort_threshold = 0.05) {
+    assert_class(sig_active_cutoff, function(x) {
+        is_scalar_numeric(x) && data.table::between(x, 0L, 1L)
+    }, "scalar {.cls numeric} in [0, 1]")
+    assert_class(
+        remove_zero_lower_ci, rlang::is_scalar_logical,
+        "scalar {.cls logical}"
+    )
+    assert_class(cohort_threshold, function(x) {
+        is_scalar_numeric(x) && x >= 0L
+    }, "scalar {.cls numeric} not less than 0")
     if (length(hdp::comp_categ_counts(hdpsample)) == 0L) {
         cli::cli_abort("No component info for hdpsample. First run hdp_extract_components")
     }
@@ -267,40 +349,47 @@ hdp_data <- function(
     }, numeric(1L))
 
     # significant signature -------------------------------------------
-    signf_exposures <- exposures
+    signif_exposures <- exposures
     cis <- dp_distn$cred.int[dpindices]
-    nonsig <- lapply(cis, function(x) which(x[1L, ] == 0L))
-    for (i in seq_along(nonsig)) {
-        signf_exposures[i, nonsig[[i]]] <- 0L
+    if (remove_zero_lower_ci) {
+        nonsig <- lapply(cis, function(x) which(x[1L, ] == 0L))
+        for (i in seq_along(nonsig)) {
+            signif_exposures[i, nonsig[[i]]] <- 0L
+        }
     }
-    signf_exposures <- signf_exposures[
-        , colnames(signf_exposures) != "0",
+    signif_exposures <- signif_exposures[
+        , colnames(signif_exposures) != "0",
         drop = FALSE
     ]
-    signf_signatures <- signatures[rownames(signatures) != "0", , drop = FALSE]
-    signf_metrics <- data.table::as.data.table(signf_exposures,
+    signif_signatures <- signatures[rownames(signatures) != "0", , drop = FALSE]
+    signif_metrics <- data.table::as.data.table(signif_exposures,
         keep.rownames = "sample_id"
     )
-    signf_metrics <- data.table::melt(signf_metrics,
+    signif_metrics <- data.table::melt(signif_metrics,
         id.vars = "sample_id",
         variable.name = "components",
         variable.factor = FALSE,
-        value.name = "value"
+        value.name = "exposures"
     )
-    signf_metrics$sig_active <- signf_metrics$value > sig_active_cutoff
-    ..tmp_cohort_threshold_number.. <- cohort_threshold * nrow(exposures)
-    signf_metrics[, active_samples := sum(sig_active, na.rm = TRUE), # nolint
+    signif_metrics$sig_active <- signif_metrics$exposures >= sig_active_cutoff
+    if (cohort_threshold < 1L) {
+        cohort_threshold <- cohort_threshold * nrow(exposures)
+    }
+    cohort_threshold <- as.integer(cohort_threshold)
+    cli::cli_inform(
+        "Filtering components in less than {cohort_threshold} sample{?s}"
+    )
+    signif_metrics[, active_samples := sum(sig_active, na.rm = TRUE), # nolint
         by = "components"
     ]
-    signf_metrics[
-        , sig_cohort := active_samples > ..tmp_cohort_threshold_number.., # nolint
+    signif_metrics[, sig_cohort := active_samples >= cohort_threshold]
+    excluded_components <- signif_metrics[(!sig_cohort), unique(components)]
+    signif_signatures <- signif_signatures[
+        !rownames(signif_signatures) %in% excluded_components, ,
+        drop = FALSE
     ]
-    excluded_components <- signf_metrics[(!sig_cohort), unique(components)]
-    signf_signatures <- signf_signatures[
-        !rownames(signf_signatures) %in% excluded_components, , drop = FALSE
-    ]
-    signf_exposures <- signf_exposures[
-        , !colnames(signf_exposures) %in% excluded_components,
+    signif_exposures <- signif_exposures[
+        , !colnames(signif_exposures) %in% excluded_components,
         drop = FALSE
     ]
     mutBurden <- data.table::data.table(
@@ -313,10 +402,10 @@ hdp_data <- function(
         exposures = exposures,
         numdata = vapply(dps, hdp::numdata, integer(1L)),
         exposures_counts = round(exposures * mutBurden$nMut),
-        signf_signatures = signf_signatures,
-        signf_exposures = signf_exposures,
-        signf_exposures_counts = round(signf_exposures * mutBurden$nMut),
-        signf_metrics = signf_metrics,
+        signif_signatures = signif_signatures,
+        signif_exposures = signif_exposures,
+        signif_exposures_counts = round(signif_exposures * mutBurden$nMut),
+        # signif_metrics = signif_metrics,
         excluded_components = excluded_components,
         RMSE = RMSE, nRMSE = nRMSE,
         cosineSimilarity = cosineSimilarity,
@@ -325,8 +414,7 @@ hdp_data <- function(
 }
 
 utils::globalVariables(c(
-    "active_samples", "sig_active",
-    "sig_cohort", "components"
+    "active_samples", "sig_active", "sig_cohort", "components"
 ))
 
 cos_sim <- function(x, y) {

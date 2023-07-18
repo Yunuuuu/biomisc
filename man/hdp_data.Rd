@@ -4,28 +4,27 @@
 \alias{hdp_data}
 \title{Extract hdp results}
 \usage{
-hdp_data(
-  hdpsample,
-  input_matrix,
-  dpindices = NULL,
-  sig_active_cutoff = 0.1,
-  cohort_threshold = 0.05
-)
+hdp_data(x, ...)
 }
 \arguments{
-\item{hdpsample}{A hdpSampleChain or hdpSampleMulti}
+\item{x}{A \code{HDP} object returned by \link{run_hdp}.}
 
-\item{input_matrix}{A matrix of counts with one row for every sample (same
-order as dpindex) and one column for every data category.}
-
-\item{dpindices}{Indices of DP nodes to extract}
-
-\item{sig_active_cutoff}{A numeric of the minimal weight to regard a
-component as active.}
-
-\item{cohort_threshold}{A numeric of the minimal proportion to regard a
-component as active.}
+\item{...}{\itemize{
+\item dpindices: Indices of DP nodes to extract. Default: \code{NULL}.
+\item sig_active_cutoff: A numeric of the minimal weight to regard a component
+as active. Default: \code{0.1}.
+\item remove_zero_lower_ci: A scalar logical indicates exposures with
+zero lower confidence interval should be removed.
+\item cohort_threshold: A numeric of the minimal proportion (if <1L) or number
+of samples (if >= 1L) to regard a component as active. Default: \code{0.05}.
+}}
+}
+\value{
+A \code{HDP} object with \code{components} and \code{statistics} added.
 }
 \description{
-Extract hdp results
+This involves collecting multiple independent HDP sampling chains into an
+hdpSampleMulti object using \link[hdp:hdp_multi_chain]{hdp_multi_chain}.
+Components are then extracted using
+\link[hdp:hdp_extract_components]{hdp_extract_components}.
 }
