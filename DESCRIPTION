@@ -10,7 +10,6 @@ Imports:
     data.table (>= 1.14.9),
     future.apply,
     progressr,
-    Rcpp,
     rlang (>= 0.4.11)
 Suggests: 
     ABSOLUTE,
