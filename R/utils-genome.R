@@ -102,7 +102,7 @@ map_seqnames <- function(x, style, arg = rlang::caller_arg(x), style_arg = NULL)
     if (all(GenomeInfoDb::seqlevelsStyle(x) != style)) {
         msg <- "Mapping seqnames of {.arg {arg}} to {style} style"
         if (!is.null(style_arg)) {
-            msg <- paste(msg, "of {.arg style_arg}")
+            msg <- paste(msg, "of {.arg {style_arg}}")
         }
         cli::cli_inform(msg)
         GenomeInfoDb::seqlevelsStyle(x) <- style
