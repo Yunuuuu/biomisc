@@ -43,6 +43,9 @@ run_hdp <- function(
     dp_tree = NULL, initcc = 10L, ..., n_posterior = 15L, seed = 1234L) {
     assert_pkg("hdp")
     assert_class(matrix, is.matrix, "matrix")
+    if (anyNA(matrix)) {
+        cli::cli_abort("NA is not allowed in {.arg matrix}")
+    }
     assert_class(priors, is.matrix, "matrix", null_ok = TRUE)
     if (!is.null(priors) && ncol(matrix) != nrow(priors)) {
         cli::cli_abort("{.code ncol(matrix)} and {.code nrow(priors)} must be equal")
@@ -204,7 +207,7 @@ print.HDP <- function(x, ...) {
     cli::cli_text("A {.cls HDP} object with {.val {length(x$posteriors)}} Posterior sampling chain{?s}")
     if (!is.null(x$statistics)) {
         stats <- x$statistics
-        comps <- sort(rownames(stats$signatures))
+        comps <- sort(rownames(stats$signif_signatures))
         new_components <- comps[startsWith(comps, "N")]
         prior_components <- comps[startsWith(comps, "P")]
         components_to_nsamples <- colSums(stats$signif_exposures > 0L)
