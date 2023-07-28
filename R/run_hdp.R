@@ -47,8 +47,16 @@ run_hdp <- function(
         cli::cli_abort("NA is not allowed in {.arg matrix}")
     }
     assert_class(priors, is.matrix, "matrix", null_ok = TRUE)
-    if (!is.null(priors) && ncol(matrix) != nrow(priors)) {
-        cli::cli_abort("{.code ncol(matrix)} and {.code nrow(priors)} must be equal")
+    if (!is.null(priors)) {
+        if (is.null(colnames(matrix))) {
+            if (ncol(matrix) != nrow(priors)) {
+                cli::cli_abort("{.code ncol(matrix)} and {.code nrow(priors)} must be equal")
+            }
+        } else {
+            if (!all(colnames(matrix) == rownames(priors))) {
+                cli::cli_abort("{.code colnames(matrix)} and {.code rownames(priors)} must be the same")
+            }
+        }
     }
     assert_class(initcc, is_scalar_numeric, "scalar numeric", cross_msg = NULL)
     assert_class(n_posterior, is_scalar_numeric, "scalar numeric",
@@ -216,9 +224,9 @@ print.HDP <- function(x, ...) {
         if (length(prior_components)) {
             values <- paste(
                 "A total of {.val {",
-                components_to_counts[prior_components], 
+                components_to_counts[prior_components],
                 "}} count{?s} in {.val {",
-                components_to_nsamples[prior_components], 
+                components_to_nsamples[prior_components],
                 "}} sample{?s}"
             )
             names(values) <- prior_components
@@ -228,9 +236,9 @@ print.HDP <- function(x, ...) {
         if (length(new_components)) {
             values <- paste(
                 "A total of {.val {",
-                components_to_counts[new_components], 
+                components_to_counts[new_components],
                 "}} count{?s} in {.val {",
-                components_to_nsamples[new_components], 
+                components_to_nsamples[new_components],
                 "}} sample{?s}"
             )
             names(values) <- new_components
@@ -288,7 +296,7 @@ print.HDP <- function(x, ...) {
 #'  * cohort_threshold: A numeric of the minimal proportion (if <1L) or number
 #'    of samples (if >= 1L) to regard a component as active. Default: `0.05`.
 #' @return A `HDP` object with `components` and `statistics` added.
-#' @export 
+#' @export
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
     hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
