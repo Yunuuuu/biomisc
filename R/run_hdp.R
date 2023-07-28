@@ -199,7 +199,8 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
     dp_tree
 }
 
-print.HDP <- function(x) {
+#' @export
+print.HDP <- function(x, ...) {
     cli::cli_text("A {.cls HDP} object with {.val {length(x$posteriors)}} Posterior sampling chain{?s}")
     if (!is.null(x$statistics)) {
         stats <- x$statistics
@@ -237,21 +238,32 @@ print.HDP <- function(x) {
     invisible(x)
 }
 
+#' @export
 `$.HDP` <- function(x, i) {
     NextMethod()
 }
+
+#' @export
 `$<-.HDP` <- function(x, i, value) {
     NextMethod()
 }
+
+#' @export
 `[[.HDP` <- function(x, i) {
     NextMethod()
 }
+
+#' @export
 `[[<-.HDP` <- function(x, i, value) {
     NextMethod()
 }
+
+#' @export
 `[.HDP` <- function(x, i) {
     NextMethod()
 }
+
+#' @export
 `[<-.HDP` <- function(x, i, value) {
     NextMethod()
 }
