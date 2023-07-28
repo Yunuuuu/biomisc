@@ -285,6 +285,7 @@ print.HDP <- function(x, ...) {
 #'  * cohort_threshold: A numeric of the minimal proportion (if <1L) or number
 #'    of samples (if >= 1L) to regard a component as active. Default: `0.05`.
 #' @return A `HDP` object with `components` and `statistics` added.
+#' @export 
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
     hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
