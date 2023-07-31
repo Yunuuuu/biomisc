@@ -104,32 +104,42 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         platform, c("SNP_6.0", "Illumina_WES", "SNP_250K_STY")
     )
     copy_num_type <- match.arg(copy_num_type, c("total", "allelic"))
-
+    assert_class(primary_disease, rlang::is_scalar_character,
+        "scalar {.cls character}",
+        cross_msg = FALSE, null_ok = TRUE
+    )
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)
     }
     if (is.null(primary_disease)) {
         primary_disease <- NA_character_
-    } else if (length(primary_disease) == 1L) {
+    } else {
         if (!is.na(primary_disease)) {
-            tmp_primary_disease <- intersect(
-                primary_disease,
-                absolute_disease_map()
+            tmp_primary_disease <- switch(primary_disease,
+                ESCA = "Esophageal Cancer",
+                HNSC = "Head and Neck Cancer",
+                KICH = "Kidney cancer",
+                KIRP = "Kidney cancer",
+                LGG = "Brain Cancer",
+                LIHC = "Hepatocellular Carcinoma",
+                MESO = "Mesothelioma",
+                PAAD = "Pancreatic Cancer",
+                SARC = "Sarcoma",
+                SKCM = "Melanoma",
+                STAD = "Stomach Cancer",
+                THCA = "Thyroid Cancer",
+                UCEC = "Endometrial Cancer",
+                intersect(primary_disease, absolute_disease_map())
             )
             if (length(tmp_primary_disease) == 0L) {
                 cli::cli_warn(
                     "Cannot find primary_disease: {.val {primary_disease}} in {.pkg ABSOLUTE} {.field disease_map}",
                     i = "you can check out {.code absolute_disease_map()}"
                 )
-                primary_disease <- NA_character_
             } else {
                 primary_disease <- tmp_primary_disease
             }
         }
-    } else {
-        cli::cli_abort(
-            "{.arg primary_disease} should be a scalar string, {.field NA} or {.field NULL}"
-        )
     }
 
     # preprocessing data ---------------------------------------------------
