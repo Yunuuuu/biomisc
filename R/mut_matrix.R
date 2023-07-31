@@ -39,7 +39,7 @@ prepare_snv_signature <- function(mut_data, sample_field = NULL, ref_genome = NU
     all_standard_snv_sub_context <- enumerate_standard_snv_sub_context(
         extension
     )
-    out <- table_counts(
+    out <- counts_matrix(
         standard_snv_sub_context,
         all_standard_snv_sub_context,
         sample_field %|n|%

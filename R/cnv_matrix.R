@@ -57,7 +57,7 @@ prepare_cnv_signature <- function(
     )
     seg_length_class <- length_to_class[seg_length_class]
     cnv_signatures <- paste(cn_class, loh, seg_length_class, sep = ":")
-    table_counts(
+    counts_matrix(
         cnv_signatures, enumerate_standard_cnv_context(),
         sample_field %|n|% seg_data$sample_id
     )

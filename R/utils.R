@@ -37,7 +37,7 @@ trim_value <- function(x, threshold = 1 - .Machine$double.neg.eps) {
     x
 }
 
-table_counts <- function(x, levels = NULL, y = NULL) {
+counts_matrix <- function(x, levels = NULL, y = NULL) {
     if (!is.null(levels)) {
         x <- factor(x, levels = levels)
     }
@@ -52,4 +52,34 @@ table_counts <- function(x, levels = NULL, y = NULL) {
         counts_mat <- unclass(counts_mat)
     }
     counts_mat
+}
+
+cli_list <- function(list, ...) {
+    main_item_lid <- cli::cli_ul()
+    .mapply(function(name, value) {
+        cli_named_li(name = name, value = value, ...)
+    }, list(name = names(list), value = list), MoreArgs = NULL)
+    cli::cli_end(id = main_item_lid)
+}
+
+cli_named_li <- function(
+    name, value, label = "", sep = ": ", add_num = TRUE,
+    cli_style = list("vec-trunc" = 3L)) {
+    cli_value <- cli::cli_vec(value, cli_style) # nolint
+    msg <- "{.field {name}}{sep}{.val {cli_value}}"
+    if (add_num) {
+        if (nzchar(label)) {
+            suffix <- "({length(values)} {label}{?s})"
+        } else {
+            suffix <- "({length(values)})"
+        }
+    } else {
+        if (nzchar(label)) {
+            suffix <- "{label}{?s}"
+        } else {
+            suffix <- NULL
+        }
+    }
+    msg <- paste(msg, suffix, sep = " ")
+    cli::cli_li(msg)
 }
