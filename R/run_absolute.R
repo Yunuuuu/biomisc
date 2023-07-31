@@ -445,7 +445,10 @@ absolute_prepare_seg_and_maf_data <- function(seg, maf = NULL, results_dir) {
         maf_filepath <- NULL
     } else {
         maf[, group_id := as.character(Tumor_Sample_Barcode)]
-        maf <- maf[group_id %chin% sample_id, ]
+        maf <- maf[group_id %chin% sample_id]
+        if (!nrow(maf)) {
+            cli::cli_abort("No samples in maf to proceed")
+        }
         if (!dir.exists(file.path(results_dir, "maf"))) {
             dir.create(file.path(results_dir, "maf"))
         }
