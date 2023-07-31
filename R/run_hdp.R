@@ -299,6 +299,9 @@ print.HDP <- function(x, ...) {
 #' @export
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
+    assert_class(x, "HDP", "{.cls HDP} object returned by {.fn run_hdp}",
+        cross_msg = NULL
+    )
     hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
     x$components <- hdp::hdp_extract_components(hdp_multi_chain)
     x$statistics <- hdp_data_internal(
@@ -314,14 +317,14 @@ hdp_data_internal <- function(
     cohort_threshold = 0.05) {
     assert_class(sig_active_cutoff, function(x) {
         is_scalar_numeric(x) && data.table::between(x, 0L, 1L)
-    }, "scalar {.cls numeric} in [0, 1]")
+    }, "scalar {.cls numeric} in [0, 1]", NULL)
     assert_class(
         remove_zero_lower_ci, rlang::is_scalar_logical,
-        "scalar {.cls logical}"
+        "scalar {.cls logical}", NULL
     )
     assert_class(cohort_threshold, function(x) {
         is_scalar_numeric(x) && x >= 0L
-    }, "scalar {.cls numeric} not less than 0")
+    }, "scalar {.cls numeric} not less than 0", NULL)
     if (length(hdp::comp_categ_counts(hdpsample)) == 0L) {
         cli::cli_abort("No component info for hdpsample. First run hdp_extract_components")
     }
