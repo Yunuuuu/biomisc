@@ -32,9 +32,9 @@ columns containing "chromosome", "start_pos", "end_pos", "major_cn", and
 "minor_cn". "sample_id" is optional, details see mut_data. other columns will
 be omited. Column names don't matter.}
 
-\item{on_sample}{A string (can be named), specifying the sample column used
-to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
-regarded from the same sample.}
+\item{on_sample}{A string (which can be named), specifying the column in the
+sample used for matching mut_data and cnv_data. If NULL, each patient is
+considered to contain only one sample.}
 
 \item{on_chr}{A string (can be named), specifying the chromosome column used
 to match mut_data and cnv_data.}

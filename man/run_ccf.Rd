@@ -46,9 +46,9 @@ raw copy number (point number) ("nAraw" and "nBraw") will be required.}
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
 regarded from the same patient.}
 
-\item{on_sample}{A string (can be named), specifying the sample column used
-to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
-regarded from the same sample.}
+\item{on_sample}{A string (which can be named), specifying the column in the
+sample used for matching mut_data and cnv_data. If NULL, each patient is
+considered to contain only one sample.}
 
 \item{purity_field}{A string specifying the purity column (in \code{mut_data} or
 \code{cnv_data}). Default is "purity".}

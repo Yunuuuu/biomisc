@@ -4,9 +4,9 @@
 #' @param on_patient A string (can be named), specifying the patient column used
 #' to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
 #' regarded from the same patient.
-#' @param on_sample A string (can be named), specifying the sample column used
-#' to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
-#' regarded from the same sample.
+#' @param on_sample A string (which can be named), specifying the column in the
+#' sample used for matching mut_data and cnv_data. If NULL, each patient is
+#' considered to contain only one sample. 
 #' @param on_chr A string (can be named), specifying the chromosome column used
 #' to match mut_data and cnv_data.
 #' @param mut_pos A string indicating the column names in `mut_data` that
