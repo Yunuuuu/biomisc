@@ -12,6 +12,9 @@
 #' @param ccf_type which CCF should we estimate, one of "phyloCCF" (include both
 #' absolute and phylogenetic CCF) or "bootstrapCCF". You can provide
 #' c("phyloCCF", "bootstrapCCF") to calculate both.
+#' @param subclonal_cn_correction A logical indicates whether correcting
+#'  subclonal copy number. Only used when phyloCCF is calculated. If TRUE, the
+#'  raw copy number (point number) ("nAraw" and "nBraw") will be required.
 #' @param purity_field A string specifying the purity column (in `mut_data` or
 #'  `cnv_data`). Default is "purity".
 #' @param normal_cn A scalar number specifying the normal.copy number or a
@@ -24,7 +27,7 @@
 #'   normal_cn is NULL. Default is "gender". Only "female" and "male" are
 #'   supported in this column.
 #' @param contigs An atomic vector specifying the chromosome to analyze. If
-#' NULL, all chromosome will be used.
+#'   NULL, all chromosome will be used.
 #' @param ... Not used currently
 #' @param ref_field,alt_field A string specifying the column of reference allele
 #'  or variant allele in mut_data to estimate whether a variant is a indel or
@@ -59,7 +62,7 @@
 #' @export
 run_ccf <- function(
     mut_data, cnv_data,
-    ccf_type = "phyloCCF",
+    ccf_type = "phyloCCF", subclonal_cn_correction = TRUE,
     on_patient = NULL, on_sample = NULL,
     purity_field = NULL, on_chr = "chr", mut_pos = "pos",
     start_field = "startpos", end_field = "endpos",
@@ -123,7 +126,11 @@ run_ccf <- function(
     ))
     cnv_columns <- NULL
     if (any(ccf_type == "phyloCCF")) {
-        cnv_columns <- c(cnv_columns, c("nAraw", "nBraw"))
+        if (subclonal_cn_correction) {
+            cnv_columns <- c(cnv_columns, c("nAraw", "nBraw"))
+        } else {
+            cnv_columns <- c(cnv_columns, c("nMinor", "nMajor"))
+        }
     }
     if (any(ccf_type == "bootstrapCCF")) {
         cnv_columns <- c(cnv_columns, c("nMinor", "nMajor"))
@@ -138,8 +145,16 @@ run_ccf <- function(
     cnv_data <- data.table::as.data.table(cnv_data)
 
     if (any(ccf_type == "phyloCCF")) {
-        # define subclone copy number
-        cnv_data <- define_subclone_cn(cnv_data, min_subclonal = 0.01)
+        if (subclonal_cn_correction) {
+            # define subclone copy number
+            cnv_data <- define_subclone_cn(cnv_data, min_subclonal = 0.01)
+        } else {
+            cnv_data[, c("fracA", "fracB", "fracC", "fracD", "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D", "nMin_A", "nMin_B", "nMin_C", "nMin_D") := list( # nolint
+                1L, 0L, NA_real_, NA_real_,
+                nMajor, nMajor, NA_integer_, NA_integer_,
+                nMinor, nMinor, NA_integer_, NA_integer_
+            )]
+        }
     }
 
     # just extract the segmented CNV for this sample

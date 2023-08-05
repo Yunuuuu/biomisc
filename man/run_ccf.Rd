@@ -8,6 +8,7 @@ run_ccf(
   mut_data,
   cnv_data,
   ccf_type = "phyloCCF",
+  subclonal_cn_correction = TRUE,
   on_patient = NULL,
   on_sample = NULL,
   purity_field = NULL,
@@ -36,6 +37,10 @@ run_ccf(
 \item{ccf_type}{which CCF should we estimate, one of "phyloCCF" (include both
 absolute and phylogenetic CCF) or "bootstrapCCF". You can provide
 c("phyloCCF", "bootstrapCCF") to calculate both.}
+
+\item{subclonal_cn_correction}{A logical indicates whether correcting
+subclonal copy number. Only used when phyloCCF is calculated. If TRUE, the
+raw copy number (point number) ("nAraw" and "nBraw") will be required.}
 
 \item{on_patient}{A string (can be named), specifying the patient column used
 to match mut_data and cnv_data. If NULL, all mut_data and cnv_data will be
