@@ -28,8 +28,6 @@ Suggests:
     roxygen2,
     testthat (>= 3.0.0),
     curl,
-    ggplot2,
-    magick,
     SummarizedExperiment,
     BSgenome,
     Biostrings,
@@ -38,6 +36,7 @@ Suggests:
     hdp,
     sequenza,
     boot,
+    ggplot2,
     methods
 Remotes:
     Yunuuuu/ABSOLUTE,
