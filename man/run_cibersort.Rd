@@ -2,7 +2,8 @@
 % Please edit documentation in R/run_cibersort.R
 \name{run_cibersort}
 \alias{run_cibersort}
-\title{a modified CIBERSORT function}
+\title{Cell-type identification by estimating relative subsets of RNA transcripts
+(CIBERSORT)}
 \usage{
 run_cibersort(
   mixture_data,

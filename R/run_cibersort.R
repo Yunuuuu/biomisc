@@ -1,4 +1,6 @@
-#' a modified CIBERSORT function
+#' Cell-type identification by estimating relative subsets of RNA transcripts
+#' (CIBERSORT)
+#'
 #' @description  Robust enumeration of cell subsets from tissue expression
 #'   profiles
 #' @details By default, CIBERSORT estimates the relative fraction of each cell
@@ -60,13 +62,20 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
                           abs_method = "sig_score") {
     assert_pkg("e1071")
     assert_pkg("preprocessCore")
+    assert_class(mixture_data, is.matrix, "{.cls matrix}")
+    assert_class(sig_data, is.matrix, "{.cls matrix}", null_ok = TRUE)
+    assert_class(quantile_norm, rlang::is_scalar_logical,
+        "scalar {.cls logistical}"
+    )
+    assert_class(absolute, rlang::is_scalar_logical,
+        "scalar {.cls logistical}"
+    )
 
     if (absolute) {
         abs_method <- match.arg(abs_method, c("no_sumto1", "sig_score"))
     }
 
     # choose the default signature data or provided by users
-
     if (is.null(sig_data)) {
         sig_data <- cibersort_lm22
     }
