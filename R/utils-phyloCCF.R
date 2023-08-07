@@ -570,6 +570,9 @@ prop_test_ci <- function(counts, totals, prop, alternative = "two.sided", conf.l
 }
 
 prop_test <- function(counts, totals, prop, alternative = "two.sided", conf.level = 0.95) {
+    if (length(counts) == 0L) {
+        return(rep_len(list(numeric()), 3L))
+    }
     out_list <- .mapply(
         function(count, total, prop) {
             out <- stats::prop.test(
