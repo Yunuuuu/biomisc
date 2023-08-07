@@ -8,6 +8,10 @@
 #' For CONIPHER anlayis, use conipher = TRUE, min_vaf_to_explain = 0.05. And you
 #' should provide indel_field or both ref_field and alt_field.
 #'
+#' @param mut_data A data.frame containing mutation data. In addition to the
+#' columns defined in the arguments on_patient, on_sample, on_chr, and mut_pos,
+#' it is also required that the columns "ref_counts" and "alt_counts" are
+#' included.
 #' @inheritParams identify_mut_cn
 #' @param ccf_type which CCF should we estimate, one of "phyloCCF" (include both
 #' absolute and phylogenetic CCF) or "bootstrapCCF". You can provide
@@ -64,9 +68,9 @@ run_ccf <- function(
     mut_data, cnv_data,
     ccf_type = "phyloCCF", subclonal_cn_correction = TRUE,
     on_patient = NULL, on_sample = NULL,
-    purity_field = NULL, on_chr = "chr", mut_pos = "pos",
+    purity_field = "purity", on_chr = "chr", mut_pos = "pos",
     start_field = "startpos", end_field = "endpos",
-    normal_cn = NULL, gender_field = NULL, contigs = NULL,
+    normal_cn = NULL, gender_field = "gender", contigs = NULL,
     ...,
     # arguments for ccf_type = phyloCCF
     ref_field = NULL,
@@ -79,6 +83,10 @@ run_ccf <- function(
 
     # check arguments firstly
     assert_in(ccf_type, c("phyloCCF", "bootstrapCCF"))
+    assert_class(subclonal_cn_correction, rlang::is_scalar_logical,
+        "scalar {.cls logical}",
+        null_ok = TRUE, cross_msg = NULL
+    )
     assert_class(on_patient, rlang::is_scalar_character,
         "scalar {.cls character}",
         null_ok = TRUE, cross_msg = NULL
@@ -89,7 +97,7 @@ run_ccf <- function(
     )
     assert_class(purity_field, rlang::is_scalar_character,
         "scalar {.cls character}",
-        null_ok = TRUE, cross_msg = NULL
+        null_ok = FALSE, cross_msg = NULL
     )
     assert_class(
         on_chr, rlang::is_scalar_character,
@@ -125,14 +133,11 @@ run_ccf <- function(
         "ref_counts", "alt_counts"
     ))
     cnv_columns <- NULL
-    if (any(ccf_type == "phyloCCF")) {
-        if (subclonal_cn_correction) {
-            cnv_columns <- c(cnv_columns, c("nAraw", "nBraw"))
-        } else {
-            cnv_columns <- c(cnv_columns, c("nMinor", "nMajor"))
-        }
+    if (any(ccf_type == "phyloCCF") && subclonal_cn_correction) {
+        cnv_columns <- c(cnv_columns, c("nAraw", "nBraw"))
     }
-    if (any(ccf_type == "bootstrapCCF")) {
+    if (any(ccf_type == "bootstrapCCF") ||
+        (any(ccf_type == "phyloCCF") && !subclonal_cn_correction)) {
         cnv_columns <- c(cnv_columns, c("nMinor", "nMajor"))
     }
     assert_df_with_columns(cnv_data, c(
@@ -145,16 +150,30 @@ run_ccf <- function(
     cnv_data <- data.table::as.data.table(cnv_data)
 
     if (any(ccf_type == "phyloCCF")) {
+        # for phyloCCF, we need raw copy number (point number)
         if (subclonal_cn_correction) {
             # define subclone copy number
             cnv_data <- define_subclone_cn(cnv_data, min_subclonal = 0.01)
+            data.table::setnames(
+                cnv_data, c("nAraw", "nBraw"),
+                c("major_raw", "minor_raw")
+            )
         } else {
             cnv_data[, c("fracA", "fracB", "fracC", "fracD", "nMaj_A", "nMaj_B", "nMaj_C", "nMaj_D", "nMin_A", "nMin_B", "nMin_C", "nMin_D") := list( # nolint
                 1L, 0L, NA_real_, NA_real_,
                 nMajor, nMajor, NA_integer_, NA_integer_,
                 nMinor, nMinor, NA_integer_, NA_integer_
             )]
+            cnv_data[, c("minor_raw", "major_raw") := list(
+                nMinor, nMajor
+            )]
         }
+    }
+    if (any(ccf_type == "bootstrapCCF")) {
+        data.table::setnames(
+            cnv_data, c("nMinor", "nMajor"),
+            c("minor_cn", "major_cn")
+        )
     }
 
     # just extract the segmented CNV for this sample
@@ -165,12 +184,20 @@ run_ccf <- function(
     )
 
     # assert every sample has only one patient
-    if (!is.null(on_sample)) assert_nest(out, on_patient, on_sample)
-    if (!is.null(on_patient) && is.null(on_sample)) {
+    if (!is.null(on_sample) && !is.null(on_patient)) {
+        assert_nest(out, on_patient, on_sample)
+        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {length(unique(out[[on_sample]]))}} sample{?s} from {.val {length(unique(out[[on_patient]]))}} patient{?s}"
+    } else if (!is.null(on_patient)) {
         group <- on_patient
-    } else {
+        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} from {.val {length(unique(out[[on_patient]]))}} patient{?s} (each has one sample)"
+    } else if (!is.null(on_sample)) {
         group <- on_sample
+        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {length(unique(out[[on_sample]]))}} sample{?s} from {.val {1}} patient"
+    } else {
+        group <- NULL
+        init_msg <- "Processing {.val 1} sample"
     }
+
     if (is.null(group)) {
         info_msg <- "try to set {.arg on_patient} or {.arg on_sample}"
     } else {
@@ -178,7 +205,6 @@ run_ccf <- function(
     }
 
     # assert every necessary column is in the combined data
-    purity_field <- purity_field %||% "purity"
     assert_df_with_columns(out, c(purity_field, kept_cols),
         check_class = FALSE, arg = c("mut_data", "cnv_data")
     )
@@ -200,12 +226,17 @@ run_ccf <- function(
     }
 
     if (nrow(out) == 0L) {
-        msg <- "No mutation to proceed"
+        contig_removing_msg <- "No mutation to proceed"
         if (!is.null(contigs) && !any(matched_contigs)) {
-            msg <- paste(msg, "after filtering by {.arg contigs}")
-            msg <- c(msg, i = "Please check {.arg contigs}")
+            contig_removing_msg <- paste(
+                contig_removing_msg,
+                "after filtering by {.arg contigs}"
+            )
+            contig_removing_msg <- c(contig_removing_msg,
+                i = "Please check {.arg contigs}"
+            )
         }
-        cli::cli_abort(msg)
+        cli::cli_abort(contig_removing_msg)
     }
 
     allosomes <- GenomeInfoDb::seqlevelsInGroup(all_seqs, group = "sex")
@@ -219,8 +250,14 @@ run_ccf <- function(
 
     # define normal_cn
     if (is.null(normal_cn)) {
+        cli::cli_inform(
+            "Using {.arg gender_field} to define {.field normal_cn}"
+        )
+        assert_class(
+            gender_field, rlang::is_scalar_character,
+            "scalar {.cls character}",
+        )
         # assert every samples provided only one gender value
-        gender_field <- gender_field %||% "gender"
         assert_df_with_columns(out, gender_field,
             check_class = FALSE,
             arg = c("mut_data", "cnv_data")
@@ -249,15 +286,12 @@ run_ccf <- function(
             data.table::setnames(out, normal_cn, "normal_cn")
         }
     }
+    cli::cli_inform(init_msg)
     columns <- c(
         on_patient, on_sample, "purity", start_field, end_field,
         on_chr, mut_pos, "alt_counts", "ref_counts"
     )
     if (any(ccf_type == "phyloCCF")) {
-        data.table::setnames(
-            out, c("nAraw", "nBraw"),
-            c("major_raw", "minor_raw")
-        )
         out <- estimate_phylo_ccf(out,
             patient_field = on_patient,
             sample_field = on_sample,
@@ -268,21 +302,17 @@ run_ccf <- function(
             min_vaf_to_explain = min_vaf_to_explain,
             conipher = conipher
         )
-        columns <- c(columns, "minor_cn", "major_cn", ref_field, alt_field)
+        columns <- c(columns, ref_field, alt_field)
     }
     if (any(ccf_type == "bootstrapCCF")) {
         assert_pkg("sequenza")
         assert_pkg("boot")
-        data.table::setnames(
-            out, c("nMinor", "nMajor"),
-            c("minor_cn", "major_cn")
-        )
         # here will modify data in place
         estimate_btstr_ccf(out, sample_field = group)
-        columns <- c(columns, "minor_cn", "major_cn")
     }
     columns <- c(
-        columns, "normal_cn", "expVAF", "obsVAF",
+        columns, "minor_raw", "major_raw", "minor_cn", "major_cn",
+        "normal_cn", "expVAF", "obsVAF",
         "mut_multi", "mut_multi_lower", "mut_multi_higher",
         "mut_multi_btstr_lower", "mut_multi_btstr_higher",
         "CCF", "CCF_lower", "CCF_higher",

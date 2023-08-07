@@ -11,13 +11,13 @@ run_ccf(
   subclonal_cn_correction = TRUE,
   on_patient = NULL,
   on_sample = NULL,
-  purity_field = NULL,
+  purity_field = "purity",
   on_chr = "chr",
   mut_pos = "pos",
   start_field = "startpos",
   end_field = "endpos",
   normal_cn = NULL,
-  gender_field = NULL,
+  gender_field = "gender",
   contigs = NULL,
   ...,
   ref_field = NULL,
@@ -30,7 +30,10 @@ run_ccf(
 )
 }
 \arguments{
-\item{mut_data}{A data.frame of mutation data.}
+\item{mut_data}{A data.frame containing mutation data. In addition to the
+columns defined in the arguments on_patient, on_sample, on_chr, and mut_pos,
+it is also required that the columns "ref_counts" and "alt_counts" are
+included.}
 
 \item{cnv_data}{A data.frame of allele-specific CNV data.}
 
