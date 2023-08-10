@@ -37,7 +37,9 @@ Suggests:
     sequenza,
     boot,
     ggplot2,
-    methods
+    methods,
+    NMF,
+    igraph
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
