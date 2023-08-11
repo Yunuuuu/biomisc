@@ -16,6 +16,7 @@
 #' Nat Genet 54, 1192–1201 (2022). https://doi.org/10.1038/s41588-022-01141-9
 #' @seealso
 #' <https://github.com/yanailab/PanCancer>
+#' @export 
 overdispersion <- function(matrix, features, ..., log = FALSE, size = 10^3L, nbin = 25L) {
     assert_pkg("BiocSingular")
     features <- intersect(features, rownames(matrix))
