@@ -8,9 +8,11 @@ License: MIT + file LICENSE
 Imports: 
     cli,
     data.table (>= 1.14.9),
+    rlang (>= 0.4.11),
+    stats,
+    utils,
     future.apply,
-    progressr,
-    rlang (>= 0.4.11)
+    progressr
 Suggests: 
     ABSOLUTE,
     ComplexHeatmap,
@@ -22,8 +24,6 @@ Suggests:
     GSVA,
     preprocessCore,
     S4Vectors,
-    stats,
-    utils,
     biomaRt,
     roxygen2,
     testthat (>= 3.0.0),
