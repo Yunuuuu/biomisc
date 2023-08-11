@@ -39,7 +39,8 @@ Suggests:
     ggplot2,
     methods,
     NMF,
-    igraph
+    igraph,
+    BiocSingular
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
