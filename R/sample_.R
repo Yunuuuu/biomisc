@@ -2,7 +2,7 @@
 #' @param matrix Normalized gene expression matrix with row is genes and column
 #' is samples. 
 #' @param features The template for gene sampling, considering genes with
-#' comparable levels of gene expression.
+#' comparable expression levels of these genes. 
 #' @param size A non-negative integer giving the number of sampling.
 #' @param nbin Divides the dataset into approximately `nbin` clusters based on
 #' gene expression levels. Subsequently, the sampling process will be applied

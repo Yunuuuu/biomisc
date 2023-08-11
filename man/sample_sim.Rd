@@ -11,7 +11,7 @@ sample_sim(matrix, features, size = 10^3L, nbin = 25L)
 is samples.}
 
 \item{features}{The template for gene sampling, considering genes with
-comparable levels of gene expression.}
+comparable expression levels of these genes.}
 
 \item{size}{A non-negative integer giving the number of sampling.}
 
