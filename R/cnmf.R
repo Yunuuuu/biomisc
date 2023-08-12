@@ -29,6 +29,8 @@
 #' - <https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py>
 #' @export
 cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03) {
+    assert_pkg("RcppML")
+    assert_pkg("cluster")
     assert_class(matrix, is.matrix, "{.cls matrix}")
     assert_class(rho, function(x) {
         is.numeric(x) && x > 0L && x <= 1L
