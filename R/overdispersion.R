@@ -19,6 +19,7 @@
 #' @export 
 overdispersion <- function(matrix, features, ..., log = FALSE, size = 10^3L, nbin = 25L) {
     assert_pkg("BiocSingular")
+    assert_class(matrix, is.matrix, "{.cls matrix}")
     features <- intersect(features, rownames(matrix))
     # https://github.com/yanailab/PanCancer/blob/49e7b270ec55dbe72076a5cae516ff0931fe7fe4/experiments.R#L326
     value <- BiocSingular::runPCA(x = t(matrix[features, , drop = FALSE]),
