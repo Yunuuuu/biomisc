@@ -19,12 +19,16 @@
 #' Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
 #' sequencing-by-synthesis for scRNA-seq using Ultima sequencing. Nat Biotechnol
 #' 41, 204–211 (2023). https://doi.org/10.1038/s41587-022-01452-6
-#' @seealso 
+#' @seealso
 #' - <https://github.com/seanken/CompareSequence>
 #' - <https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py>
 #' @export
 cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, local_neighborhood_size = 0.3, min_dist = 0.03, numb_smp = NULL) {
     assert_class(matrix, is.matrix, "{.cls matrix}")
+    assert_class(local_neighborhood_size, function(x) {
+        is.numeric(x) && x > 0L && x <= 1L
+    }, "(0, 1] {.cls numeric}", cross_msg = NULL)
+
     if (!is.null(numb_smp) && numb_smp > 0L) {
         if (numb_smp <= 1L) {
             numb_smp <- ncol(matrix) * numb_smp
@@ -43,7 +47,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, local_ne
     # https://github.com/seanken/CompareSequence/blob/main/ComparePackage_R/CompareSeqR/R/cNMF.R#L53
     cli::cli_inform("Runing NMF")
     w_list <- lapply(seq_len(n_iters), function(i) {
-        RcppML::nmf(matrix, k)$w
+        RcppML::nmf(A = matrix, k = k)$w
     })
 
     cli::cli_inform("Combining")
@@ -54,20 +58,20 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, local_ne
     L <- local_neighborhood_size * n_iters
     ave_dist <- apply(dist, 1L, function(x) {
         mean(sort(x, , decreasing = FALSE)[seq_len(L)])
-    })
-    W <- t(W[, ave_dist < min_dist])
+    }, simplify = TRUE)
+    W <- t(W[, ave_dist < min_dist, drop = FALSE])
 
-    factors <- stats::kmeans(W, k)
+    factor_groups <- stats::kmeans(W, centers = k)
 
-    W_new <- data.table::as.data.table(W)
-    W_new[, .__clusters := factors$cluster] # nolint
-    W_new <- W_new[, lapply(.SD, median), by = ".__clusters"]
-    W_new <- as.matrix(W_new[, !".__clusters"])
-    W_new <- t(W_new / rowSums(abs(W_new)))
+    W_consensus <- data.table::as.data.table(W)
+    W_consensus[, .__clusters := factor_groups$cluster] # nolint
+    W_consensus <- W_consensus[, lapply(.SD, median), by = ".__clusters"]
+    W_consensus <- as.matrix(W_consensus[, !".__clusters"])
+    W_consensus <- t(W_consensus / rowSums(abs(W_consensus)))
 
-    H <- RcppML::project(matrix, w = W_new)
+    H <- RcppML::project(matrix, w = W_consensus)
 
-    W_fin <- RcppML::project(orig_matrix, h = H)
+    W_final <- RcppML::project(orig_matrix, h = H)
 
-    list(H = t(H), W = t(W_fin))
+    list(H = t(H), W = t(W_final))
 }
