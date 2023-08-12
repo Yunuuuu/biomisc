@@ -15,6 +15,7 @@
 #' @param min_dist distance threshold that determines how close a component must
 #' be to its nearest neighbors in Euclidean space to be considered
 #' ‘approximately matching’.
+#' @param silhouette If TRUE, will calculate silhouette score.
 #' @return A list.
 #' @references
 #' - Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
@@ -28,7 +29,7 @@
 #' - <https://github.com/seanken/CompareSequence>
 #' - <https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py>
 #' @export
-cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03) {
+cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03, silhouette = TRUE) {
     assert_pkg("RcppML")
     assert_pkg("cluster")
     assert_class(matrix, is.matrix, "{.cls matrix}")
@@ -46,7 +47,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     w_list <- lapply(seq_len(n_iters), function(i) {
         RcppML::nmf(A = matrix, k = k)$w
     })
-    
+
     cli::cli_inform("Idenfity consensus programs")
     w <- do.call(cbind, w_list)
 
@@ -64,8 +65,15 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
 
     # kmeans regard row as observations
     km <- stats::kmeans(transposed_w, centers = k)
-    silhouette_score <- cluster::silhouette(km$cluster, dist)
-    silhouette_score <- mean(silhouette_score[, 3L, drop = TRUE])
+    if (isTRUE(silhouette)) {
+        silhouette_score <- cluster::silhouette(
+            km$cluster,
+            stats::dist(transposed_w, method = "euclidean")
+        )
+        silhouette_score <- mean(silhouette_score[, 3L, drop = TRUE])
+    } else {
+        silhouette_score <- NULL
+    }
     w_consensus <- data.table::as.data.table(transposed_w)
     w_consensus[, .__groups := km$cluster] # nolint
     w_consensus <- w_consensus[, lapply(.SD, median), by = ".__groups"]

@@ -10,7 +10,8 @@ cnmf(
   k = 15L,
   n_iters = 100L,
   rho = 0.3,
-  min_dist = 0.03
+  min_dist = 0.03,
+  silhouette = TRUE
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ to be kept by cNMF.}
 \item{min_dist}{distance threshold that determines how close a component must
 be to its nearest neighbors in Euclidean space to be considered
 ‘approximately matching’.}
+
+\item{silhouette}{If TRUE, will calculate silhouette score.}
 }
 \value{
 A list.
