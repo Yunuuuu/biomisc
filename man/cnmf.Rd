@@ -9,9 +9,8 @@ cnmf(
   min_fraction = 0.002,
   k = 15L,
   n_iters = 100L,
-  local_neighborhood_size = 0.3,
-  min_dist = 0.03,
-  numb_smp = NULL
+  rho = 0.3,
+  min_dist = 0.03
 )
 }
 \arguments{
@@ -25,14 +24,14 @@ cnmf(
 \item{n_iters}{The number of times to run NMF internally before making the
 consensus}
 
-\item{local_neighborhood_size}{Determines number of neighbors to use for
-calculating KNN distance as local_neighborhood_size * n_iters.}
+\item{rho}{Determines number of neighbors to use for calculating KNN distance
+as rho * n_iters. can be thought of the fraction of replicates that must
+yield a component approximately matching a program in order for that program
+to be kept by cNMF.}
 
-\item{min_dist}{The distance used for filtering out outliers}
-
-\item{numb_smp}{Number of cells to select, can be a floating number between 0
-and 1, which means the fraction of cells to choose (if NULL or <=0 no
-downsampling will be applied).}
+\item{min_dist}{distance threshold that determines how close a component must
+be to its nearest neighbors in Euclidean space to be considered
+‘approximately matching’.}
 }
 \value{
 A list.
@@ -41,9 +40,15 @@ A list.
 A modified version of the cNMF algorithm, implemented in R
 }
 \references{
-Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
-sequencing-by-synthesis for scRNA-seq using Ultima sequencing. Nat Biotechnol
-41, 204–211 (2023). https://doi.org/10.1038/s41587-022-01452-6
+\itemize{
+\item Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
+sequencing-by-synthesis for scRNA-seq using Ultima sequencing. Nat
+Biotechnol 41, 204–211 (2023). https://doi.org/10.1038/s41587-022-01452-6
+\item Dylan KotliarAdrian VeresM Aurel NagyShervin TabriziEran HodisDouglas A
+MeltonPardis C Sabeti (2019) Identifying gene expression programs of
+cell-type identity and cellular activity with single-cell RNA-Seq eLife
+8:e43803. https://doi.org/10.7554/eLife.43803
+}
 }
 \seealso{
 \itemize{

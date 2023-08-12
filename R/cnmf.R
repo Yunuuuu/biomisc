@@ -8,38 +8,33 @@
 #' @param k Number of programs.
 #' @param n_iters The number of times to run NMF internally before making the
 #' consensus
-#' @param local_neighborhood_size Determines number of neighbors to use for
-#' calculating KNN distance as local_neighborhood_size * n_iters.
-#' @param min_dist The distance used for filtering out outliers
-#' @param numb_smp Number of cells to select, can be a floating number between 0
-#' and 1, which means the fraction of cells to choose (if NULL or <=0 no
-#' downsampling will be applied).
+#' @param rho Determines number of neighbors to use for calculating KNN distance
+#' as rho * n_iters. can be thought of the fraction of replicates that must
+#' yield a component approximately matching a program in order for that program
+#' to be kept by cNMF.
+#' @param min_dist distance threshold that determines how close a component must
+#' be to its nearest neighbors in Euclidean space to be considered
+#' ‘approximately matching’.
 #' @return A list.
 #' @references
-#' Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
-#' sequencing-by-synthesis for scRNA-seq using Ultima sequencing. Nat Biotechnol
-#' 41, 204–211 (2023). https://doi.org/10.1038/s41587-022-01452-6
+#' - Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
+#'   sequencing-by-synthesis for scRNA-seq using Ultima sequencing. Nat
+#'   Biotechnol 41, 204–211 (2023). https://doi.org/10.1038/s41587-022-01452-6
+#' - Dylan KotliarAdrian VeresM Aurel NagyShervin TabriziEran HodisDouglas A
+#'   MeltonPardis C Sabeti (2019) Identifying gene expression programs of
+#'   cell-type identity and cellular activity with single-cell RNA-Seq eLife
+#'   8:e43803. https://doi.org/10.7554/eLife.43803
 #' @seealso
 #' - <https://github.com/seanken/CompareSequence>
 #' - <https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py>
 #' @export
-cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, local_neighborhood_size = 0.3, min_dist = 0.03, numb_smp = NULL) {
+cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03) {
     assert_class(matrix, is.matrix, "{.cls matrix}")
-    assert_class(local_neighborhood_size, function(x) {
+    assert_class(rho, function(x) {
         is.numeric(x) && x > 0L && x <= 1L
     }, "(0, 1] {.cls numeric}", cross_msg = NULL)
 
-    if (!is.null(numb_smp) && numb_smp > 0L) {
-        if (numb_smp <= 1L) {
-            numb_smp <- ncol(matrix) * numb_smp
-        }
-        numb_smp <- as.integer(numb_smp)
-        numb_smp <- min(numb_smp, ncol(matrix))
-        cli::cli_inform("Downsampling {numb_smp} sample{?s}")
-        orig_matrix <- matrix[, sample(ncol(matrix), numb_smp), drop = FALSE]
-    } else {
-        orig_matrix <- matrix
-    }
+    orig_matrix <- matrix
     matrix <- orig_matrix[
         rowMeans(orig_matrix > 0L) > min_fraction, ,
         drop = FALSE
@@ -49,29 +44,32 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, local_ne
     w_list <- lapply(seq_len(n_iters), function(i) {
         RcppML::nmf(A = matrix, k = k)$w
     })
+    w <- do.call(cbind, w_list)
 
-    cli::cli_inform("Combining")
-    W <- do.call(cbind, w_list)
-    W <- t(t(W) / sqrt(colSums(W^2L)))
-
-    dist <- 2L - 2L * (t(W) %*% W)
-    L <- local_neighborhood_size * n_iters
-    ave_dist <- apply(dist, 1L, function(x) {
-        mean(sort(x, , decreasing = FALSE)[seq_len(L)])
+    # Defining consensus w and H
+    transposed_w <- t(w) / sqrt(colSums(w^2L))
+    L <- as.integer(rho * n_iters)
+    # dist regard row as observations
+    dist <- stats::dist(transposed_w, method = "euclidean")
+    ave_dist <- apply(as.matrix(dist), 1L, function(x) {
+        # find the mean over those n_neighbors
+        # (excluding self, which has a distance of 0)
+        sum(sort(x, , decreasing = FALSE)[seq_len(L + 1L)]) / L
     }, simplify = TRUE)
-    W <- t(W[, ave_dist < min_dist, drop = FALSE])
+    transposed_w <- transposed_w[ave_dist < min_dist, , drop = FALSE]
 
-    factor_groups <- stats::kmeans(W, centers = k)
+    # kmeans regard row as observations
+    km <- stats::kmeans(transposed_w, centers = k)
+    silhouette_score <- cluster::silhouette(km$cluster, dist)
+    w_consensus <- data.table::as.data.table(transposed_w)
+    w_consensus[, .__groups := km$cluster] # nolint
+    w_consensus <- w_consensus[, lapply(.SD, median), by = ".__groups"]
+    w_consensus <- as.matrix(w_consensus[, !".__groups"])
+    w_consensus <- t(w_consensus / rowSums(abs(w_consensus)))
 
-    W_consensus <- data.table::as.data.table(W)
-    W_consensus[, .__clusters := factor_groups$cluster] # nolint
-    W_consensus <- W_consensus[, lapply(.SD, median), by = ".__clusters"]
-    W_consensus <- as.matrix(W_consensus[, !".__clusters"])
-    W_consensus <- t(W_consensus / rowSums(abs(W_consensus)))
+    h <- RcppML::project(matrix, w = w_consensus)
 
-    H <- RcppML::project(matrix, w = W_consensus)
+    w_final <- RcppML::project(orig_matrix, h = h)
 
-    W_final <- RcppML::project(orig_matrix, h = H)
-
-    list(H = t(H), W = t(W_final))
+    list(w = t(w_final), h = t(h), silhouette_score = silhouette_score)
 }
