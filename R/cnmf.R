@@ -59,7 +59,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     ave_dist <- apply(as.matrix(dist), 1L, function(x) {
         # find the mean over those n_neighbors
         # (excluding self, which has a distance of 0)
-        sum(sort(x, , decreasing = FALSE)[seq_len(L + 1L)]) / L
+        sum(sort(x)[seq_len(L + 1L)]) / L
     }, simplify = TRUE)
     transposed_w <- transposed_w[ave_dist < min_dist, , drop = FALSE]
 
