@@ -46,6 +46,8 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     w_list <- lapply(seq_len(n_iters), function(i) {
         RcppML::nmf(A = matrix, k = k)$w
     })
+    
+    cli::cli_inform("Idenfity consensus programs")
     w <- do.call(cbind, w_list)
 
     # Defining consensus w and H
