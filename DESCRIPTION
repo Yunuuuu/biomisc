@@ -40,7 +40,8 @@ Suggests:
     methods,
     NMF,
     igraph,
-    BiocSingular
+    BiocSingular,
+    RcppML
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
