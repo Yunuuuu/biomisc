@@ -61,6 +61,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     # kmeans regard row as observations
     km <- stats::kmeans(transposed_w, centers = k)
     silhouette_score <- cluster::silhouette(km$cluster, dist)
+    silhouette_score <- mean(silhouette_score[, 3L, drop = TRUE])
     w_consensus <- data.table::as.data.table(transposed_w)
     w_consensus[, .__groups := km$cluster] # nolint
     w_consensus <- w_consensus[, lapply(.SD, median), by = ".__groups"]
