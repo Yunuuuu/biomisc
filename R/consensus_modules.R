@@ -102,17 +102,17 @@ consensus_modules <- function(module_list, cluster_fn = igraph::cluster_infomap,
     )
     raw_modules <- igraph::communities(cluster_fn(graph = g, ...))
     modules <- raw_modules[lengths(raw_modules) >= threshold]
-    names(modules) <- paste0("Consensus_module_", seq_along(modules))
+    names(modules) <- paste0("consensus_module_", seq_along(modules))
     structure(modules,
         raw_modules = raw_modules,
         full_adj = full_adj,
         adj_list = adj_list,
-        class = "Consensus_module"
+        class = c("list", "consensus_module")
     )
 }
 
 #' @export
-print.Consensus_module <- function(x, ...) {
+print.consensus_module <- function(x, ...) {
     x <- unclass(x)
     attr(x, "raw_modules") <- NULL
     attr(x, "adj_list") <- NULL
