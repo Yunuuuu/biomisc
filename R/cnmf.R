@@ -27,7 +27,7 @@
 #'   8:e43803. https://doi.org/10.7554/eLife.43803
 #' @seealso
 #' - <https://github.com/seanken/CompareSequence>
-#' - <https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py>
+#' - <https://github.com/dylkot/cNMF>
 #' @export
 cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03, silhouette = TRUE) {
     assert_pkg("RcppML")
@@ -51,6 +51,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     cli::cli_inform("Idenfity consensus programs")
     w <- do.call(cbind, w_list)
 
+    # https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py
     # Defining consensus w and H
     transposed_w <- t(w) / sqrt(colSums(w^2L))
     L <- as.integer(rho * n_iters)

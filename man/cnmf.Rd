@@ -56,6 +56,6 @@ cell-type identity and cellular activity with single-cell RNA-Seq eLife
 \seealso{
 \itemize{
 \item \url{https://github.com/seanken/CompareSequence}
-\item \url{https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py}
+\item \url{https://github.com/dylkot/cNMF}
 }
 }
