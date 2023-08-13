@@ -3,9 +3,7 @@
 #' A modified version of the cNMF algorithm, implemented in R
 #'
 #' @param matrix A matrix with row is features and column is samples.
-#' @param min_fraction Only featuers with value (above 0) in at least
-#' `min_fraction` of samples are used in cNMF.
-#' @param k Number of programs.
+#' @param rank Specification of the factorization rank.
 #' @param n_iters The number of times to run NMF internally before making the
 #' consensus
 #' @param rho Determines number of neighbors to use for calculating KNN distance
@@ -15,7 +13,12 @@
 #' @param min_dist distance threshold that determines how close a component must
 #' be to its nearest neighbors in Euclidean space to be considered
 #' ‘approximately matching’.
+#' @param min_fraction Only featuers with value (above 0) in at least
+#' `min_fraction` of samples are used in cNMF.
 #' @param silhouette If TRUE, will calculate silhouette score.
+#' @inheritDotParams RcppML::nmf -data -k
+#' @param cores Parallelization is applied with OpenMP using the number of
+#' threads; `0` corresponds to all threads.
 #' @return A list.
 #' @references
 #' - Simmons, S.K., Lithwick-Yanai, G., Adiconis, X. et al. Mostly natural
@@ -29,7 +32,7 @@
 #' - <https://github.com/seanken/CompareSequence>
 #' - <https://github.com/dylkot/cNMF>
 #' @export
-cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03, silhouette = TRUE) {
+cnmf <- function(matrix, rank = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_fraction = 0.002, silhouette = TRUE, ..., cores = 0L) {
     assert_pkg("RcppML")
     assert_pkg("cluster")
     assert_class(matrix, is.matrix, "{.cls matrix}")
@@ -42,10 +45,13 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
         rowMeans(orig_matrix > 0L) > min_fraction, ,
         drop = FALSE
     ]
+
     # https://github.com/seanken/CompareSequence/blob/main/ComparePackage_R/CompareSeqR/R/cNMF.R#L53
     cli::cli_inform("Runing NMF")
+    old_threads <- options(RcppML.threads = cores)
+    on.exit(do.call(`options`, old_threads))
     w_list <- lapply(seq_len(n_iters), function(i) {
-        RcppML::nmf(A = matrix, k = k)$w
+        RcppML::nmf(data = matrix, k = rank, ...)$w
     })
 
     cli::cli_inform("Idenfity consensus programs")
@@ -65,7 +71,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     transposed_w <- transposed_w[ave_dist < min_dist, , drop = FALSE]
 
     # kmeans regard row as observations
-    km <- stats::kmeans(transposed_w, centers = k)
+    km <- stats::kmeans(transposed_w, centers = rank)
     if (isTRUE(silhouette)) {
         silhouette_score <- cluster::silhouette(
             km$cluster,
@@ -77,7 +83,7 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
     }
     w_consensus <- data.table::as.data.table(transposed_w)
     w_consensus[, .__groups := km$cluster] # nolint
-    w_consensus <- w_consensus[, lapply(.SD, median), by = ".__groups"]
+    w_consensus <- w_consensus[, lapply(.SD, stats::median), by = ".__groups"]
     w_consensus <- as.matrix(w_consensus[, !".__groups"])
     w_consensus <- t(w_consensus / rowSums(abs(w_consensus)))
 
@@ -87,3 +93,5 @@ cnmf <- function(matrix, min_fraction = 0.002, k = 15L, n_iters = 100L, rho = 0.
 
     list(w = t(w_final), h = t(h), silhouette_score = silhouette_score)
 }
+
+utils::globalVariables(".__groups")

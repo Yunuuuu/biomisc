@@ -41,7 +41,7 @@ Suggests:
     NMF,
     igraph,
     BiocSingular,
-    RcppML,
+    RcppML (>= 0.5.5),
     cluster
 Remotes:
     Yunuuuu/ABSOLUTE,

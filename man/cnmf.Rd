@@ -6,21 +6,20 @@
 \usage{
 cnmf(
   matrix,
-  min_fraction = 0.002,
-  k = 15L,
+  rank = 15L,
   n_iters = 100L,
   rho = 0.3,
   min_dist = 0.03,
-  silhouette = TRUE
+  min_fraction = 0.002,
+  silhouette = TRUE,
+  ...,
+  cores = 0L
 )
 }
 \arguments{
 \item{matrix}{A matrix with row is features and column is samples.}
 
-\item{min_fraction}{Only featuers with value (above 0) in at least
-\code{min_fraction} of samples are used in cNMF.}
-
-\item{k}{Number of programs.}
+\item{rank}{Specification of the factorization rank.}
 
 \item{n_iters}{The number of times to run NMF internally before making the
 consensus}
@@ -34,7 +33,24 @@ to be kept by cNMF.}
 be to its nearest neighbors in Euclidean space to be considered
 ‘approximately matching’.}
 
+\item{min_fraction}{Only featuers with value (above 0) in at least
+\code{min_fraction} of samples are used in cNMF.}
+
 \item{silhouette}{If TRUE, will calculate silhouette score.}
+
+\item{...}{
+  Arguments passed on to \code{\link[RcppML:nmf]{RcppML::nmf}}
+  \describe{
+    \item{\code{tol}}{tolerance of the fit}
+    \item{\code{maxit}}{maximum number of fitting iterations}
+    \item{\code{L1}}{LASSO penalties in the range (0, 1], single value or array of length two for \code{c(w, h)}}
+    \item{\code{L2}}{Ridge penalties greater than zero, single value or array of length two for \code{c(w, h)}}
+    \item{\code{seed}}{single initialization seed or array, or a matrix or list of matrices giving initial \code{w}. For multiple initializations, the model with least mean squared error is returned.}
+    \item{\code{mask}}{dense or sparse matrix of values in \code{data} to handle as missing. Prefer \code{Matrix::dgCMatrix}. Alternatively, specify "\code{zeros}" or "\code{NA}" to mask either all zeros or NA values.}
+  }}
+
+\item{cores}{Parallelization is applied with OpenMP using the number of
+threads; \code{0} corresponds to all threads.}
 }
 \value{
 A list.
