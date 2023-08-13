@@ -32,10 +32,9 @@
 #' - <https://github.com/seanken/CompareSequence>
 #' - <https://github.com/dylkot/cNMF>
 #' @export
-cnmf <- function(matrix, rank = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_fraction = 0.002, silhouette = TRUE, ..., cores = 0L) {
+cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_fraction = 0.002, silhouette = TRUE, ..., cores = 0L) {
     assert_pkg("RcppML")
-    assert_pkg("cluster")
-    assert_class(matrix, is.matrix, "{.cls matrix}")
+    if (isTRUE(silhouette)) assert_pkg("cluster")
     assert_class(rho, function(x) {
         is.numeric(x) && x > 0L && x <= 1L
     }, "(0, 1] {.cls numeric}", cross_msg = NULL)
@@ -47,14 +46,16 @@ cnmf <- function(matrix, rank = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03,
     ]
 
     # https://github.com/seanken/CompareSequence/blob/main/ComparePackage_R/CompareSeqR/R/cNMF.R#L53
+    require("RcppML", quietly = TRUE, character.only = TRUE)
     cli::cli_inform("Runing NMF")
     old_threads <- options(RcppML.threads = cores)
     on.exit(do.call(`options`, old_threads))
+    rank <- as.integer(rank)
     w_list <- lapply(seq_len(n_iters), function(i) {
-        RcppML::nmf(data = matrix, k = rank, ...)$w
+        RcppML::nmf(data = matrix, k = rank, ...)@w
     })
 
-    cli::cli_inform("Idenfity consensus programs")
+    cli::cli_inform("Idenfitying consensus programs")
     w <- do.call(cbind, w_list)
 
     # https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py
@@ -87,11 +88,10 @@ cnmf <- function(matrix, rank = 15L, n_iters = 100L, rho = 0.3, min_dist = 0.03,
     w_consensus <- as.matrix(w_consensus[, !".__groups"])
     w_consensus <- t(w_consensus / rowSums(abs(w_consensus)))
 
-    h <- RcppML::project(matrix, w = w_consensus)
+    h <- RcppML::project(w = w_consensus, data = matrix)
+    w_final <- t(RcppML::project(w = h, data = t(orig_matrix)))
 
-    w_final <- RcppML::project(orig_matrix, h = h)
-
-    list(w = t(w_final), h = t(h), silhouette_score = silhouette_score)
+    list(w = w_final, h = h, rank = rank, silhouette_score = silhouette_score)
 }
 
 utils::globalVariables(".__groups")
