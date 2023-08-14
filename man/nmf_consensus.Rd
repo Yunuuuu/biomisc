@@ -16,7 +16,8 @@ nmf_consensus(
   redundant_sim = 0.2,
   min_intersection = 0.2,
   founder_intersection_size = 0.2,
-  child_intersection_size = 0.2
+  min_overlap_index = 0.2,
+  index_fn = jaccard_index
 )
 }
 \arguments{
@@ -58,8 +59,10 @@ was removed, to avoid redundancy.}
 \item{founder_intersection_size}{Minimal size of significant intersected
 programs to define the first NMF program in a cluster.}
 
-\item{child_intersection_size}{Minimal intersection cutoff for adding a new
+\item{min_overlap_index}{Minimal intersection cutoff for adding a new
 NMF program to the forming cluster.}
+
+\item{index_fn}{Function to define overlap index between two gene sets.}
 }
 \description{
 Identify consensus modules.
