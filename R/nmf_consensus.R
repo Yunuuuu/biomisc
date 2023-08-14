@@ -36,7 +36,7 @@
 #' @seealso
 #' <https://github.com/tiroshlab/3ca>
 #' @export
-nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02, min_size = 3L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 2L, redundant_sim = 0.2, min_intersection = 0.2, founder_intersection_size = 0.2, min_overlap_index = 0.2, index_fn = jaccard_index) {
+nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02, min_size = 3L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_intersection = 0.2, founder_intersection_size = 0.2, min_overlap_index = 0.2, index_fn = jaccard_index) {
     assert_class(
         basis_list, function(list) {
             is.list(list) && all(vapply(list, function(sublist) {
@@ -151,10 +151,12 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         sapply(nmf_programs, function(y) min(lengths(list(x, y))))
     })
     if (min_intersection > 0L && min_intersection < 1L) {
-        min_intersection <- min_length * min_intersection
+        min_intersection_threshold <- min_length * min_intersection
+    } else {
+        min_intersection_threshold <- min_intersection
     }
     sorted_intersection <- sort(
-        rowSums(nmf_intersect >= min_intersection) - 1L,
+        rowSums(nmf_intersect >= min_intersection_threshold) - 1L,
         decreasing = TRUE
     )
     program_list <- list() # Every entry contains the NMFs of a chosen cluster
@@ -163,7 +165,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     k <- 1L
 
     if (founder_intersection_size > 0L && founder_intersection_size < 1L) {
-        founder_intersection_threshold <- ncol(nmf_intersect) *
+        founder_intersection_threshold <- (ncol(nmf_intersect) - 1L) *
             founder_intersection_size
     } else {
         founder_intersection_threshold <- founder_intersection_size
@@ -180,7 +182,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         nmf_programs <- nmf_programs[
             setdiff(names(nmf_programs), cur_program_id)
         ] # remove selected NMF
-
+        if (length(nmf_programs) == 0L) break
         ovaerlap_genes_mp <- sapply(nmf_programs, function(y) {
             index_fn(genes_mp, y)
         })
@@ -239,8 +241,8 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
             }
             genes_mp <- genes_mp[seq_len(min(module_size, length(genes_mp)))]
             remain_programs <- setdiff(names(nmf_programs), next_program_id)
-            if (length(remain_programs) == 0L) break
             nmf_programs <- nmf_programs[remain_programs] # remove selected NMF
+            if (length(nmf_programs) == 0L) break
             ovaerlap_genes_mp <- sapply(nmf_programs, function(y) {
                 index_fn(genes_mp, y)
             })
@@ -249,10 +251,10 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         }
         program_list[[paste0("MP", k)]] <- cur_program
         MP_list[[paste0("MP", k)]] <- genes_mp
-        if (!is.null(min_intersection) && all(dim(min_intersection) == dim(nmf_intersect))) {
-            min_intersection <- min_intersection[
-                setdiff(rownames(min_intersection), cur_program),
-                setdiff(colnames(min_intersection), cur_program),
+        if (min_intersection > 0L && min_intersection < 1L) {
+            min_intersection_threshold <- min_intersection_threshold[
+                setdiff(rownames(min_intersection_threshold), cur_program),
+                setdiff(colnames(min_intersection_threshold), cur_program),
                 drop = FALSE
             ]
         }
@@ -263,9 +265,15 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         ] # Remove current chosen cluster
         if (length(nmf_intersect) == 0L) break
         sorted_intersection <- sort(
-            rowSums(nmf_intersect >= min_intersection) - 1L,
+            rowSums(nmf_intersect >= min_intersection_threshold) - 1L,
             decreasing = TRUE
         )
+        if (founder_intersection_size > 0L && founder_intersection_size < 1L) {
+            founder_intersection_threshold <- (ncol(nmf_intersect) - 1L) *
+                founder_intersection_size
+        } else {
+            founder_intersection_threshold <- founder_intersection_size
+        }
         cur_program <- NULL
         k <- k + 1
     }
@@ -284,6 +292,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         sim_matrix_group,
         rep_len("none", length(non_classified))
     )
+    sim_matrix_group <- factor(sim_matrix_group, unique(sim_matrix_group))
     sim_matrix <- sim_matrix[idxs_sorted, idxs_sorted]
 
     recur_program_list <- mapply(

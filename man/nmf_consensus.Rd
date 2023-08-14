@@ -12,7 +12,7 @@ nmf_consensus(
   min_intra_sim = 0.7,
   min_intra_size = NULL,
   min_inter_sim = 0.2,
-  min_inter_size = 2L,
+  min_inter_size = 1L,
   redundant_sim = 0.2,
   min_intersection = 0.2,
   founder_intersection_size = 0.2,
