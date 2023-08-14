@@ -6,7 +6,7 @@
 \usage{
 cnmf(
   matrix,
-  rank = 15L,
+  rank,
   n_iters = 100L,
   rho = 0.3,
   min_dist = 0.03,
