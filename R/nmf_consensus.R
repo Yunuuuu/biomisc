@@ -138,24 +138,24 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     nmf_intersect <- sapply(nmf_programs, function(x) {
         sapply(nmf_programs, function(y) length(intersect(x, y)))
     })
-    nmf_union <- sapply(nmf_programs, function(x) {
-        sapply(nmf_programs, function(y) length(union(x, y)))
-    })
     min_length <- sapply(nmf_programs, function(x) {
         sapply(nmf_programs, function(y) min(lengths(list(x, y))))
     })
+    # nmf_union <- sapply(nmf_programs, function(x) {
+    #     sapply(nmf_programs, function(y) length(union(x, y)))
+    # })
     # hierarchical clustering of the similarity matrix
-    nmf_intersect_hc <- stats::hclust(
-        stats::as.dist(1 - (nmf_intersect / nmf_union)),
-        method = "average"
-    )
-    nmf_intersect_hc <- stats::reorder(
-        stats::as.dendrogram(nmf_intersect_hc),
-        colMeans(nmf_intersect)
-    )
-    order_hc <- stats::order.dendrogram(nmf_intersect_hc)
-    nmf_intersect <- nmf_intersect[order_hc, order_hc]
-    min_length <- min_length[order_hc, order_hc]
+    # nmf_intersect_hc <- stats::hclust(
+    #     stats::as.dist(1 - nmf_intersect / nmf_union),
+    #     method = "average"
+    # )
+    # nmf_intersect_hc <- stats::reorder(
+    #     stats::as.dendrogram(nmf_intersect_hc),
+    #     colMeans(nmf_intersect)
+    # )
+    # order_hc <- stats::order.dendrogram(nmf_intersect_hc)
+    # nmf_intersect <- nmf_intersect[order_hc, order_hc]
+    # min_length <- min_length[order_hc, order_hc]
     if (min_intersection > 0L && min_intersection < 1L) {
         min_intersection <- min_length * min_intersection
     }
@@ -198,7 +198,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         all_genes_mp <- genes_mp
         # has genes in all NMFs in the current cluster, for redefining genes_mp
         # after adding a new NMF
-        ### Create gene list is composed of intersecting genes (in descending order by frequency). When the number of genes with a given frequency span bewond the 50th genes, they are sorted according to their NMF score.
+        ### Create gene list is composed of intersecting genes (in descending order by frequency). When the number of genes with a given frequency span bewond the 50th genes, they are sorted according to their NMF score. 
 
         if (child_intersection_size > 0L && child_intersection_size < 1L) {
             child_intersection_threshold <- module_size * child_intersection_size
