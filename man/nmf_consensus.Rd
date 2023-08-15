@@ -14,7 +14,7 @@ nmf_consensus(
   min_inter_sim = 0.2,
   min_inter_size = 1L,
   redundant_sim = 0.2,
-  min_intersection = 0.2,
+  min_consensus_sim = 0.2,
   founder_intersection_size = 0.2,
   min_overlap_index = 0.2,
   index_fn = jaccard_index
@@ -53,8 +53,8 @@ tumours and selected in decreasing order; once an NMF was selected, any other
 NMF within the tumour that had 20\% overlap (or more) with the selected NMF
 was removed, to avoid redundancy.}
 
-\item{min_intersection}{Minimal size of gene intersection with other programs
-(across all tumor) to be considered significant.}
+\item{min_consensus_sim}{Minimal similarity index of gene intersection with
+other programs (across all tumor) to be considered significant.}
 
 \item{founder_intersection_size}{Minimal size of significant intersected
 programs to define the first NMF program in a cluster.}

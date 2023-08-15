@@ -22,8 +22,8 @@
 #' tumours and selected in decreasing order; once an NMF was selected, any other
 #' NMF within the tumour that had 20% overlap (or more) with the selected NMF
 #' was removed, to avoid redundancy.
-#' @param min_intersection Minimal size of gene intersection with other programs
-#' (across all tumor) to be considered significant.
+#' @param min_consensus_sim Minimal similarity index of gene intersection with
+#' other programs (across all tumor) to be considered significant.
 #' @param founder_intersection_size Minimal size of significant intersected
 #' programs to define the first NMF program in a cluster.
 #' @param min_overlap_index Minimal intersection cutoff for adding a new
@@ -36,7 +36,7 @@
 #' @seealso
 #' <https://github.com/tiroshlab/3ca>
 #' @export
-nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02, min_size = 3L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_intersection = 0.2, founder_intersection_size = 0.2, min_overlap_index = 0.2, index_fn = jaccard_index) {
+nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02, min_size = 3L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_consensus_sim = 0.2, founder_intersection_size = 0.2, min_overlap_index = 0.2, index_fn = jaccard_index) {
     assert_class(
         basis_list, function(list) {
             is.list(list) && all(vapply(list, function(sublist) {
@@ -140,23 +140,12 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
 
     # define consensus modules ---------------------------------
     # calculate similarity between programs
-    nmf_intersect <- sapply(nmf_programs, function(x) {
-        sapply(nmf_programs, function(y) length(intersect(x, y)))
+    sim_matrix <- sapply(nmf_programs, function(x) {
+        sapply(nmf_programs, function(y) index_fn(x, y))
     })
-    nmf_union <- sapply(nmf_programs, function(x) {
-        sapply(nmf_programs, function(y) length(union(x, y)))
-    })
-    sim_matrix <- nmf_intersect / nmf_union
-    min_length <- sapply(nmf_programs, function(x) {
-        sapply(nmf_programs, function(y) min(lengths(list(x, y))))
-    })
-    if (min_intersection > 0L && min_intersection < 1L) {
-        min_intersection_threshold <- min_length * min_intersection
-    } else {
-        min_intersection_threshold <- min_intersection
-    }
+    sim_matrix_orig <- sim_matrix
     sorted_intersection <- sort(
-        rowSums(nmf_intersect >= min_intersection_threshold) - 1L,
+        rowSums(sim_matrix >= min_consensus_sim) - 1L,
         decreasing = TRUE
     )
     program_list <- list() # Every entry contains the NMFs of a chosen cluster
@@ -165,7 +154,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     k <- 1L
 
     if (founder_intersection_size > 0L && founder_intersection_size < 1L) {
-        founder_intersection_threshold <- (ncol(nmf_intersect) - 1L) *
+        founder_intersection_threshold <- (ncol(sim_matrix) - 1L) *
             founder_intersection_size
     } else {
         founder_intersection_threshold <- founder_intersection_size
@@ -255,25 +244,18 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         }
         program_list[[paste0("MP", k)]] <- cur_program
         MP_list[[paste0("MP", k)]] <- genes_mp
-        if (min_intersection > 0L && min_intersection < 1L) {
-            min_intersection_threshold <- min_intersection_threshold[
-                setdiff(rownames(min_intersection_threshold), cur_program),
-                setdiff(colnames(min_intersection_threshold), cur_program),
-                drop = FALSE
-            ]
-        }
-        nmf_intersect <- nmf_intersect[
-            setdiff(rownames(nmf_intersect), cur_program),
-            setdiff(colnames(nmf_intersect), cur_program),
+        sim_matrix <- sim_matrix[
+            setdiff(rownames(sim_matrix), cur_program),
+            setdiff(colnames(sim_matrix), cur_program),
             drop = FALSE
         ] # Remove current chosen cluster
-        if (length(nmf_intersect) == 0L) break
+        if (length(sim_matrix) == 0L) break
         sorted_intersection <- sort(
-            rowSums(nmf_intersect >= min_intersection_threshold) - 1L,
+            rowSums(sim_matrix >= min_consensus_sim) - 1L,
             decreasing = TRUE
         )
         if (founder_intersection_size > 0L && founder_intersection_size < 1L) {
-            founder_intersection_threshold <- (ncol(nmf_intersect) - 1L) *
+            founder_intersection_threshold <- (ncol(sim_matrix) - 1L) *
                 founder_intersection_size
         } else {
             founder_intersection_threshold <- founder_intersection_size
@@ -284,20 +266,25 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
 
     # order final program data based on clustering output --------
     # hierarchical clustering of the similarity matrix
-    nmf_hc <- stats::hclust(stats::as.dist(1 - sim_matrix), method = "average")
-    nmf_hc <- stats::reorder(stats::as.dendrogram(nmf_hc), colMeans(sim_matrix))
+    nmf_hc <- stats::hclust(stats::as.dist(1 - sim_matrix_orig),
+        method = "average"
+    )
+    nmf_hc <- stats::reorder(
+        stats::as.dendrogram(nmf_hc),
+        colMeans(sim_matrix_orig)
+    )
     order_hc <- stats::order.dendrogram(nmf_hc)
-    sim_matrix <- sim_matrix[order_hc, order_hc]
+    sim_matrix_orig <- sim_matrix_orig[order_hc, order_hc]
     idxs_sorted <- unlist(program_list, recursive = FALSE, use.names = FALSE)
     sim_matrix_group <- rep(names(program_list), times = lengths(program_list))
-    non_classified <- setdiff(colnames(sim_matrix), idxs_sorted)
+    non_classified <- setdiff(colnames(sim_matrix_orig), idxs_sorted)
     idxs_sorted <- c(idxs_sorted, non_classified)
     sim_matrix_group <- c(
         sim_matrix_group,
         rep_len("none", length(non_classified))
     )
     sim_matrix_group <- factor(sim_matrix_group, unique(sim_matrix_group))
-    sim_matrix <- sim_matrix[idxs_sorted, idxs_sorted]
+    sim_matrix_orig <- sim_matrix_orig[idxs_sorted, idxs_sorted]
 
     recur_program_list <- mapply(
         function(programs, basis) {
@@ -317,16 +304,16 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     program_list <- lapply(program_list, function(programs) {
         nmf_consensus_parse_name(programs, basis_list)
     })
-    rownames(sim_matrix) <- nmf_consensus_parse_name(
-        rownames(sim_matrix), basis_list
+    rownames(sim_matrix_orig) <- nmf_consensus_parse_name(
+        rownames(sim_matrix_orig), basis_list
     )
-    colnames(sim_matrix) <- nmf_consensus_parse_name(
-        colnames(sim_matrix), basis_list
+    colnames(sim_matrix_orig) <- nmf_consensus_parse_name(
+        colnames(sim_matrix_orig), basis_list
     )
     list(
         recur_program_list = recur_program_list,
         meta_program = MP_list, clusters = program_list,
-        sim_matrix = sim_matrix, sim_matrix_group = sim_matrix_group
+        sim_matrix = sim_matrix_orig, sim_matrix_group = sim_matrix_group
     )
 }
 
