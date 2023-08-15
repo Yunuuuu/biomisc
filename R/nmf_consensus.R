@@ -182,7 +182,11 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         nmf_programs <- nmf_programs[
             setdiff(names(nmf_programs), cur_program_id)
         ] # remove selected NMF
-        if (length(nmf_programs) == 0L) break
+        if (length(nmf_programs) == 0L) {
+            program_list[[paste0("MP", k)]] <- cur_program
+            MP_list[[paste0("MP", k)]] <- genes_mp
+            break
+        }
         ovaerlap_genes_mp <- sapply(nmf_programs, function(y) {
             index_fn(genes_mp, y)
         })
