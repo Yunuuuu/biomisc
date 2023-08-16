@@ -4,74 +4,87 @@
 \alias{nmf_consensus}
 \title{Identify consensus modules.}
 \usage{
-nmf_consensus(
-  basis_list,
-  module_size = 50L,
-  min_contribution = 0.02,
-  min_size = 3L,
-  min_intra_sim = 0.7,
-  min_intra_size = NULL,
-  min_inter_sim = 0.2,
-  min_inter_size = 1L,
-  redundant_sim = 0.2,
-  min_consensus_sim = 0.2,
-  founder_intersection_size = 0.2,
-  min_overlap_index = 0.2,
-  index_fn = jaccard_index
-)
+nmf_consensus(basis_list, method = c("barkley", "gavish"), min_size = 5L, ...)
 }
 \arguments{
-\item{basis_list}{A list of sub-list of matrix for each NMF run.}
+\item{basis_list}{A list of sub-list (length >= 2) of basis matrix for each
+NMF run.}
 
-\item{module_size}{Expected size of genes in a module.}
-
-\item{min_contribution}{Minimal contricution percent (defined by \code{basis}) of
-genes in a module.}
+\item{method}{Specifying the method to define consensus modules. Defatils see
+references.}
 
 \item{min_size}{Minimal number of genes in a module.}
 
-\item{min_intra_sim}{Minimal intra-tumor jaccard index, robust within the
+\item{...}{Other argument passed to specific methods.
+
+If method is "barkley", these can be follows:
+\itemize{
+\item cluster_fn: Function used to find communities (ususally function starts
+with "cluster_" in igraph package). Always accept a "graph" object.
+Default: \code{igraph::cluster_infomap}
+\item v_min: Gene–gene connections were filtered out if they occurred in fewer
+than \code{v_min} individual tumor modules. Default: \code{2L}.
+\item s_min: genes connected with fewer than \code{s_min} genes were removed.
+Default: \code{3L}.
+}
+
+If method is "gavish", these can be follows:
+\itemize{
+\item module_size: Expected size of genes in a module. Default: \code{50L},
+\item min_contribution: Minimal contricution percent (defined by \code{basis}) of
+genes in a module. Default: \code{0.02}.
+\item min_intra_sim: Minimal intra-tumor overlap index, robust within the
 tumour (a program that is represented by several similar NMF programs, as
-defined for the same tumour when analysed by multiple NMF rank values; two
-NMF programs were considered as similar if they had at least 75\% gene overlap
-defined by jaccard index)}
-
-\item{min_intra_size}{Minimal number of significant programs (with jaccard
-index > min_intra_sim) to be considered robust within the tumor. If NULL, the
-number of NMF runs is used.}
-
-\item{min_inter_sim}{Minimal inter-tumor jaccard index. robust across tumours
-(NMF programs that had at least 20\% similarity (by top 50 genes) with any NMF
-program in any of the other tumours analysed).}
-
-\item{min_inter_size}{Minimal number of significant programs (with jaccard
-index > min_inter_sim) to be considered robust across tuomor.}
-
-\item{redundant_sim}{Non-redundant within the tumour (within each tumour, NMF
-programs were ranked by their similarity (gene overlap) with NMFs from other
-tumours and selected in decreasing order; once an NMF was selected, any other
-NMF within the tumour that had 20\% overlap (or more) with the selected NMF
-was removed, to avoid redundancy.}
-
-\item{min_consensus_sim}{Minimal similarity index of gene intersection with
-other programs (across all tumor) to be considered significant.}
-
-\item{founder_intersection_size}{Minimal size of significant intersected
-programs to define the first NMF program in a cluster.}
-
-\item{min_overlap_index}{Minimal intersection cutoff for adding a new
-NMF program to the forming cluster.}
-
-\item{index_fn}{Function to define overlap index between two gene sets.}
+defined for the same tumour when analysed by multiple NMF rank values;
+two NMF programs were considered as similar if they had at least 75\% gene
+overlap defined by overlap). Default: \code{0.7}.
+\item min_intra_size: Minimal number of significant programs (with jaccard
+index > min_intra_sim) to be considered robust within the tumor. If
+\code{NULL}, the number of NMF runs is used. Default: \code{NULL}.
+\item min_inter_sim: Minimal inter-tumor jaccard index. robust across tumours
+(NMF programs that had at least 20\% similarity (by top 50 genes) with any
+NMF program in any of the other tumours analysed). Default: \code{0.2}.
+\item min_inter_size: Minimal number of significant programs (with overlap
+index > min_inter_sim) to be considered robust across tuomor. Default:
+\code{1}.
+\item redundant_sim: Non-redundant within the tumour (within each tumour, NMF
+programs were ranked by their similarity (gene overlap) with NMFs from
+other tumours and selected in decreasing order; once an NMF was selected,
+any other NMF within the tumour that had 20\% overlap (or more) with the
+selected NMF was removed, to avoid redundancy. Default: \code{0.2}.
+\item min_consensus_sim: Minimal similarity index of gene intersection with
+other programs (across all tumor) to be considered significant. Default:
+\code{0.2}.
+\item founder_intersection: Minimal size or fraction (if ranges from \code{0} to
+\code{1}) of significant intersected programs to define the first NMF program
+in a cluster. Default: \code{0.2}.
+\item min_overlap_index: Minimal overlap cutoff for adding a new NMF program
+to the forming cluster. Default: \code{0.2}.
+\item overlap_fn: Function to define overlap index between two gene sets.
+Default: \code{jaccard_index}.
+}}
+}
+\value{
+A Consensus_module list of filtered communities by \code{min_size}, each
+identified by their members, with \code{raw_modules}, \code{full_adj} and \code{adj_list}
+attached in the attributes.
 }
 \description{
 Identify consensus modules.
 }
 \references{
-Gavish, A., Tyler, M., Greenwald, A.C. et al. Hallmarks of transcriptional
+\itemize{
+\item Gavish, A., Tyler, M., Greenwald, A.C. et al. Hallmarks of transcriptional
 intratumour heterogeneity across a thousand tumours. Nature 618, 598–606
 (2023). https://doi.org/10.1038/s41586-023-06130-4
+\item Barkley, D., Moncada, R., Pour, M. et al. Cancer cell states recur across
+tumor types and form specific interactions with the tumor microenvironment.
+Nat Genet 54, 1192–1201 (2022). https://doi.org/10.1038/s41588-022-01141-9
+}
 }
 \seealso{
-\url{https://github.com/tiroshlab/3ca}
+\itemize{
+\item \url{https://github.com/tiroshlab/3ca}
+\item \url{https://github.com/yanailab/PanCancer}
+}
 }

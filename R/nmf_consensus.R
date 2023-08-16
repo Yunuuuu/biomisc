@@ -1,42 +1,69 @@
 #' Identify consensus modules.
-#' @param basis_list A list of sub-list of matrix for each NMF run.
-#' @param module_size Expected size of genes in a module.
-#' @param min_contribution Minimal contricution percent (defined by `basis`) of
-#' genes in a module.
+#' @param basis_list A list of sub-list (length >= 2) of basis matrix for each
+#' NMF run.
+#' @param method Specifying the method to define consensus modules. Defatils see
+#' references.
 #' @param min_size Minimal number of genes in a module.
-#' @param min_intra_sim Minimal intra-tumor jaccard index, robust within the
-#' tumour (a program that is represented by several similar NMF programs, as
-#' defined for the same tumour when analysed by multiple NMF rank values; two
-#' NMF programs were considered as similar if they had at least 75% gene overlap
-#' defined by jaccard index)
-#' @param min_intra_size Minimal number of significant programs (with jaccard
-#' index > min_intra_sim) to be considered robust within the tumor. If NULL, the
-#' number of NMF runs is used.
-#' @param min_inter_sim Minimal inter-tumor jaccard index. robust across tumours
-#' (NMF programs that had at least 20% similarity (by top 50 genes) with any NMF
-#' program in any of the other tumours analysed).
-#' @param min_inter_size Minimal number of significant programs (with jaccard
-#' index > min_inter_sim) to be considered robust across tuomor.
-#' @param redundant_sim Non-redundant within the tumour (within each tumour, NMF
-#' programs were ranked by their similarity (gene overlap) with NMFs from other
-#' tumours and selected in decreasing order; once an NMF was selected, any other
-#' NMF within the tumour that had 20% overlap (or more) with the selected NMF
-#' was removed, to avoid redundancy.
-#' @param min_consensus_sim Minimal similarity index of gene intersection with
-#' other programs (across all tumor) to be considered significant.
-#' @param founder_intersection_size Minimal size of significant intersected
-#' programs to define the first NMF program in a cluster.
-#' @param min_overlap_index Minimal intersection cutoff for adding a new
-#' NMF program to the forming cluster.
-#' @param index_fn Function to define overlap index between two gene sets.
+#' @param ... Other argument passed to specific methods.
+#'
+#'  If method is "barkley", these can be follows:
+#'   * cluster_fn: Function used to find communities (ususally function starts
+#'     with "cluster_" in igraph package). Always accept a "graph" object.
+#'     Default: `igraph::cluster_infomap`
+#'   * v_min: Gene–gene connections were filtered out if they occurred in fewer
+#'     than `v_min` individual tumor modules. Default: `2L`.
+#'   * s_min: genes connected with fewer than `s_min` genes were removed.
+#'     Default: `3L`.
+#'
+#'  If method is "gavish", these can be follows:
+#'   * module_size: Expected size of genes in a module. Default: `50L`,
+#'   * min_contribution: Minimal contricution percent (defined by `basis`) of
+#'     genes in a module. Default: `0.02`.
+#'   * min_intra_sim: Minimal intra-tumor overlap index, robust within the
+#'     tumour (a program that is represented by several similar NMF programs, as
+#'     defined for the same tumour when analysed by multiple NMF rank values;
+#'     two NMF programs were considered as similar if they had at least 75% gene
+#'     overlap defined by overlap). Default: `0.7`.
+#'   * min_intra_size: Minimal number of significant programs (with jaccard
+#'     index > min_intra_sim) to be considered robust within the tumor. If
+#'     `NULL`, the number of NMF runs is used. Default: `NULL`.
+#'   * min_inter_sim: Minimal inter-tumor jaccard index. robust across tumours
+#'     (NMF programs that had at least 20% similarity (by top 50 genes) with any
+#'     NMF program in any of the other tumours analysed). Default: `0.2`.
+#'   * min_inter_size: Minimal number of significant programs (with overlap
+#'     index > min_inter_sim) to be considered robust across tuomor. Default:
+#'     `1`.
+#'   * redundant_sim: Non-redundant within the tumour (within each tumour, NMF
+#'     programs were ranked by their similarity (gene overlap) with NMFs from
+#'     other tumours and selected in decreasing order; once an NMF was selected,
+#'     any other NMF within the tumour that had 20% overlap (or more) with the
+#'     selected NMF was removed, to avoid redundancy. Default: `0.2`.
+#'   * min_consensus_sim: Minimal similarity index of gene intersection with
+#'     other programs (across all tumor) to be considered significant. Default:
+#'     `0.2`.
+#'   * founder_intersection: Minimal size or fraction (if ranges from `0` to
+#'     `1`) of significant intersected programs to define the first NMF program
+#'     in a cluster. Default: `0.2`.
+#'   * min_overlap_index: Minimal overlap cutoff for adding a new NMF program
+#'     to the forming cluster. Default: `0.2`.
+#'   * overlap_fn: Function to define overlap index between two gene sets.
+#'     Default: `jaccard_index`.
+#' @return A Consensus_module list of filtered communities by `min_size`, each
+#'  identified by their members, with `raw_modules`, `full_adj` and `adj_list`
+#'  attached in the attributes.
 #' @references
-#' Gavish, A., Tyler, M., Greenwald, A.C. et al. Hallmarks of transcriptional
+#' - Gavish, A., Tyler, M., Greenwald, A.C. et al. Hallmarks of transcriptional
 #' intratumour heterogeneity across a thousand tumours. Nature 618, 598–606
 #' (2023). https://doi.org/10.1038/s41586-023-06130-4
+#' - Barkley, D., Moncada, R., Pour, M. et al. Cancer cell states recur across
+#' tumor types and form specific interactions with the tumor microenvironment.
+#' Nat Genet 54, 1192–1201 (2022). https://doi.org/10.1038/s41588-022-01141-9
 #' @seealso
-#' <https://github.com/tiroshlab/3ca>
+#' - <https://github.com/tiroshlab/3ca>
+#' - <https://github.com/yanailab/PanCancer>
 #' @export
-nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02, min_size = 3L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_consensus_sim = 0.2, founder_intersection_size = 0.2, min_overlap_index = 0.2, index_fn = jaccard_index) {
+nmf_consensus <- function(basis_list, method = c("barkley", "gavish"), min_size = 5L, ...) {
+    method <- match.arg(method, c("barkley", "gavish"))
     assert_class(
         basis_list, function(list) {
             is.list(list) && all(vapply(list, function(sublist) {
@@ -46,7 +73,183 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         }, "{.cls list} of sublist (length >= 2) of {.cls matrix}",
         cross_msg = NULL
     )
-    assert_class(index_fn, is.function, "{.cls function}", cross_msg = NULL)
+    # failed_elements <- NULL
+    # for (i in seq_along(basis_list)) {
+    #     if (!rlang::is_named(basis_list[[i]]) ||
+    #         anyDuplicated(names(basis_list[[i]]))) {
+    #         failed_elements <- c(failed_elements, i)
+    #     }
+    # }
+    # if (length(failed_elements)) {
+    #     if (!is.null(names(basis_list))) {
+    #         failed_elements <- names(basis_list)[failed_elements]
+    #     }
+    #     cli::cli_abort(c(
+    #         "All elements in {.arg module_list} must be named and shouldn't contain blank ({.val } and {.val NA_character_}) or duplicated names.", # nolint
+    #         x = "Failed elements: {.val {failed_elements}}"
+    #     )) # nolint
+    # }
+    switch(method,
+        barkley = nmf_consensus_barkley(
+            basis_list = basis_list,
+            ..., min_size = min_size
+        ),
+        gavish = nmf_consensus_gavish(
+            basis_list = basis_list,
+            ..., min_size = min_size
+        )
+    )
+}
+
+#' @export
+print.consensus_module <- function(x, ...) {
+    x <- unclass(x)
+    attr(x, "raw_modules") <- NULL
+    attr(x, "sim_matrix") <- NULL
+    attr(x, "sim_matrix_group") <- NULL
+    attr(x, "adj_list") <- NULL
+    attr(x, "full_adj") <- NULL
+    print(x)
+}
+
+nmf_consensus_barkley <- function(basis_list, v_min = 2L, s_min = 3L, cluster_fn = igraph::cluster_infomap, ..., min_size = 5L) {
+    assert_pkg("igraph")
+    module_list <- lapply(basis_list, nmf_modules_barkley, min_size = min_size)
+    if (length(module_list) == 0L) {
+        return(list())
+    }
+    assert_class(cluster_fn, is.function, "{.cls function}", cross_msg = NULL)
+
+    # https://github.com/yanailab/PanCancer/blob/49e7b270ec55dbe72076a5cae516ff0931fe7fe4/Finding.R#L349
+    # retain modules with at least 5% overlap (by Jaccard index) with at least
+    # two other modules
+    raw_modules <- module_list
+    names(module_list) <- seq_along(module_list)
+    all <- unlist(module_list, recursive = FALSE, use.names = TRUE)
+    sim <- sapply(all, function(x) {
+        vapply(all, jaccard_index, numeric(1L), x = x)
+    })
+    kept_modules <- rownames(sim)[rowSums(sim > 0.05) >= 3L]
+    if (length(kept_modules) == 0L) {
+        cli::cli_abort("No modules to proceed")
+    }
+    all <- all[kept_modules]
+    module_list <- mapply(
+        function(x, i) {
+            x[paste(i, names(x), sep = ".") %in% kept_modules]
+        },
+        x = module_list, i = names(module_list),
+        SIMPLIFY = FALSE, USE.NAMES = TRUE
+    )
+
+    # Gene–gene connections ---------------------------------------
+    # filtered out if they occurred in fewer than two individual tumor modules
+    # ta <- table(unlist(all, use.names = FALSE))
+    # features <- names(ta)[ta > v_min]
+
+    features <- unique(unlist(all, use.names = FALSE))
+    adj_zero <- matrix(0L, nrow = length(features), ncol = length(features))
+    rownames(adj_zero) <- colnames(adj_zero) <- features
+
+    # Adjacency matrix, list by cancer
+    adj_list <- lapply(module_list, function(modules, init = adj_zero) {
+        for (i in seq_along(modules)) {
+            mod <- intersect(modules[[i]], features)
+            init[mod, mod] <- init[mod, mod] + 1L
+        }
+        diag(init) <- 0L
+        init
+    })
+    full_adj <- Reduce(`+`, adj_list)
+
+    # Remove low connections
+    # Gene–gene connections were filtered out if they occurred in fewer than two
+    # individual tumor modules, and genes with fewer than three connections were
+    # removed.
+    full_adj[full_adj < v_min] <- 0L
+    is_keep <- rowSums(full_adj > 0L) >= s_min
+    full_adj <- full_adj[is_keep, is_keep]
+
+    # Cluster ---------------------------------------------------
+    g <- igraph::graph_from_adjacency_matrix(full_adj,
+        diag = FALSE, mode = "undirected", weighted = TRUE
+    )
+    modules <- igraph::communities(cluster_fn(g, ...))
+    modules <- modules[lengths(modules) >= min_size]
+    names(modules) <- paste0("MP", seq_along(modules))
+
+    structure(
+        modules,
+        raw_modules = raw_modules,
+        full_adj = full_adj,
+        adj_list = adj_list,
+        class = c("list", "consensus_module")
+    )
+}
+
+nmf_modules_barkley <- function(basis_list, min_size = 5L) {
+    # assert_class(nmf_list, function(x) {
+    #     is.list(x) && all(vapply(x, function(i) {
+    #         inherits(i, "NMFfit")
+    #     }, logical(1L)))
+    # }, "{.cls list} of {.cls NMFfit}", cross_msg = NULL)
+
+    # https://github.com/yanailab/PanCancer/blob/49e7b270ec55dbe72076a5cae516ff0931fe7fe4/part1.R#L67
+    # ranks <- vapply(nmf_list, NMF::nbasis, integer(1L))
+    ranks <- vapply(basis_list, ncol, integer(1L))
+
+    # put NMFfit with the largest rank firstly
+    # so we can use which.min to define the first near one with the largest rank
+    rank_order <- order(ranks, decreasing = TRUE)
+    ranks <- ranks[rank_order]
+    basis_list <- basis_list[rank_order]
+    modules_list <- lapply(basis_list, function(scores) {
+        # Remove if fewer than min_size genes
+        modules <- nmf_modules_internal(scores)
+        scores <- scores[, lengths(modules) >= min_size, drop = FALSE]
+        if (length(scores) == 0L) {
+            return(character())
+        }
+
+        # Find modules
+        modules <- nmf_modules_internal(scores)
+        # names(modules) <- vapply(modules, `[[`, character(1L), 1L)
+        names(modules) <- paste0("module", seq_along(modules))
+        # names(modules) <- make.names(names(modules))
+        modules
+    })
+    best_rank_idx <- which.min(ranks - lengths(modules_list))
+    if (length(best_rank_idx)) {
+        # nmf_out <- basis_list[[best_rank_idx]]
+        modules <- modules_list[[best_rank_idx]]
+    } else {
+        cli::cli_abort("Cannot determine the best rank")
+    }
+    modules
+}
+
+nmf_modules_internal <- function(scores) {
+    contributions <- -t(t(scores) / colMeans(scores))
+    ranks_x <- t(apply(contributions, 1L, rank))
+    ranks_y <- apply(contributions, 2L, rank)
+    # test_ranks_y <- ranks_y
+    # for (i in seq_len(ncol(scores))) {
+    #     ranks_y[ranks_x[, i] > 1, i] <- Inf
+    # }
+    # identical(ranks_y, test_ranks_y)
+    ranks_y[ranks_x > 1L] <- Inf
+    apply(ranks_y, 2L, function(m) {
+        a <- sort(m[is.finite(m)])
+        names(a[a == seq_along(a)])
+    }, simplify = FALSE)
+}
+
+jaccard_index <- function(x, y) {
+    length(intersect(x, y)) / length(union(x, y))
+}
+
+nmf_consensus_gavish <- function(basis_list, min_size = 3L, min_contribution = 0.02, module_size = 50L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_consensus_sim = 0.2, founder_intersection = 0.2, min_overlap_index = 0.2, overlap_fn = jaccard_index) {
+    assert_class(overlap_fn, is.function, "{.cls function}", cross_msg = NULL)
     # Modified from <https://github.com/tiroshlab/3ca/blob/main/ITH_hallmarks/Generating_MPs/Generate_Meta_Programs.R>
     ### Parameters for clustering
     # min_intersection: the minimal intersection cutoff for defining the
@@ -55,7 +258,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     # min_overlap_index: the minimal intersection cutoff for adding a new
     # NMF to the forming cluster;
 
-    # founder_intersection_size: the minimal group size to consider for defining
+    # founder_intersection: the minimal group size to consider for defining
     # the first NMF program in a cluster
 
     # nmf programs -------------------------------------------
@@ -83,9 +286,9 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
             list()
         } else {
             intra_similarity <- sapply(intra_program_list, function(x) {
-                sapply(intra_program_list, function(y) {
-                    index_fn(x, y)
-                })
+                vapply(intra_program_list, function(y) {
+                    overlap_fn(x, y)
+                }, numeric(1L))
             })
             intra_program_list[
                 rowSums(intra_similarity >= min_intra_sim) - 1L >=
@@ -106,7 +309,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
         inter_counts <- vapply(curr_program, function(program) {
             sum(vapply(others, function(other) {
                 any(vapply(other, function(y) {
-                    index_fn(program, y)
+                    overlap_fn(program, y)
                 }, numeric(1L)) >= min_inter_sim)
             }, numeric(1L)))
         }, numeric(1L))
@@ -121,7 +324,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
                 idx <- c(idx, i)
             } else {
                 intra_similarity <- vapply(idx, function(i2) {
-                    index_fn(curr_program[[i]], curr_program[[i2]])
+                    overlap_fn(curr_program[[i]], curr_program[[i2]])
                 }, numeric(1L))
                 if (max(intra_similarity) >= redundant_sim) {
                     next
@@ -141,7 +344,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     # define consensus modules ---------------------------------
     # calculate similarity between programs
     sim_matrix <- sapply(nmf_programs, function(x) {
-        sapply(nmf_programs, function(y) index_fn(x, y))
+        sapply(nmf_programs, function(y) overlap_fn(x, y))
     })
     sim_matrix_orig <- sim_matrix
     sorted_intersection <- sort(
@@ -153,11 +356,11 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     cur_program <- NULL
     k <- 1L
 
-    if (founder_intersection_size > 0L && founder_intersection_size < 1L) {
+    if (founder_intersection > 0L && founder_intersection < 1L) {
         founder_intersection_threshold <- (ncol(sim_matrix) - 1L) *
-            founder_intersection_size
+            founder_intersection
     } else {
-        founder_intersection_threshold <- founder_intersection_size
+        founder_intersection_threshold <- founder_intersection
     }
     while (sorted_intersection[1] >= founder_intersection_threshold) {
         cur_program_id <- names(sorted_intersection[1])
@@ -177,7 +380,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
             break
         }
         ovaerlap_genes_mp <- sapply(nmf_programs, function(y) {
-            index_fn(genes_mp, y)
+            overlap_fn(genes_mp, y)
         })
         # intersection between all other NMFs and genes_mp
         ovaerlap_genes_mp <- sort(ovaerlap_genes_mp, decreasing = TRUE)
@@ -211,9 +414,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
                     curr_study <- as.integer(curr_study)
                     curr_basis <- basis_list[[curr_study[1:2]]]
                     curr_nmf_coef <- curr_basis[
-                        intersect(
-                            names(genes_at_border), rownames(curr_basis)
-                        ),
+                        intersect(names(genes_at_border), rownames(curr_basis)),
                         curr_study[[3L]],
                         drop = TRUE
                     ]
@@ -237,7 +438,7 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
             nmf_programs <- nmf_programs[remain_programs] # remove selected NMF
             if (length(nmf_programs) == 0L) break
             ovaerlap_genes_mp <- sapply(nmf_programs, function(y) {
-                index_fn(genes_mp, y)
+                overlap_fn(genes_mp, y)
             })
             # intersection between all other NMFs and genes_mp
             ovaerlap_genes_mp <- sort(ovaerlap_genes_mp, decreasing = TRUE)
@@ -254,11 +455,11 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
             rowSums(sim_matrix >= min_consensus_sim) - 1L,
             decreasing = TRUE
         )
-        if (founder_intersection_size > 0L && founder_intersection_size < 1L) {
+        if (founder_intersection > 0L && founder_intersection < 1L) {
             founder_intersection_threshold <- (ncol(sim_matrix) - 1L) *
-                founder_intersection_size
+                founder_intersection
         } else {
-            founder_intersection_threshold <- founder_intersection_size
+            founder_intersection_threshold <- founder_intersection
         }
         cur_program <- NULL
         k <- k + 1
@@ -310,10 +511,12 @@ nmf_consensus <- function(basis_list, module_size = 50L, min_contribution = 0.02
     colnames(sim_matrix_orig) <- nmf_consensus_parse_name(
         colnames(sim_matrix_orig), basis_list
     )
-    list(
-        recur_program_list = recur_program_list,
-        meta_program = MP_list, clusters = program_list,
-        sim_matrix = sim_matrix_orig, sim_matrix_group = sim_matrix_group
+    structure(
+        MP_list,
+        raw_modules = program_list,
+        sim_matrix = sim_matrix_orig,
+        sim_matrix_group = sim_matrix_group,
+        class = c("list", "consensus_module")
     )
 }
 
