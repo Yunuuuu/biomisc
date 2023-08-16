@@ -52,9 +52,7 @@
 #'     to the forming cluster. Default: `0.2`.
 #'   * overlap_fn: Function to define overlap index between two gene sets.
 #'     Default: `jaccard_index`.
-#' @return A Consensus_module list of filtered communities by `min_size`, each
-#'  identified by their members, with `raw_modules`, `full_adj` and `adj_list`
-#'  attached in the attributes.
+#' @return A Consensus_module list.
 #' @references
 #' - Gavish, A., Tyler, M., Greenwald, A.C. et al. Hallmarks of transcriptional
 #' intratumour heterogeneity across a thousand tumours. Nature 618, 598–606

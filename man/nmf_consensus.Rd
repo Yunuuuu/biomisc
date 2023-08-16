@@ -69,9 +69,7 @@ Default: \code{jaccard_index}.
 }}
 }
 \value{
-A Consensus_module list of filtered communities by \code{min_size}, each
-identified by their members, with \code{raw_modules}, \code{full_adj} and \code{adj_list}
-attached in the attributes.
+A Consensus_module list.
 }
 \description{
 Identify consensus modules.
