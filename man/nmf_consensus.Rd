@@ -19,6 +19,10 @@ references.}
 
 If method is "barkley", these can be follows:
 \itemize{
+\item min_jaccard: Minimal jaccard index to consider significant overlapped
+between two modules. Default: \code{0.05}.
+\item s_min_jaccard: Modules significantly overlapped fewer than
+\code{s_min_jaccard} modules are removed. Default: \code{3L}.
 \item cluster_fn: Function used to find communities (ususally function starts
 with "cluster_" in igraph package). Always accept a "graph" object.
 Default: \code{igraph::cluster_infomap}

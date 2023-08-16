@@ -7,6 +7,10 @@
 #' @param ... Other argument passed to specific methods.
 #'
 #'  If method is "barkley", these can be follows:
+#'   * min_jaccard: Minimal jaccard index to consider significant overlapped
+#'     between two modules. Default: `0.05`.
+#'   * s_min_jaccard: Modules significantly overlapped fewer than
+#'     `s_min_jaccard` modules are removed. Default: `3L`.
 #'   * cluster_fn: Function used to find communities (ususally function starts
 #'     with "cluster_" in igraph package). Always accept a "graph" object.
 #'     Default: `igraph::cluster_infomap`
@@ -112,7 +116,7 @@ print.consensus_module <- function(x, ...) {
     print(x)
 }
 
-nmf_consensus_barkley <- function(basis_list, v_min = 2L, s_min = 3L, cluster_fn = igraph::cluster_infomap, ..., min_size = 5L) {
+nmf_consensus_barkley <- function(basis_list, min_jaccard = 0.05, s_min_jaccard = 3L, v_min = 2L, s_min = 3L, cluster_fn = igraph::cluster_infomap, ..., min_size = 5L) {
     assert_pkg("igraph")
     module_list <- lapply(basis_list, nmf_modules_barkley, min_size = min_size)
     if (length(module_list) == 0L) {
@@ -129,7 +133,7 @@ nmf_consensus_barkley <- function(basis_list, v_min = 2L, s_min = 3L, cluster_fn
     sim <- sapply(all, function(x) {
         vapply(all, jaccard_index, numeric(1L), x = x)
     })
-    kept_modules <- rownames(sim)[rowSums(sim > 0.05) >= 3L]
+    kept_modules <- rownames(sim)[rowSums(sim > min_jaccard) >= s_min_jaccard]
     if (length(kept_modules) == 0L) {
         cli::cli_abort("No modules to proceed")
     }
