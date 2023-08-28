@@ -346,7 +346,7 @@ nmf_consensus_gavish <- function(basis_list, min_size = 3L, min_contribution = 0
     # define consensus modules ---------------------------------
     # calculate similarity between programs
     sim_matrix <- sapply(nmf_programs, function(x) {
-        sapply(nmf_programs, function(y) overlap_fn(x, y))
+        vapply(nmf_programs, function(y) overlap_fn(x, y), numeric(1L))
     })
     sim_matrix_orig <- sim_matrix
     sorted_intersection <- sort(
@@ -515,7 +515,8 @@ nmf_consensus_gavish <- function(basis_list, min_size = 3L, min_contribution = 0
     )
     structure(
         MP_list,
-        raw_modules = program_list,
+        elements = program_list,
+        raw_programs = recur_program_list,
         sim_matrix = sim_matrix_orig,
         sim_matrix_group = sim_matrix_group,
         class = c("list", "consensus_module")
