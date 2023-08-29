@@ -35,8 +35,8 @@ Default: \code{3L}.
 If method is "gavish", these can be follows:
 \itemize{
 \item module_size: Expected size of genes in a module. Default: \code{50L},
-\item min_contribution: Minimal contricution percent (defined by \code{basis}) of
-genes in a module. Default: \code{0.02}.
+\item coef_threthold: Minimal coefficient  (defined by \code{basis}) of genes in a
+module.  Default: \code{0}.
 \item min_intra_sim: Minimal intra-tumor overlap index, robust within the
 tumour (a program that is represented by several similar NMF programs, as
 defined for the same tumour when analysed by multiple NMF rank values;

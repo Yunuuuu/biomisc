@@ -21,8 +21,8 @@
 #'
 #'  If method is "gavish", these can be follows:
 #'   * module_size: Expected size of genes in a module. Default: `50L`,
-#'   * min_contribution: Minimal contricution percent (defined by `basis`) of
-#'     genes in a module. Default: `0.02`.
+#'   * coef_threthold: Minimal coefficient  (defined by `basis`) of genes in a
+#'     module.  Default: `0`.
 #'   * min_intra_sim: Minimal intra-tumor overlap index, robust within the
 #'     tumour (a program that is represented by several similar NMF programs, as
 #'     defined for the same tumour when analysed by multiple NMF rank values;
@@ -248,7 +248,7 @@ jaccard_index <- function(x, y) {
     length(intersect(x, y)) / length(union(x, y))
 }
 
-nmf_consensus_gavish <- function(basis_list, min_size = 3L, min_contribution = 0.02, module_size = 50L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_consensus_sim = 0.2, founder_intersection = 0.2, min_overlap_index = 0.2, overlap_fn = jaccard_index) {
+nmf_consensus_gavish <- function(basis_list, min_size = 3L, coef_threthold = 0, module_size = 50L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_consensus_sim = 0.2, founder_intersection = 0.2, min_overlap_index = 0.2, overlap_fn = jaccard_index) {
     assert_class(overlap_fn, is.function, "{.cls function}", cross_msg = NULL)
     # Modified from <https://github.com/tiroshlab/3ca/blob/main/ITH_hallmarks/Generating_MPs/Generate_Meta_Programs.R>
     ### Parameters for clustering
@@ -267,11 +267,7 @@ nmf_consensus_gavish <- function(basis_list, min_size = 3L, min_contribution = 0
         names(rank_basis) <- seq_along(rank_basis)
         intra_program_list <- lapply(rank_basis, function(basis) {
             programs <- apply(basis, 2, function(y) {
-                sum_val <- sum(y)
-                if (sum_val == 0L) {
-                    return(character())
-                }
-                y <- y[y / sum_val >= min_contribution]
+                y <- y[y > coef_threthold]
                 names(sort(y, decreasing = TRUE))[seq_len(min(length(y), module_size))]
             }, simplify = FALSE)
             # use the integer index as the name
