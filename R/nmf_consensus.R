@@ -105,12 +105,9 @@ nmf_consensus <- function(basis_list, method = c("barkley", "gavish"), min_size 
 
 #' @export
 print.consensus_module <- function(x, ...) {
-    x <- unclass(x)
-    attr(x, "raw_modules") <- NULL
-    attr(x, "sim_matrix") <- NULL
-    attr(x, "sim_matrix_group") <- NULL
-    attr(x, "adj_list") <- NULL
-    attr(x, "full_adj") <- NULL
+    for (at in setdiff(names(attributes(x)), "names")) {
+        attr(x, at) <- NULL
+    }
     print(x)
 }
 
@@ -127,15 +124,15 @@ nmf_consensus_barkley <- function(basis_list, min_jaccard = 0.05, s_min_jaccard 
     # two other modules
     raw_modules <- module_list
     names(module_list) <- seq_along(module_list)
-    all <- unlist(module_list, recursive = FALSE, use.names = TRUE)
-    sim <- sapply(all, function(x) {
-        vapply(all, jaccard_index, numeric(1L), x = x)
+    all_modules <- unlist(module_list, recursive = FALSE, use.names = TRUE)
+    sim <- sapply(all_modules, function(x) {
+        vapply(all_modules, jaccard_index, numeric(1L), x = x)
     })
     kept_modules <- rownames(sim)[rowSums(sim > min_jaccard) >= s_min_jaccard]
     if (length(kept_modules) == 0L) {
         cli::cli_abort("No modules to proceed")
     }
-    all <- all[kept_modules]
+    all_modules <- all_modules[kept_modules]
     module_list <- mapply(
         function(x, i) {
             x[paste(i, names(x), sep = ".") %in% kept_modules]
@@ -146,11 +143,12 @@ nmf_consensus_barkley <- function(basis_list, min_jaccard = 0.05, s_min_jaccard 
 
     # Gene–gene connections ---------------------------------------
     # filtered out if they occurred in fewer than two individual tumor modules
-    # ta <- table(unlist(all, use.names = FALSE))
+    # ta <- table(unlist(all_modules, use.names = FALSE))
     # features <- names(ta)[ta > v_min]
 
-    features <- unique(unlist(all, use.names = FALSE))
-    adj_zero <- matrix(0L, nrow = length(features), ncol = length(features))
+    features <- unique(unlist(all_modules, use.names = FALSE))
+    l <- length(features)
+    adj_zero <- matrix(0L, nrow = l, ncol = l)
     rownames(adj_zero) <- colnames(adj_zero) <- features
 
     # Adjacency matrix, list by cancer
@@ -182,7 +180,7 @@ nmf_consensus_barkley <- function(basis_list, min_jaccard = 0.05, s_min_jaccard 
 
     structure(
         modules,
-        raw_modules = raw_modules,
+        raw_programs = raw_modules,
         full_adj = full_adj,
         adj_list = adj_list,
         class = c("list", "consensus_module")
