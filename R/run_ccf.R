@@ -305,8 +305,6 @@ run_ccf <- function(
         columns <- c(columns, ref_field, alt_field)
     }
     if (any(ccf_type == "bootstrapCCF")) {
-        assert_pkg("sequenza")
-        assert_pkg("boot")
         # here will modify data in place
         estimate_btstr_ccf(out, sample_field = group)
     }

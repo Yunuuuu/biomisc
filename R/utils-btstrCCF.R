@@ -5,6 +5,8 @@
 #' @return Modify data in place
 #' @noRd
 estimate_btstr_ccf <- function(mut_cn_data, sample_field = NULL) {
+    assert_pkg("sequenza")
+    assert_pkg("boot")
     # check arguments firstly
     assert_df_with_columns(mut_cn_data, c(
         sample_field, "purity", "alt_counts", "ref_counts",
@@ -137,7 +139,7 @@ new_mut_types <- function(max_cn, p) {
 
 # should run for each mutation
 bootstrap_cf <- function(alt_counts, ref_counts, purity, CNts, CNns, times = 1000L) {
-    out_list <- .mapply(function(alt_count, ref_count, p, CNn, CNt, times = 1000L) {
+    out_list <- .mapply(function(alt_count, ref_count, p, CNn, CNt, times) {
         if (ref_count == 0L) {
             ci_list <- calculate_ccf(
                 alt_counts = alt_count,
@@ -146,7 +148,7 @@ bootstrap_cf <- function(alt_counts, ref_counts, purity, CNts, CNns, times = 100
                 observed_vafs = alt_count / (alt_count + ref_count),
                 expected_vafs = NULL
             )[2:3]
-            unlist(ci_list)
+            unlist(ci_list, use.names = FALSE)
         } else {
             x <- c(rep(1L, alt_count), rep(0L, ref_count))
             theta <- function(x, i) {
