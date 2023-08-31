@@ -30,10 +30,9 @@ these pseudocounts to specify the relative weighting of each prior
 component compared to the volume of observed data. If NULL, will be
 \code{rep_len(1000L, ncol(priors))}.}
 
-\item{dp_tree}{A data.frame specifying the children-parent
-relationships. The first column must contain all the samples specified in
-\code{matrix} (rownames), and the second define the parent, the third difine the
-grandparent and more ancestors et.al.}
+\item{dp_tree}{A data.frame specifying the children-parent relationships. The
+first column must match \code{rownames(matrix)}, and the second define the
+parent, the third difine the grandparent and more ancestors.}
 
 \item{initcc}{Number of data clusters to start with (every data item is
 randomly assigned to a cluster to start with). Will coerced to integer. See

@@ -16,10 +16,9 @@
 #'   these pseudocounts to specify the relative weighting of each prior
 #'   component compared to the volume of observed data. If NULL, will be
 #'   `rep_len(1000L, ncol(priors))`.
-#' @param dp_tree A data.frame specifying the children-parent
-#'   relationships. The first column must contain all the samples specified in
-#'   `matrix` (rownames), and the second define the parent, the third difine the
-#'   grandparent and more ancestors et.al.
+#' @param dp_tree A data.frame specifying the children-parent relationships. The
+#'   first column must match `rownames(matrix)`, and the second define the
+#'   parent, the third difine the grandparent and more ancestors.
 #' @param initcc Number of data clusters to start with (every data item is
 #'   randomly assigned to a cluster to start with). Will coerced to integer. See
 #'   [dp_activate][hdp::dp_activate].
@@ -75,15 +74,10 @@ run_hdp <- function(
     }
     dp_tree <- hdp_prepare_tree(dp_tree, matrix)
 
-    # order matrix based on dp_tree
-    matrix <- matrix[match(dp_tree[[1L]], rownames(matrix)), ,
-        drop = FALSE
-    ]
-
     ##################################
     ###  initialise HDP structure  ###
     ##################################
-
+    cli::cli_inform("Preparing data")
     if (!is.null(priors)) {
         ### with priors ###
         nps <- ncol(priors)
@@ -165,8 +159,7 @@ run_hdp <- function(
     ############
     ### run posterior sampling chains
     ############
-
-    # run chain sampling
+    cli::cli_inform("Running chain sampling")
     posteriors <- lapply(seq_len(n_posterior), function(i) {
         # with different dp_activate seeds to start the clustering from a
         # different random starting point each time.
@@ -192,9 +185,9 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
     assert_class(dp_tree, "data.frame", null_ok = TRUE, arg = arg1, call = call)
     if (!is.null(dp_tree)) {
         dp_tree <- data.table::as.data.table(dp_tree)
-        if (!setequal(dp_tree[[1L]], rownames(matrix))) {
+        if (!all(dp_tree[[1L]] == rownames(matrix))) {
             cli::cli_abort(
-                "The first column of {.arg {arg1}} must contain all samples (rownames) in {.arg {arg2}}",
+                "The first column of {.arg {arg1}} must match {.code rownames({arg2})}",
                 call = call
             )
         }
