@@ -62,6 +62,12 @@ run_hdp <- function(
         cross_msg = NULL
     )
     assert_class(seed, is_scalar_numeric, "scalar numeric", cross_msg = NULL)
+    oldseed <- get0(".Random.seed", envir = .GlobalEnv)
+    if (is.null(oldseed)) {
+        on.exit(rm(".Random.seed", envir = .GlobalEnv))
+    } else {
+        on.exit(assign(".Random.seed", value = oldseed, envir = .GlobalEnv))
+    }
     set.seed(seed,
         kind = "Mersenne-Twister",
         normal.kind = "Inversion",
