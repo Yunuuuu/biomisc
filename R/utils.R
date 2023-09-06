@@ -33,7 +33,7 @@ read_internal_extdata <- function(...) {
 }
 
 trim_value <- function(x, threshold = 1 - .Machine$double.neg.eps) {
-    x[x >= threshold] <- threshold
+    x[x > threshold] <- threshold
     x
 }
 
