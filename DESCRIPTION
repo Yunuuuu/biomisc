@@ -8,7 +8,7 @@ License: MIT + file LICENSE
 Imports: 
     cli,
     data.table (>= 1.14.9),
-    rlang (>= 0.4.11),
+    rlang (>= 1.1.0),
     stats,
     utils,
     future.apply,

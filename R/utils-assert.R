@@ -1,45 +1,148 @@
 #' Report if an argument is a specific class
 #'
-#' @keywords internal
+#' @param x The object type which does not conform to `what`. Its
+#'   `obj_type_friendly()` is taken and mentioned in the error message.
+#' @param what The friendly expected type as a string. Can be a
+#'   character vector of expected types, in which case the error
+#'   message mentions all of them in an "or" enumeration.
+#' @param show_value Passed to `value` argument of `obj_type_friendly()`.
+#' @param show_length Passed to `length` argument of `obj_type_friendly()`.
+#' @param ... Arguments passed to [rlang::abort()].
 #' @noRd
-assert_class <- function(
-    x, is_class, msg,
-    cross_msg = "You've supplied a {.cls {class(x)}} object",
-    null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(),
-    .envir = environment()) {
+assert_ <- function(
+    x, assert_fn, what,
+    null_ok = FALSE,
+    show_value = TRUE,
+    show_length = FALSE,
+    ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    # if (!is.function(assert_fn)) {
+    #     rlang::abort(sprintf(
+    #         "%s must be %s",
+    #         format_arg("assert_fn"),
+    #         "a function"
+    #     ))
+    # }
+    if (null_ok && is.null(x) || assert_fn(x)) {
+        return(invisible(NULL))
+    }
+    stop_input_type(x, what,
+        null_ok = null_ok,
+        show_value = show_value,
+        show_length = show_length,
+        ..., arg = arg, call = call
+    )
+}
+
+assert_s3_class <- function(
+    x, is_class, what, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
     if (rlang::is_scalar_character(is_class)) {
         class <- is_class
         is_class <- function(x) {
             inherits(x, what = class)
         }
-        if (missing(msg)) {
-            msg <- "{.cls {class}} object"
+        if (missing(what)) {
+            what <- class
         }
     }
+    assert_(
+        x = x, assert_fn = is_class, what = what,
+        ..., arg = arg, call = call
+    )
+}
+
+assert_s4_class <- function(
+    x, is_class, what, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    if (rlang::is_scalar_character(is_class)) {
+        class <- is_class
+        is_class <- function(x) {
+            methods::is(x, class)
+        }
+        if (missing(what)) {
+            what <- class
+        }
+    }
+    assert_(
+        x = x, assert_fn = is_class, what = what,
+        ..., arg = arg, call = call
+    )
+}
+
+stop_input_type <- function(
+    x, what,
+    null_ok = FALSE,
+    show_value = TRUE,
+    show_length = FALSE,
+    ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
     if (null_ok) {
-        msg <- paste(msg, "or {.code NULL}", sep = " ")
+        what <- c(what, format_code("NULL"))
     }
-    msg <- sprintf("{.arg {arg}} must be a %s", msg)
-    is_right_class <- is_class(x)
-    # is_class sometimes return `TRUE` for`NULL`
-    if (is.null(x) && !is_right_class) {
-        if (!null_ok) {
-            cli::cli_abort(c(msg,
-                "x" = "You've supplied a {.code NULL}"
-            ), call = call, .envir = .envir)
+    if (length(what)) {
+        what <- oxford_comma(what)
+    }
+    if (inherits(arg, "AsIs")) {
+        .format_arg <- identity
+    } else {
+        .format_arg <- format_arg
+    }
+    message <- sprintf(
+        "%s must be %s, not %s.",
+        .format_arg(arg),
+        what,
+        obj_type_friendly(x, value = show_value, length = show_length)
+    )
+    rlang::abort(message, ..., call = call, arg = arg)
+}
+
+assert_pkg <- function(pkg, version = NULL, fun = NULL, call = rlang::caller_env()) {
+    if (!is_installed(pkg, version = version)) {
+        if (is.null(fun)) {
+            fun_call <- rlang::frame_call(frame = call)
+            fun <- rlang::as_label(fun_call[[1L]])
         }
-    } else if (!is_right_class) {
-        if (!is.null(cross_msg)) {
-            msg <- c(msg, x = cross_msg)
+        pkg <- format_pkg(pkg)
+        if (!is.null(version)) {
+            pkg <- sprintf("%s (>=%s)", pkg, version)
         }
-        cli::cli_abort(msg, call = call, .envir = .envir)
+        rlang::abort(
+            sprintf(
+                "%s must be installed to use %s.",
+                pkg, format_fn(fun)
+            ),
+            call = call
+        )
     }
 }
+
+is_installed <- local({
+    cache <- new.env()
+    function(pkg, version = NULL) {
+        id <- if (is.null(version)) pkg else paste(pkg, version, sep = ":")
+        out <- cache[[id]]
+        if (is.null(out)) {
+            if (is.null(version)) {
+                out <- requireNamespace(pkg, quietly = TRUE)
+            } else {
+                out <- requireNamespace(pkg, quietly = TRUE) &&
+                    utils::packageVersion(pkg) >= version
+            }
+            cache[[id]] <<- out
+        }
+        out
+    }
+})
 
 #' Report if an argument has specific length
 #' @keywords internal
 #' @noRd
-assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = parent.frame(), .envir = environment()) {
+assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, arg = rlang::caller_arg(x), call = rlang::caller_env(), .envir = environment()) {
     if (!missing(length)) {
         length <- as.integer(length)
         if (missing(msg)) {
@@ -83,20 +186,7 @@ assert_length <- function(x, length, msg, scalar_ok = FALSE, null_ok = FALSE, ar
     }
 }
 
-assert_pkg <- function(pkg, fun = NULL, frame = rlang::caller_env()) {
-    if (!requireNamespace(pkg, quietly = TRUE)) {
-        if (is.null(fun)) {
-            fun_call <- rlang::frame_call(frame = frame)
-            fun <- rlang::as_label(fun_call[[1L]])
-        }
-        cli::cli_abort(
-            "{.pkg {pkg}} must be installed to use {.fn {fun}}.",
-            call = frame
-        )
-    }
-}
-
-assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg = rlang::caller_arg(x), call = parent.frame()) {
+assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg = rlang::caller_arg(x), call = rlang::caller_env()) {
     if (check_class) {
         is_right <- inherits(x, "data.frame")
         msg <- c(i = "{.arg {arg}} must be a {.cls data.frame}")
@@ -123,7 +213,7 @@ assert_df_with_columns <- function(x, cols, check_class = length(arg) == 1L, arg
 }
 
 # assert hierarchy relationship, every value only correspond to a unique id
-assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), tag_uid = uid, tag_group = group, msg = NULL, cross_msg = NULL, cross_format = c("pair", "group", "uid"), info_msg = NULL, call = parent.frame()) {
+assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), tag_uid = uid, tag_group = group, msg = NULL, cross_msg = NULL, cross_format = c("pair", "group", "uid"), info_msg = NULL, call = rlang::caller_env()) {
     if (is.null(group)) {
         pairs <- list(unique(uid))
     } else {
@@ -166,7 +256,7 @@ assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), 
     }
 }
 
-assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call = parent.frame()) {
+assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call = rlang::caller_env()) {
     missing_items <- setdiff(x, y)
     if (length(missing_items)) {
         cli::cli_abort(
@@ -176,5 +266,57 @@ assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call = parent.frame())
             ),
             call = call
         )
+    }
+}
+
+format_arg <- function(x) .rlang_cli_format_inline(x, "arg", "`%s`")
+format_code <- function(x) .rlang_cli_format_inline(x, "code", "`%s`")
+format_pkg <- function(x) .rlang_cli_format_inline(x, "pkg", NULL)
+format_fn <- function(x) .rlang_cli_format_inline(x, "fn", "`%s()`")
+format_var <- function(x) .rlang_cli_format_inline(x, "var", "`%s`")
+format_envvar <- function(x) .rlang_cli_format_inline(x, "envvar", "`%s`")
+format_field <- function(x) .rlang_cli_format_inline(x, "field", NULL)
+
+.rlang_cli_format_inline <- function(x, span, fallback = "`%s`") {
+    if (.rlang_cli_has_cli()) {
+        cli::format_inline(paste0("{.", span, " {x}}"))
+    } else {
+        .rlang_cli_style_inline(x, span, fallback = fallback)
+    }
+}
+
+.rlang_cli_style_inline <- function(x, span, fallback = "`%s`") {
+    if (.rlang_cli_has_cli()) {
+        paste0("{.", span, " {\"", encodeString(x), "\"}}")
+    } else if (is.null(fallback)) {
+        x
+    } else if (is.function(fallback)) {
+        fallback(x)
+    } else {
+        sprintf(fallback, x)
+    }
+}
+
+.rlang_cli_has_cli <- function(version = "3.0.0") {
+    is_installed("cli", version = version)
+}
+
+oxford_comma <- function(chr, sep = ", ", final = "or") {
+    n <- length(chr)
+
+    if (n < 2L) {
+        return(chr)
+    }
+
+    head <- chr[seq_len(n - 1L)]
+    last <- chr[n]
+
+    head <- paste(head, collapse = sep)
+
+    # Write a or b. But a, b, or c.
+    if (n > 2L) {
+        paste0(head, sep, final, " ", last)
+    } else {
+        paste0(head, " ", final, " ", last)
     }
 }
