@@ -61,7 +61,7 @@ cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_f
         RcppML::nmf(data = matrix, k = rank, ...)@w
     })
 
-    cli::cli_inform("Idenfitying consensus programs")
+    cli::cli_inform("Identifying consensus programs")
     w <- do.call(cbind, w_list)
 
     # https://github.com/dylkot/cNMF/blob/master/src/cnmf/cnmf.py
