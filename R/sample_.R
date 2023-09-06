@@ -16,7 +16,7 @@
 #' <https://github.com/yanailab/PanCancer>
 #' @export
 sample_sim <- function(matrix, features, size = 10^3L, nbin = 25L) {
-    assert_class(matrix, is.matrix, "{.cls matrix}")
+    assert_(matrix, is.matrix, "a {.cls matrix}")
     features <- intersect(features, rownames(matrix))
     data_avg <- rowMeans(matrix)
     if (nbin >= nrow(matrix)) {

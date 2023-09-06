@@ -30,11 +30,12 @@
 #' @return A numeric size factor for each mut_context
 #' @export
 context_sizefactor <- function(context, method = c("genome", "exome", "exome2genome", "genome2exome"), ref_genome = NULL, exome_ranges = NULL, contigs = NULL, strand = c("+", "-"), pruning_mode = "error") {
-    assert_class(
+    assert_(
         context, function(x) {
-            all(nchar(context) == nchar(context)[1L])
+            n <- nchar(x)
+            all(n == n[1L])
         },
-        msg = "characters each element with the same number of strings", cross_msg = FALSE
+        what = "an atomic character with equal strings"
     )
     assert_in(strand, c("+", "-"))
     ref_genome <- get_genome(ref_genome)
@@ -43,7 +44,7 @@ context_sizefactor <- function(context, method = c("genome", "exome", "exome2gen
         exome_ranges = exome_ranges,
         method = method,
         contigs = contigs,
-        strand = strand,
+        strand = unique(strand),
         pruning_mode = pruning_mode
     )
 }

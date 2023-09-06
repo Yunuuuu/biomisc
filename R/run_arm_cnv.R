@@ -35,31 +35,31 @@ run_arm_cnv <- function(
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
     cnv_mode <- match.arg(cnv_mode)
-    assert_class(sample_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL, null_ok = TRUE
+    assert_(sample_field, rlang::is_scalar_character,
+        "a string",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(cnv_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
+    assert_(
+        cnv_field, rlang::is_scalar_character,
+        "a string",
     )
     group_fields <- NULL
     if (cnv_mode == "abs") {
-        assert_class(ploidy_field,
+        assert_(ploidy_field,
             function(x) {
                 rlang::is_scalar_character(x) || is_scalar_numeric(x)
-            }, "scalar {.cls numeric} or {.cls chacter}",
-            cross_msg = NULL, null_ok = TRUE
+            }, "a number or a string",
+            null_ok = TRUE, show_length = TRUE
         )
         if (is.character(ploidy_field)) {
             assert_nest(seg_data, ploidy_field, group = sample_field)
             group_fields <- ploidy_field
         }
     } else {
-        assert_class(
+        assert_(
             threshold,
-            is_scalar_numeric, "scalar {.cls numeric}",
-            cross_msg = NULL
+            is_scalar_numeric, "a number",
+            show_length = TRUE
         )
     }
     out <- summarize_arm(

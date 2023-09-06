@@ -83,47 +83,43 @@ run_ccf <- function(
 
     # check arguments firstly
     assert_in(ccf_type, c("phyloCCF", "bootstrapCCF"))
-    assert_class(subclonal_cn_correction, rlang::is_scalar_logical,
-        "scalar {.cls logical}",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(subclonal_cn_correction, rlang::is_scalar_logical,
+        "a scalar {.cls logical}",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(on_patient, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(on_patient, rlang::is_scalar_character,
+        "a scalar {.cls character}",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(on_sample, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(on_sample, rlang::is_scalar_character,
+        "a scalar {.cls character}",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(purity_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        null_ok = FALSE, cross_msg = NULL
+    assert_(purity_field, rlang::is_scalar_character,
+        "a scalar {.cls character}",
+        null_ok = FALSE, show_length = TRUE
     )
-    assert_class(
+    assert_(
         on_chr, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
+        "a scalar {.cls character}", show_length = TRUE
     )
-    assert_class(
+    assert_(
         mut_pos, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
+        "a scalar {.cls character}", show_length = TRUE
     )
-    assert_class(
+    assert_(
         start_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
+        "a scalar {.cls character}", show_length = TRUE
     )
-    assert_class(
+    assert_(
         end_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL
+        "a scalar {.cls character}", show_length = TRUE
     )
-    assert_class(normal_cn,
+    assert_(normal_cn,
         function(x) {
             is_scalar_numeric(x) || rlang::is_scalar_character(x)
-        }, "scalar {.cls numeric} or {.cls character}",
-        null_ok = TRUE, cross_msg = NULL
+        }, "a number or a string",
+        null_ok = TRUE, show_length = TRUE
     )
 
     assert_df_with_columns(mut_data, c(
@@ -143,8 +139,8 @@ run_ccf <- function(
     assert_df_with_columns(cnv_data, c(
         on_patient, on_sample, on_chr, start_field, end_field, cnv_columns
     ))
-    assert_class(kept_cols, is.character, "{.cls character} vector",
-        cross_msg = NULL, null_ok = TRUE
+    assert_(kept_cols, is.character, "an atomic {.cls character}",
+        null_ok = TRUE, show_length = TRUE
     )
     mut_data <- data.table::as.data.table(mut_data)
     cnv_data <- data.table::as.data.table(cnv_data)
@@ -253,9 +249,9 @@ run_ccf <- function(
         cli::cli_inform(
             "Using {.arg gender_field} to define {.field normal_cn}"
         )
-        assert_class(
+        assert_(
             gender_field, rlang::is_scalar_character,
-            "scalar {.cls character}",
+            "a scalar {.cls character}", show_length = TRUE
         )
         # assert every samples provided only one gender value
         assert_df_with_columns(out, gender_field,

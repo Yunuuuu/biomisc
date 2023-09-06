@@ -104,9 +104,9 @@ run_absolute <- function(seg, maf = NULL, sigma_p = 0, max_sigma_h = 0.015,
         platform, c("SNP_6.0", "Illumina_WES", "SNP_250K_STY")
     )
     copy_num_type <- match.arg(copy_num_type, c("total", "allelic"))
-    assert_class(primary_disease, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = FALSE, null_ok = TRUE
+    assert_(primary_disease, rlang::is_scalar_character,
+        "a string",
+        null_ok = TRUE
     )
     if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE)

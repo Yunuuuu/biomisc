@@ -74,26 +74,27 @@ run_motif_fisher <- function(
     assert_pkg("GenomeInfoDb")
     assert_pkg("Biostrings")
 
-    assert_class(
+    assert_(
         mut_data, function(x) {
             inherits(x, "data.frame") && ncol(x) >= 5L
         },
-        msg = "{.cls data.frame} and with at lease 5 columns",
-        cross_msg = NULL
+        what = "a {.cls data.frame} (with at lease 5 columns)"
     )
-    assert_class(
+    assert_(
         signature_motif, function(x) {
             is.character(x) && all(nchar(x) == 3L)
         },
-        msg = "{.cls character} and all elements must have size {.val 3L}",
-        cross_msg = NULL
+        what = "an atomic {.cls character} (all have nchar 3L)"
     )
-    assert_class(
+    assert_(
         background_snv, function(x) {
             is.character(x) && all(x %chin% names(standard_snv_sub_pairs))
         },
-        msg = "{.cls character} (among {.val {unique(names(standard_snv_sub))}})",
-        cross_msg = NULL, null_ok = TRUE
+        what = sprintf(
+            "an atomic {.cls character} (all in %s})",
+            oxford_comma(unique(names(standard_snv_sub_pairs)), final = "and")
+        ),
+        null_ok = TRUE
     )
 
     mut_data <- data.table::as.data.table(mut_data)[, .SD, .SDcols = 1:5]

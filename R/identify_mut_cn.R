@@ -6,7 +6,7 @@
 #' regarded from the same patient.
 #' @param on_sample A string (which can be named), specifying the column in the
 #' sample used for matching mut_data and cnv_data. If NULL, each patient is
-#' considered to contain only one sample. 
+#' considered to contain only one sample.
 #' @param on_chr A string (can be named), specifying the chromosome column used
 #' to match mut_data and cnv_data.
 #' @param mut_pos A string indicating the column names in `mut_data` that
@@ -27,7 +27,7 @@ identify_mut_cn <- function(
         mut_data = mut_data, cnv_data = cnv_data,
         on_patient = on_patient, on_sample = on_sample,
         on_chr = on_chr, mut_pos = mut_pos,
-        start_field = start_field, end_field = end_field, 
+        start_field = start_field, end_field = end_field,
         nomatch = nomatch
     )
 }
@@ -38,49 +38,47 @@ identify_mut_cn <- function(
 mut_match_cn <- function(
     mut_data, cnv_data, on_patient = NULL, on_sample = NULL, on_chr = "chr",
     mut_pos = "pos", start_field = "start", end_field = "end",
-    nomatch = NULL,
-    on_patient_arg = rlang::caller_arg(on_patient),
+    nomatch = NULL, on_patient_arg = rlang::caller_arg(on_patient),
     on_sample_arg = rlang::caller_arg(on_sample),
     on_chr_arg = rlang::caller_arg(on_chr),
     mut_pos_arg = rlang::caller_arg(on_chr),
     start_field_arg = rlang::caller_arg(start_field),
     end_field_arg = rlang::caller_arg(end_field),
     call = parent.frame()) {
-    assert_class(on_patient, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL,
-        null_ok = TRUE,
+    assert_(on_patient, rlang::is_scalar_character,
+        "a string",
+        null_ok = TRUE, show_length = TRUE,
         arg = on_patient_arg,
         call = call
     )
-    assert_class(on_sample, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(on_sample, rlang::is_scalar_character,
+        "a string",
         cross_msg = NULL,
-        null_ok = TRUE,
+        null_ok = TRUE, show_length = TRUE,
         arg = on_sample_arg,
         call = call
     )
-    assert_class(on_chr, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL,
+    assert_(on_chr, rlang::is_scalar_character,
+        "a string",
+        cross_msg = NULL, show_length = TRUE,
         arg = on_chr_arg,
         call = call
     )
-    assert_class(mut_pos, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL,
+    assert_(mut_pos, rlang::is_scalar_character,
+        "a string",
+        cross_msg = NULL, show_length = TRUE,
         arg = mut_pos_arg,
         call = call
     )
-    assert_class(start_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL,
+    assert_(start_field, rlang::is_scalar_character,
+        "a string",
+        cross_msg = NULL, show_length = TRUE,
         arg = start_field_arg,
         call = call
     )
-    assert_class(end_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL,
+    assert_(end_field, rlang::is_scalar_character,
+        "a string",
+        cross_msg = NULL, show_length = TRUE,
         arg = end_field_arg,
         call = call
     )

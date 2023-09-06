@@ -39,13 +39,13 @@ summarize_arm <- function(
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_pkg("S4Vectors")
-    assert_class(sample_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL, null_ok = TRUE
+    assert_(sample_field, rlang::is_scalar_character,
+        "a string",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(filter_centromere, rlang::is_scalar_logical,
-        "scalar {.cls logical}",
-        cross_msg = NULL, null_ok = TRUE
+    assert_(filter_centromere, rlang::is_scalar_logical,
+        "a scalar {.cls logical}",
+        null_ok = TRUE, show_length = TRUE
     )
     assert_df_with_columns(seg_data,
         c(other_fields, chr_field, start_field, end_field, group_fields),
@@ -73,7 +73,7 @@ summarize_arm <- function(
         arm_field <- "arm"
     } else if (!inherits(ref_cytoband, "GenomicRanges")) {
         cli::cli_abort(
-            '{.arg ref_cytoband} must be a scalar character ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
+            '{.arg ref_cytoband} must be a string ("hg19" or "hg38"), or a self-defined {.cls GenomicRanges} object.'
         )
     }
     cytoband_seqstyle <- GenomeInfoDb::seqlevelsStyle(ref_cytoband)
@@ -125,20 +125,20 @@ summarize_arm <- function(
 }
 
 prepare_granges <- function(data, chr_field, start_field, end_field, keep.extra.columns = TRUE, ignore.strand = TRUE, call = parent.frame()) {
-    assert_class(chr_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(chr_field, rlang::is_scalar_character,
+        "a string", show_length = TRUE,
         arg = rlang::caller_arg(chr_field),
-        cross_msg = NULL, call = call
+        call = call
     )
-    assert_class(start_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(start_field, rlang::is_scalar_character,
+        "a string", show_length = TRUE,
         arg = rlang::caller_arg(start_field),
-        cross_msg = NULL, call = call
+        call = call
     )
-    assert_class(end_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(end_field, rlang::is_scalar_character,
+        "a string", show_length = TRUE,
         arg = rlang::caller_arg(end_field),
-        cross_msg = NULL, call = call
+        call = call
     )
     GenomicRanges::makeGRangesFromDataFrame(
         df = as.data.frame(data,

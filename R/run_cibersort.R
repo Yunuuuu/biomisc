@@ -62,13 +62,13 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
                           abs_method = "sig_score") {
     assert_pkg("e1071")
     assert_pkg("preprocessCore")
-    assert_class(mixture_data, is.matrix, "{.cls matrix}")
-    assert_class(sig_data, is.matrix, "{.cls matrix}", null_ok = TRUE)
-    assert_class(quantile_norm, rlang::is_scalar_logical,
-        "scalar {.cls logical}"
+    assert_(mixture_data, is.matrix, "a {.cls matrix}")
+    assert_(sig_data, is.matrix, "a {.cls matrix}", null_ok = TRUE)
+    assert_(quantile_norm, rlang::is_scalar_logical,
+        "a scalar {.cls logical}", show_length = TRUE
     )
-    assert_class(absolute, rlang::is_scalar_logical,
-        "scalar {.cls logical}"
+    assert_(absolute, rlang::is_scalar_logical,
+        "a scalar {.cls logical}", show_length = TRUE
     )
 
     if (absolute) {

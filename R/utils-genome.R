@@ -15,7 +15,7 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     assert_pkg("S4Vectors")
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
-    assert_class(ref_ranges, "GenomicRanges")
+    assert_s4_class(ref_ranges, "GenomicRanges")
 
     if (is.null(arm_field)) {
         arm_field <- grep("^arm", names(S4Vectors::mcols(ref_ranges)),

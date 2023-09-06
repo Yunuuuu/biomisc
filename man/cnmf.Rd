@@ -2,7 +2,7 @@
 % Please edit documentation in R/cnmf.R
 \name{cnmf}
 \alias{cnmf}
-\title{Modified cNMF}
+\title{Consensus Non-negative Matrix factorization}
 \usage{
 cnmf(
   matrix,
@@ -41,12 +41,7 @@ be to its nearest neighbors in Euclidean space to be considered
 \item{...}{
   Arguments passed on to \code{\link[RcppML:nmf]{RcppML::nmf}}
   \describe{
-    \item{\code{tol}}{tolerance of the fit}
-    \item{\code{maxit}}{maximum number of fitting iterations}
-    \item{\code{L1}}{LASSO penalties in the range (0, 1], single value or array of length two for \code{c(w, h)}}
-    \item{\code{L2}}{Ridge penalties greater than zero, single value or array of length two for \code{c(w, h)}}
-    \item{\code{seed}}{single initialization seed or array, or a matrix or list of matrices giving initial \code{w}. For multiple initializations, the model with least mean squared error is returned.}
-    \item{\code{mask}}{dense or sparse matrix of values in \code{data} to handle as missing. Prefer \code{Matrix::dgCMatrix}. Alternatively, specify "\code{zeros}" or "\code{NA}" to mask either all zeros or NA values.}
+    \item{\code{}}{}
   }}
 
 \item{cores}{Parallelization is applied with OpenMP using the number of

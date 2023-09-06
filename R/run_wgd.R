@@ -28,25 +28,25 @@ run_wgd <- function(
     seg_data, sample_field = NULL, ...,
     thresholds = 2:3, major_cn_field = "major_cn", minor_cn_field = NULL,
     CNt_field = NULL, ploidy_field = "ploidy", perm_times = 10000L) {
-    assert_class(sample_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(sample_field, rlang::is_scalar_character,
+        "a string",
         null_ok = TRUE,
-        cross_msg = NULL
+        show_length = TRUE
     )
-    assert_class(major_cn_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(major_cn_field, rlang::is_scalar_character,
+        "a string",
         null_ok = !is.null(minor_cn_field),
-        cross_msg = NULL
+        show_length = TRUE
     )
-    assert_class(minor_cn_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(minor_cn_field, rlang::is_scalar_character,
+        "a string",
         null_ok = TRUE,
-        cross_msg = NULL
+        show_length = TRUE
     )
-    assert_class(CNt_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
+    assert_(CNt_field, rlang::is_scalar_character,
+        "a string",
         null_ok = !(!is.null(minor_cn_field) && is.null(major_cn_field)),
-        cross_msg = NULL
+        show_length = TRUE
     )
     if (is.null(minor_cn_field)) {
         group_fields <- NULL

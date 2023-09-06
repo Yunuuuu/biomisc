@@ -70,9 +70,9 @@ prepare_pyclone <- function(
         "major_cn"
     )
     if (pyclone_vi) {
-        assert_class(purity_field, rlang::is_scalar_character,
-            "scalar {.cls character}",
-            null_ok = TRUE, cross_msg = NULL
+        assert_(purity_field, rlang::is_scalar_character,
+            "a string",
+            null_ok = TRUE
         )
         if (is.null(purity_field)) {
             purity_field <- "..purity.."

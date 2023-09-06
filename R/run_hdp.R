@@ -41,11 +41,11 @@ run_hdp <- function(
     matrix, priors = NULL, prior_pseudoc = NULL,
     dp_tree = NULL, initcc = 10L, ..., n_posterior = 15L, seed = 1234L) {
     assert_pkg("hdp")
-    assert_class(matrix, is.matrix, "matrix")
+    assert_(matrix, is.matrix, "a matrix")
     if (anyNA(matrix)) {
         cli::cli_abort("NA is not allowed in {.arg matrix}")
     }
-    assert_class(priors, is.matrix, "matrix", null_ok = TRUE)
+    assert_(priors, is.matrix, "a matrix", null_ok = TRUE)
     if (!is.null(priors)) {
         if (is.null(colnames(matrix))) {
             if (ncol(matrix) != nrow(priors)) {
@@ -57,11 +57,8 @@ run_hdp <- function(
             }
         }
     }
-    assert_class(initcc, is_scalar_numeric, "scalar numeric", cross_msg = NULL)
-    assert_class(n_posterior, is_scalar_numeric, "scalar numeric",
-        cross_msg = NULL
-    )
-    assert_class(seed, is_scalar_numeric, "scalar numeric", cross_msg = NULL)
+    assert_(initcc, is_scalar_numeric, "a number", show_length = TRUE)
+    assert_(n_posterior, is_scalar_numeric, "a number", show_length = TRUE)
     oldseed <- get0(".Random.seed", envir = .GlobalEnv)
     if (is.null(oldseed)) {
         on.exit(rm(".Random.seed", envir = .GlobalEnv))
@@ -87,9 +84,7 @@ run_hdp <- function(
     if (!is.null(priors)) {
         ### with priors ###
         nps <- ncol(priors)
-        assert_class(prior_pseudoc, is.numeric, "numeric",
-            null_ok = TRUE, cross_msg = NULL
-        )
+        assert_(prior_pseudoc, is.numeric, "a numeric", null_ok = TRUE)
         assert_length(prior_pseudoc, nps, scalar_ok = TRUE, null_ok = TRUE)
         # (don’t activate the frozen pseudo-count nodes for the prior
         # signatures)
@@ -188,7 +183,10 @@ run_hdp <- function(
 }
 
 hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree), arg2 = rlang::caller_arg(matrix), call = parent.frame()) {
-    assert_class(dp_tree, "data.frame", null_ok = TRUE, arg = arg1, call = call)
+    assert_s3_class(
+        dp_tree, "data.frame",
+        null_ok = TRUE, arg = arg1, call = call
+    )
     if (!is.null(dp_tree)) {
         dp_tree <- data.table::as.data.table(dp_tree)
         if (!all(dp_tree[[1L]] == rownames(matrix))) {
@@ -298,7 +296,7 @@ print.HDP <- function(x, ...) {
 #' @export
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
-    assert_class(x, "HDP", "{.cls HDP} object returned by {.fn run_hdp}",
+    assert_(x, "HDP", "a {.cls HDP} object returned by {.fn run_hdp}",
         cross_msg = NULL
     )
     hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
@@ -314,16 +312,16 @@ hdp_data_internal <- function(
     hdpsample, input_matrix, dpindices = NULL,
     sig_active_cutoff = 0.1, remove_zero_lower_ci = TRUE,
     cohort_threshold = 0.05) {
-    assert_class(sig_active_cutoff, function(x) {
+    assert_(sig_active_cutoff, function(x) {
         is_scalar_numeric(x) && data.table::between(x, 0L, 1L)
-    }, "scalar {.cls numeric} in [0, 1]", NULL)
-    assert_class(
+    }, "a number in [0, 1]")
+    assert_(
         remove_zero_lower_ci, rlang::is_scalar_logical,
-        "scalar {.cls logical}", NULL
+        "a scalar {.cls logical}", show_length = TRUE
     )
-    assert_class(cohort_threshold, function(x) {
+    assert_(cohort_threshold, function(x) {
         is_scalar_numeric(x) && x >= 0L
-    }, "scalar {.cls numeric} not less than 0", NULL)
+    }, "a number not less than 0")
     if (length(hdp::comp_categ_counts(hdpsample)) == 0L) {
         cli::cli_abort("No component info for hdpsample. First run hdp_extract_components")
     }

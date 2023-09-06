@@ -17,8 +17,7 @@ or \link[Biobase:class.ExpressionSet]{ExpressionSet} object.}
 
 \item{assay}{Integer scalar or string indicating which assay of \code{x} to use.}
 
-\item{row_as_observations}{A scalar logical value indicates whether use row
-as the observations, if TRUE, a data.frame combined the assay data and
+\item{row_as_observations}{If TRUE, a data.frame combined the assay data and
 \code{colData(x)} will be returned, otherwise, a data.frame combined the
 transposed assay data and \code{rowData(x)}.}
 }

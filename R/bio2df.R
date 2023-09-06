@@ -14,24 +14,15 @@ bio2df <- function(x, ...) {
 }
 
 #' @param assay Integer scalar or string indicating which assay of `x` to use.
-#' @param row_as_observations A scalar logical value indicates whether use row
-#'   as the observations, if TRUE, a data.frame combined the assay data and
+#' @param row_as_observations If TRUE, a data.frame combined the assay data and
 #'   `colData(x)` will be returned, otherwise, a data.frame combined the
 #'   transposed assay data and `rowData(x)`.
 #' @rdname bio2df
 #' @export
 bio2df.SummarizedExperiment <- function(x, ..., assay = NULL, row_as_observations = FALSE) {
-    assert_length(assay, 1L, null_ok = TRUE)
-    assert_class(row_as_observations, rlang::is_scalar_logical,
-        "scalar {.cls logical}",
-        null_ok = FALSE, cross_msg = NULL
-    )
-    if (is.null(assay)) {
-        assay_data <- SummarizedExperiment::assay(x, 1L)
-    } else {
-        assay_data <- SummarizedExperiment::assay(x, assay)
-    }
-    if (row_as_observations) {
+    assay <- assay %||% 1L
+    assay_data <- SummarizedExperiment::assay(x, i = assay)
+    if (isTRUE(row_as_observations)) {
         assay_data <- data.frame(assay_data,
             check.names = FALSE, fix.empty.names = FALSE
         )

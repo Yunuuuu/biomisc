@@ -119,7 +119,7 @@ mufreq_dpois <- function(mufreq, mufreq.model, depth, seq.errors = 0.01, ...) {
 }
 
 new_mut_types <- function(max_cn, p) {
-    assert_class(p, is_scalar_numeric, "scalar {numeric}")
+    assert_(p, is_scalar_numeric, "a number", show_length = TRUE)
     types <- lapply(1:2, function(CNn, max_cn) {
         sequenza::mufreq.types.matrix(CNt.min = 1L, CNt.max = max_cn, CNn = CNn)
     }, max_cn = max_cn)

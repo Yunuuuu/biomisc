@@ -120,9 +120,9 @@
 #' @export
 #' @rdname run_rrho
 run_rrho <- function(list1, list2, stepsize = NULL, log_base = 10L) {
-    assert_class(stepsize, is_scalar_numeric,
-        "scalar {.cls numeric}",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(stepsize, is_scalar_numeric,
+        "a number",
+        null_ok = TRUE, show_length = TRUE
     )
     rrho_data <- set_rrho_list(list1, list2)
     if (is.null(stepsize)) {
@@ -585,9 +585,9 @@ rrho_heatmap <- function(
     assert_rrho(rrho_obj)
     assert_pkg("ComplexHeatmap")
     assert_pkg("circlize")
-    assert_class(use_raster, rlang::is_scalar_logical,
-        msg = "scalar {.cls logical} value",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(use_raster, rlang::is_scalar_logical,
+        msg = "a scalar {.cls logical}",
+        null_ok = TRUE, show_length =  TRUE
     )
     heat_matrix <- t(rrho_obj$hyper_metric)
     heat_matrix <- heat_matrix[
@@ -993,9 +993,9 @@ rrho_seq_idx <- function(n, stepsize) {
     seq.int(stepsize, n, by = stepsize)
 }
 
-assert_rrho <- function(x, arg = rlang::caller_arg(x), call = parent.frame()) {
-    assert_class(x, "rrho",
-        msg = "{.cls rrho} object returned by {.fn run_rrho} function",
+assert_rrho <- function(x, arg = rlang::caller_arg(x), call = rlang::caller_env()) {
+    assert_s3_class(x, "rrho",
+        what = "a {.cls rrho} object returned by {.fn run_rrho}",
         arg = arg, call = call
     )
 }

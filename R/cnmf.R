@@ -1,4 +1,4 @@
-#' Modified cNMF
+#' Consensus Non-negative Matrix factorization
 #'
 #' A modified version of the cNMF algorithm, implemented in R
 #'
@@ -33,11 +33,18 @@
 #' - <https://github.com/dylkot/cNMF>
 #' @export
 cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_fraction = 0.002, silhouette = TRUE, ..., cores = 0L) {
-    assert_pkg("RcppML")
     if (isTRUE(silhouette)) assert_pkg("cluster")
-    assert_class(rho, function(x) {
-        is.numeric(x) && x > 0L && x <= 1L
-    }, "(0, 1] {.cls numeric}", cross_msg = NULL)
+    # RcppML package must be loaded to run nmf
+    if (require("RcppML", quietly = TRUE, character.only = TRUE) &&
+        utils::packageVersion("RcppML") >= "0.5.5") { # nolint
+        cli::cli_abort(sprintf(
+            "%s (>=0.5.5) must be installed to use %s.",
+            format_pkg("RcppML"), format_fn("cnmf")
+        ))
+    }
+    assert_(rho, function(x) {
+        is_scalar_numeric(x) && x > 0L && x <= 1L
+    }, "numeric in (0, 1]")
 
     orig_matrix <- matrix
     matrix <- orig_matrix[
@@ -46,7 +53,6 @@ cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_f
     ]
 
     # https://github.com/seanken/CompareSequence/blob/main/ComparePackage_R/CompareSeqR/R/cNMF.R#L53
-    require("RcppML", quietly = TRUE, character.only = TRUE)
     cli::cli_inform("Runing NMF")
     old_threads <- options(RcppML.threads = cores)
     on.exit(do.call(`options`, old_threads))

@@ -53,8 +53,8 @@
 #' https://doi.org/10.1038/s41586-023-05783-5
 #' @export
 run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_threthold = 0.9, emfrac_threshold = 0.1, maxiter = 1000L, alpha_threshold = 1e-5, only_one = !is.null(prior)) {
-    assert_class(signature, is.numeric, "numeric")
-    assert_class(targets, is.matrix, "matrix")
+    assert_(signature, is.numeric, "a numeric")
+    assert_(targets, is.matrix, "a matrix")
     if (anyNA(signature)) {
         cli::cli_warn(c(
             "Found {NA} value in {.arg signature}",
@@ -68,9 +68,9 @@ run_signature_dissection <- function(signature, targets, prior = NULL, cos_sim_t
     if (is.null(rownames(targets))) {
         rownames(targets) <- paste0("Signature", seq_len(nrow(targets)))
     }
-    assert_class(prior, function(x) {
-        rlang::is_scalar_character(x) && prior %chin% rownames(targets)
-    }, "scalar {.cls character} in {.code rownames(targets)}", null_ok = TRUE)
+    assert_(prior, function(x) {
+        rlang::is_scalar_character(x) && x %chin% rownames(targets)
+    }, "a string in {.code rownames(targets)}", null_ok = TRUE)
     signature_fraction <- run_em(signature, targets,
         maxiter = maxiter, threshold = alpha_threshold
     )

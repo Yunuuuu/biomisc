@@ -16,28 +16,28 @@ estimate_phylo_ccf <- function(
     chr_field = NULL, pos_field = NULL, ref_field = NULL,
     alt_field = NULL, indel_field = NULL,
     min_vaf_to_explain = NULL, conipher = FALSE) {
-    assert_class(
+    assert_(
         ref_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL, null_ok = is.null(indel_field)
+        "a string",
+        null_ok = is.null(indel_field), show_length = TRUE
     )
-    assert_class(
+    assert_(
         alt_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL, null_ok = TRUE
+        "a string",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(
+    assert_(
         indel_field, rlang::is_scalar_character,
-        "scalar {.cls character}",
-        cross_msg = NULL, null_ok = TRUE
+        "a string",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(min_vaf_to_explain, is_scalar_numeric,
-        "scalar {.cls numeric}",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(min_vaf_to_explain, is_scalar_numeric,
+        "a number",
+        null_ok = TRUE, show_length = TRUE
     )
-    assert_class(conipher, rlang::is_scalar_logical,
-        "scalar {.cls logical}",
-        null_ok = TRUE, cross_msg = NULL
+    assert_(conipher, rlang::is_scalar_logical,
+        "a scalar {.cls logical}",
+        null_ok = TRUE, show_length = TRUE
     )
 
     # In order to estimate whether mutations were clonal or subclonal, and the

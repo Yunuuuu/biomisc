@@ -66,14 +66,13 @@
 #' @export
 nmf_consensus <- function(basis_list, method = c("barkley", "gavish"), min_size = 5L, ...) {
     method <- match.arg(method, c("barkley", "gavish"))
-    assert_class(
+    assert_(
         basis_list, function(list) {
             is.list(list) && all(vapply(list, function(sublist) {
                 is.list(sublist) && length(sublist) >= 2L &&
                     all(vapply(sublist, is.matrix, logical(1L)))
             }, logical(1L)))
-        }, "{.cls list} of sublist (length >= 2) of {.cls matrix}",
-        cross_msg = NULL
+        }, "a list of sublist (length >= 2) of {.cls matrix}"
     )
     # failed_elements <- NULL
     # for (i in seq_along(basis_list)) {
@@ -117,7 +116,7 @@ nmf_consensus_barkley <- function(basis_list, min_jaccard = 0.05, s_min_jaccard 
     if (length(module_list) == 0L) {
         return(list())
     }
-    assert_class(cluster_fn, is.function, "{.cls function}", cross_msg = NULL)
+    assert_(cluster_fn, is.function, "a function")
 
     # https://github.com/yanailab/PanCancer/blob/49e7b270ec55dbe72076a5cae516ff0931fe7fe4/Finding.R#L349
     # retain modules with at least 5% overlap (by Jaccard index) with at least
@@ -188,11 +187,11 @@ nmf_consensus_barkley <- function(basis_list, min_jaccard = 0.05, s_min_jaccard 
 }
 
 nmf_modules_barkley <- function(basis_list, min_size = 5L) {
-    # assert_class(nmf_list, function(x) {
+    # assert_(nmf_list, function(x) {
     #     is.list(x) && all(vapply(x, function(i) {
     #         inherits(i, "NMFfit")
     #     }, logical(1L)))
-    # }, "{.cls list} of {.cls NMFfit}", cross_msg = NULL)
+    # }, "a list of {.cls NMFfit}", cross_msg = NULL)
 
     # https://github.com/yanailab/PanCancer/blob/49e7b270ec55dbe72076a5cae516ff0931fe7fe4/part1.R#L67
     # ranks <- vapply(nmf_list, NMF::nbasis, integer(1L))
@@ -249,7 +248,7 @@ jaccard_index <- function(x, y) {
 }
 
 nmf_consensus_gavish <- function(basis_list, min_size = 3L, coef_threthold = 0, module_size = 50L, min_intra_sim = 0.7, min_intra_size = NULL, min_inter_sim = 0.2, min_inter_size = 1L, redundant_sim = 0.2, min_consensus_sim = 0.2, founder_intersection = 0.2, min_overlap_index = 0.2, overlap_fn = jaccard_index) {
-    assert_class(overlap_fn, is.function, "{.cls function}", cross_msg = NULL)
+    assert_(overlap_fn, is.function, "a function")
     # Modified from <https://github.com/tiroshlab/3ca/blob/main/ITH_hallmarks/Generating_MPs/Generate_Meta_Programs.R>
     ### Parameters for clustering
     # min_intersection: the minimal intersection cutoff for defining the
