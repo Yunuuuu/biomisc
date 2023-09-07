@@ -200,7 +200,7 @@ assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(
         }
         rlang::abort(
             sprintf(
-                "One of %s must contain columns (%s), missing columns (%s) in %s",
+                "One of %s must contain columns (%s), missing columns: %s",
                 .format_arg(args), 
                 oxford_comma(columns),
                 oxford_comma(missing_cols)
