@@ -85,11 +85,13 @@ mut_match_cn <- function(
     mut_patient_col <- names(on_patient) %||% on_patient
     mut_sample_col <- names(on_sample) %||% on_sample
     mut_chr_col <- names(on_chr) %||% on_chr
-    assert_df_with_columns(
+    assert_data_frame(mut_data)
+    assert_data_frame(cnv_data)
+    assert_data_frame_columns(
         mut_data,
         c(mut_patient_col, mut_sample_col, mut_chr_col, mut_pos)
     )
-    assert_df_with_columns(
+    assert_data_frame_columns(
         cnv_data,
         c(on_sample, on_chr, start_field, end_field)
     )

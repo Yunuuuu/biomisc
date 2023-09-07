@@ -92,7 +92,7 @@ run_motif_fisher <- function(
         },
         what = sprintf(
             "an atomic {.cls character} (all in %s})",
-            oxford_comma(unique(names(standard_snv_sub_pairs)), final = "and")
+            oxford_comma(unique(names(standard_snv_sub_pairs)))
         ),
         null_ok = TRUE
     )

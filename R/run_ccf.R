@@ -121,8 +121,8 @@ run_ccf <- function(
         }, "a number or a string",
         null_ok = TRUE, show_length = TRUE
     )
-
-    assert_df_with_columns(mut_data, c(
+    assert_data_frame(mut_data)
+    assert_data_frame_columns(mut_data, c(
         names(on_patient) %||% on_patient,
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr, mut_pos,
@@ -136,7 +136,8 @@ run_ccf <- function(
         (any(ccf_type == "phyloCCF") && !subclonal_cn_correction)) {
         cnv_columns <- c(cnv_columns, c("nMinor", "nMajor"))
     }
-    assert_df_with_columns(cnv_data, c(
+    assert_data_frame(cnv_data)
+    assert_data_frame_columns(cnv_data, c(
         on_patient, on_sample, on_chr, start_field, end_field, cnv_columns
     ))
     assert_(kept_cols, is.character, "an atomic {.cls character}",
@@ -201,8 +202,8 @@ run_ccf <- function(
     }
 
     # assert every necessary column is in the combined data
-    assert_df_with_columns(out, c(purity_field, kept_cols),
-        check_class = FALSE, arg = c("mut_data", "cnv_data")
+    assert_data_frame_columns(out, c(purity_field, kept_cols),
+        arg = c("mut_data", "cnv_data")
     )
 
     # assert every samples provided only have one purity value
@@ -254,8 +255,7 @@ run_ccf <- function(
             "a scalar {.cls character}", show_length = TRUE
         )
         # assert every samples provided only one gender value
-        assert_df_with_columns(out, gender_field,
-            check_class = FALSE,
+        assert_data_frame_columns(out, gender_field,
             arg = c("mut_data", "cnv_data")
         )
         if (!all(out[[gender_field]] %in% c("male", "female"))) {
@@ -272,8 +272,7 @@ run_ccf <- function(
         if (is_scalar_numeric(normal_cn)) {
             out[, normal_cn := normal_cn]
         } else {
-            assert_df_with_columns(out, normal_cn,
-                check_class = FALSE,
+            assert_data_frame_columns(out, normal_cn,
                 arg = "mut_data"
             )
             if (!is.numeric(out[[normal_cn]])) {

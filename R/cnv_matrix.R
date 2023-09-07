@@ -11,7 +11,8 @@
 prepare_cnv_signature <- function(
     seg_data, sample_field = NULL, chr_field = "chr", start_field = "startpos",
     end_field = "endpos", major_cn_field = "major_cn", minor_cn_field = "minor_cn") {
-    assert_df_with_columns(seg_data, c(
+    assert_data_frame(seg_data)
+    assert_data_frame_columns(seg_data, c(
         sample_field, chr_field, start_field, end_field,
         minor_cn_field, major_cn_field
     ))

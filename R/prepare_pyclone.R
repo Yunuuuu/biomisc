@@ -36,13 +36,15 @@ prepare_pyclone <- function(
     purity_field = NULL, normal_cn = 2L,
     pyclone_vi = FALSE, error_rate = NULL,
     nomatch = NULL) {
-    assert_df_with_columns(mut_data, c(
+    assert_data_frame(mut_data)
+    assert_data_frame(cnv_data)
+    assert_data_frame_columns(mut_data, c(
         names(on_sample) %||% on_sample,
         names(on_chr) %||% on_chr,
         mut_pos, ref_field,
         ref_counts_field, var_counts_field
     ))
-    assert_df_with_columns(cnv_data, c(
+    assert_data_frame_columns(cnv_data, c(
         on_sample, on_chr, start_field, end_field,
         major_cn_field, minor_cn_field
     ))
@@ -78,7 +80,7 @@ prepare_pyclone <- function(
             purity_field <- "..purity.."
             out$..purity.. <- 1L
         } else {
-            assert_df_with_columns(out, purity_field,
+            assert_data_frame_columns(out, purity_field,
                 arg = c("mut_data", "cnv_data")
             )
         }

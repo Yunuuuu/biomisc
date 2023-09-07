@@ -47,9 +47,9 @@ summarize_arm <- function(
         "a scalar {.cls logical}",
         null_ok = TRUE, show_length = TRUE
     )
-    assert_df_with_columns(seg_data,
-        c(other_fields, chr_field, start_field, end_field, group_fields),
-        check_class = TRUE
+    assert_data_frame(seg_data)
+    assert_data_frame_columns(seg_data,
+        c(other_fields, chr_field, start_field, end_field, group_fields)
     )
     if (!is.null(group_fields)) {
         lapply(as.character(group_fields),

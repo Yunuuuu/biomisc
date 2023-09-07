@@ -16,7 +16,8 @@
 #' @return the mutation context matrix
 #' @export
 prepare_snv_signature <- function(mut_data, sample_field = NULL, ref_genome = NULL, chr_field = "chr", mut_pos = "pos", ref_field = "ref", alt_field = "alt", extension = 1L, method = NULL, contigs = NULL, exome_ranges = NULL, pruning_mode = "error") {
-    assert_df_with_columns(mut_data, c(
+    assert_data_frame(mut_data)
+    assert_data_frame_columns(mut_data, c(
         sample_field, chr_field, mut_pos, ref_field, alt_field
     ))
     ref_genome <- get_genome(ref_genome)

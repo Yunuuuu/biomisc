@@ -8,7 +8,7 @@ estimate_btstr_ccf <- function(mut_cn_data, sample_field = NULL) {
     assert_pkg("sequenza")
     assert_pkg("boot")
     # check arguments firstly
-    assert_df_with_columns(mut_cn_data, c(
+    assert_data_frame_columns(mut_cn_data, c(
         sample_field, "purity", "alt_counts", "ref_counts",
         "minor_cn", "major_cn", "normal_cn"
     ))
