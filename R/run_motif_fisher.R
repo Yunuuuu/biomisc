@@ -91,7 +91,7 @@ run_motif_fisher <- function(
             is.character(x) && all(x %chin% names(standard_snv_sub_pairs))
         },
         what = sprintf(
-            "an atomic {.cls character} (all in %s})",
+            "an atomic {.cls character} (all must in %s})",
             oxford_comma(unique(names(standard_snv_sub_pairs)))
         ),
         null_ok = TRUE
