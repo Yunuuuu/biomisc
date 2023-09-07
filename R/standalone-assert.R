@@ -1,3 +1,12 @@
+# ---
+# repo: Yunuuuu/biomisc
+# file: standalone-assert.R
+# last-updated: 2023-09-07
+# license: https://unlicense.org
+# dependencies: standalone-obj-type.R
+# imports: rlang (>= 1.1.0)
+# ---
+
 #' Report if an argument is a specific class
 #'
 #' @param x The object type which does not conform to `what`. Its
@@ -286,6 +295,12 @@ assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::cal
     }
 }
 
+#' The `format_` functions are easier to work with because they format the style
+#' eagerly. However they produce slightly incorrect style in corner cases
+#' because the formatting doesn't take into account the message type. In
+#' principle, cli themes can create different stylings depending on the message
+#' type.
+#' @noRd 
 format_val <- function(x, ...) .rlang_cli_format_inline(x, ".val", NULL, ...)
 format_emph <- function(x, ...) .rlang_cli_format_inline(x, "emph", "%s", ...)
 format_strong <- function(x, ...) {
