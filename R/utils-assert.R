@@ -146,7 +146,8 @@ assert_s3_class <- function(
 }
 
 assert_data_frame <- function(x, ..., arg = rlang::caller_arg(), call = rlang::caller_env()) {
-    assert_s3_class(x = x, is_class = "data.frame",
+    assert_s3_class(
+        x = x, is_class = "data.frame",
         what = "a data frame",
         ..., arg = arg, call = call
     )
@@ -272,13 +273,13 @@ assert_hierarchy <- function(parents, children = NULL, id1 = rlang::caller_arg(p
     }
 }
 
-assert_in <- function(x, y, arg = rlang::caller_arg(x), call = rlang::caller_env()) {
+assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::caller_env()) {
     missing_items <- setdiff(x, y)
     if (length(missing_items)) {
-        cli::cli_abort(
-            c(
-                "value allowed in {.arg {arg}}: {.val {y}}",
-                x = "erroneous value{?s}: {.val {missing_items}}"
+        rlang::abort(
+            sprintf(
+                "Only values (%s) are allowed in %s, not %s",
+                format_val(y), format_arg(arg), format_val(missing_items)
             ),
             call = call
         )

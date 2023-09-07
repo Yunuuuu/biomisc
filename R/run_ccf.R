@@ -82,7 +82,7 @@ run_ccf <- function(
     rlang::check_dots_empty()
 
     # check arguments firstly
-    assert_in(ccf_type, c("phyloCCF", "bootstrapCCF"))
+    assert_inclusive(ccf_type, c("phyloCCF", "bootstrapCCF"))
     assert_(subclonal_cn_correction, rlang::is_scalar_logical,
         "a scalar {.cls logical}",
         null_ok = TRUE, show_length = TRUE

@@ -34,10 +34,10 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
     }
     arm_values <- S4Vectors::mcols(ref_ranges)[[arm_field]]
     arm_levels <- c("p", "acen", "q", "")
-    assert_in(arm_values, arm_levels,
+    assert_inclusive(arm_values, arm_levels,
         arg = sprintf("{.arg %s}", arm_field)
     )
-    assert_in(arms, arm_levels)
+    assert_inclusive(arms, arm_levels)
     arm_values <- factor(arm_values, arm_levels)
     arm_values <- droplevels(arm_values)
 

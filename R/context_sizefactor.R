@@ -37,7 +37,7 @@ context_sizefactor <- function(context, method = c("genome", "exome", "exome2gen
         },
         what = "an atomic character with equal strings"
     )
-    assert_in(strand, c("+", "-"))
+    assert_inclusive(strand, c("+", "-"))
     ref_genome <- get_genome(ref_genome)
     calculate_context_sizefactor(
         context, ref_genome,
