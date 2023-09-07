@@ -40,10 +40,7 @@ summarize_arm <- function(
     assert_pkg("GenomeInfoDb")
     assert_pkg("S4Vectors")
     assert_string(sample_field, empty_ok = FALSE, null_ok = TRUE)
-    assert_(filter_centromere, rlang::is_scalar_logical,
-        "a scalar {.cls logical}",
-        null_ok = TRUE, show_length = TRUE
-    )
+    assert_bool(filter_centromere, null_ok = TRUE)
     assert_data_frame(seg_data)
     assert_data_frame_columns(
         seg_data,

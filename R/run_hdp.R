@@ -318,11 +318,7 @@ hdp_data_internal <- function(
     assert_(sig_active_cutoff, function(x) {
         is_scalar_numeric(x) && data.table::between(x, 0L, 1L)
     }, "a number in [0, 1]")
-    assert_(
-        remove_zero_lower_ci, rlang::is_scalar_logical,
-        "a scalar {.cls logical}",
-        show_length = TRUE
-    )
+    assert_bool(remove_zero_lower_ci)
     assert_(cohort_threshold, function(x) {
         is_scalar_numeric(x) && x >= 0L
     }, "a number not less than 0")

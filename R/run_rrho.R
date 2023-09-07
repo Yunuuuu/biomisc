@@ -585,10 +585,7 @@ rrho_heatmap <- function(
     assert_rrho(rrho_obj)
     assert_pkg("ComplexHeatmap")
     assert_pkg("circlize")
-    assert_(use_raster, rlang::is_scalar_logical,
-        msg = "a scalar {.cls logical}",
-        null_ok = TRUE, show_length =  TRUE
-    )
+    assert_bool(use_raster, null_ok = TRUE)
     heat_matrix <- t(rrho_obj$hyper_metric)
     heat_matrix <- heat_matrix[
         rev(seq_len(nrow(heat_matrix))), ,

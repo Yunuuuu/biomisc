@@ -23,10 +23,7 @@ estimate_phylo_ccf <- function(
         "a number",
         null_ok = TRUE, show_length = TRUE
     )
-    assert_(conipher, rlang::is_scalar_logical,
-        "a scalar {.cls logical}",
-        null_ok = TRUE, show_length = TRUE
-    )
+    assert_bool(conipher, null_ok = TRUE)
 
     # In order to estimate whether mutations were clonal or subclonal, and the
     # clonal structure of each tumor, a modified version of PyClone was used.

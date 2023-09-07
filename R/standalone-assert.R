@@ -98,7 +98,7 @@ is_installed <- local({
     }
 })
 
-# scalar object
+# scalar object ----------------------------------
 assert_string <- function(
     x, empty_ok = TRUE, na_ok = FALSE, show_length = TRUE, ...,
     arg = rlang::caller_arg(x),
@@ -134,7 +134,38 @@ assert_string <- function(
     FALSE
 }
 
-# S3 object
+assert_bool <- function(
+    x, na_ok = FALSE, show_length = TRUE, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    what <-  c("`TRUE`", "`FALSE`")
+    if (na_ok) {
+        what <- c(what, format_code("NA"))
+    }
+    assert_(
+        x = x,
+        assert_fn = function(x) {
+            .rlang_check_is_bool(x, na_ok = na_ok)
+        }, what = what,
+        show_length = show_length,
+        ...,
+        arg = arg,
+        call = call
+    )
+}
+
+.rlang_check_is_bool <- function(x, na_ok) {
+    if (rlang::is_bool(x)) {
+        return(TRUE)
+    }
+    if (na_ok && identical(x, NA)) {
+        return(TRUE)
+    }
+    FALSE
+}
+
+
+# S3 object ----------------------------------------
 assert_s3_class <- function(
     x, is_class, what, ...,
     arg = rlang::caller_arg(x),
@@ -177,7 +208,7 @@ assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(
     }
 }
 
-# S4 object
+# S4 object -------------------------------------
 assert_s4_class <- function(
     x, is_class, what, ...,
     arg = rlang::caller_arg(x),
@@ -244,7 +275,7 @@ stop_input_length <- function(
 }
 
 
-# Other utils
+# Other utils ---------------------------------
 assert_data_frame_hierarchy <- function(x, parent_field, child_field = NULL, arg_children = rlang::caller_arg(child_field), ..., arg = rlang::caller_arg(x), call = rlang::caller_env()) {
     id1 <- format_code(sprintf("%s[[\"%s\"]]", arg, parent_field))
     id2 <- child_field %|n|%
@@ -300,7 +331,7 @@ assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::cal
 #' because the formatting doesn't take into account the message type. In
 #' principle, cli themes can create different stylings depending on the message
 #' type.
-#' @noRd 
+#' @noRd
 format_val <- function(x, ...) .rlang_cli_format_inline(x, ".val", NULL, ...)
 format_emph <- function(x, ...) .rlang_cli_format_inline(x, "emph", "%s", ...)
 format_strong <- function(x, ...) {

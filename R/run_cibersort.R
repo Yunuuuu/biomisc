@@ -64,12 +64,8 @@ run_cibersort <- function(mixture_data, sig_data = NULL,
     assert_pkg("preprocessCore")
     assert_(mixture_data, is.matrix, "a {.cls matrix}")
     assert_(sig_data, is.matrix, "a {.cls matrix}", null_ok = TRUE)
-    assert_(quantile_norm, rlang::is_scalar_logical,
-        "a scalar {.cls logical}", show_length = TRUE
-    )
-    assert_(absolute, rlang::is_scalar_logical,
-        "a scalar {.cls logical}", show_length = TRUE
-    )
+    assert_bool(quantile_norm)
+    assert_bool(absolute)
 
     if (absolute) {
         abs_method <- match.arg(abs_method, c("no_sumto1", "sig_score"))

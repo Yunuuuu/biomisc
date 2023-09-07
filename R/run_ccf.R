@@ -83,10 +83,7 @@ run_ccf <- function(
 
     # check arguments firstly
     assert_inclusive(ccf_type, c("phyloCCF", "bootstrapCCF"))
-    assert_(subclonal_cn_correction, rlang::is_scalar_logical,
-        "a scalar {.cls logical}",
-        null_ok = TRUE, show_length = TRUE
-    )
+    assert_bool(subclonal_cn_correction, null_ok = TRUE)
     assert_string(on_patient, empty_ok = FALSE, null_ok = TRUE)
     assert_string(on_sample, empty_ok = FALSE, null_ok = TRUE)
     assert_string(purity_field, empty_ok = FALSE, null_ok = FALSE)
