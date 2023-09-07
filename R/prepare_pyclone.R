@@ -72,8 +72,8 @@ prepare_pyclone <- function(
         "major_cn"
     )
     if (pyclone_vi) {
-        assert_(purity_field, rlang::is_scalar_character,
-            "a string",
+        assert_string(purity_field,
+            empty_ok = FALSE,
             null_ok = TRUE
         )
         if (is.null(purity_field)) {

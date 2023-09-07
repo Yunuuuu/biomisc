@@ -39,16 +39,14 @@ summarize_arm <- function(
     assert_pkg("GenomicRanges")
     assert_pkg("GenomeInfoDb")
     assert_pkg("S4Vectors")
-    assert_(sample_field, rlang::is_scalar_character,
-        "a string",
-        null_ok = TRUE, show_length = TRUE
-    )
+    assert_string(sample_field, empty_ok = FALSE, null_ok = TRUE)
     assert_(filter_centromere, rlang::is_scalar_logical,
         "a scalar {.cls logical}",
         null_ok = TRUE, show_length = TRUE
     )
     assert_data_frame(seg_data)
-    assert_data_frame_columns(seg_data,
+    assert_data_frame_columns(
+        seg_data,
         c(other_fields, chr_field, start_field, end_field, group_fields)
     )
     if (!is.null(group_fields)) {
@@ -125,20 +123,18 @@ summarize_arm <- function(
 }
 
 prepare_granges <- function(data, chr_field, start_field, end_field, keep.extra.columns = TRUE, ignore.strand = TRUE, call = parent.frame()) {
-    assert_(chr_field, rlang::is_scalar_character,
-        "a string", show_length = TRUE,
-        arg = rlang::caller_arg(chr_field),
-        call = call
+    assert_string(chr_field,
+        empty_ok = FALSE,
+        arg = rlang::caller_arg(chr_field), call = call
     )
-    assert_(start_field, rlang::is_scalar_character,
-        "a string", show_length = TRUE,
+    assert_string(start_field,
+        empty_ok = FALSE,
         arg = rlang::caller_arg(start_field),
         call = call
     )
-    assert_(end_field, rlang::is_scalar_character,
-        "a string", show_length = TRUE,
-        arg = rlang::caller_arg(end_field),
-        call = call
+    assert_string(end_field,
+        empty_ok = FALSE,
+        arg = rlang::caller_arg(end_field), call = call
     )
     GenomicRanges::makeGRangesFromDataFrame(
         df = as.data.frame(data,

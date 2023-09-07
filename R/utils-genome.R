@@ -29,13 +29,13 @@ get_arm_ranges <- function(ref_ranges, arm_field = NULL, arms = c("p", "q")) {
             ))
         }
         arm_field <- arm_field[[1L]]
-    } else if (!rlang::is_scalar_character(arm_field)) {
-        cli::cli_abort("{.arg arm_field} should be a scalar string")
+    } else if (!rlang::is_string(arm_field)) {
+        cli::cli_abort("{.arg arm_field} should be a single string")
     }
     arm_values <- S4Vectors::mcols(ref_ranges)[[arm_field]]
     arm_levels <- c("p", "acen", "q", "")
     assert_in(arm_values, arm_levels,
-        arg_x = sprintf("{.arg %s}", arm_field)
+        arg = sprintf("{.arg %s}", arm_field)
     )
     assert_in(arms, arm_levels)
     arm_values <- factor(arm_values, arm_levels)

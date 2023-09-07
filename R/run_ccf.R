@@ -87,38 +87,13 @@ run_ccf <- function(
         "a scalar {.cls logical}",
         null_ok = TRUE, show_length = TRUE
     )
-    assert_(on_patient, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        null_ok = TRUE, show_length = TRUE
-    )
-    assert_(on_sample, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        null_ok = TRUE, show_length = TRUE
-    )
-    assert_(purity_field, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        null_ok = FALSE, show_length = TRUE
-    )
-    assert_(
-        on_chr, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        show_length = TRUE
-    )
-    assert_(
-        mut_pos, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        show_length = TRUE
-    )
-    assert_(
-        start_field, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        show_length = TRUE
-    )
-    assert_(
-        end_field, rlang::is_scalar_character,
-        "a scalar {.cls character}",
-        show_length = TRUE
-    )
+    assert_string(on_patient, empty_ok = FALSE, null_ok = TRUE)
+    assert_string(on_sample, empty_ok = FALSE, null_ok = TRUE)
+    assert_string(purity_field, empty_ok = FALSE, null_ok = FALSE)
+    assert_string(on_chr, empty_ok = FALSE)
+    assert_string(mut_pos, empty_ok = FALSE)
+    assert_string(start_field, empty_ok = FALSE)
+    assert_string(end_field, empty_ok = FALSE)
     assert_(normal_cn,
         function(x) {
             is_scalar_numeric(x) || rlang::is_scalar_character(x)
@@ -251,11 +226,7 @@ run_ccf <- function(
         cli::cli_inform(
             "Using {.arg gender_field} to define {.field normal_cn}"
         )
-        assert_(
-            gender_field, rlang::is_scalar_character,
-            "a scalar {.cls character}",
-            show_length = TRUE
-        )
+        assert_string(gender_field, empty_ok = FALSE)
         # assert every samples provided only one gender value
         assert_data_frame_columns(out, gender_field,
             arg = c("mut_data", "cnv_data")

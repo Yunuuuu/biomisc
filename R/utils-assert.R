@@ -28,44 +28,6 @@ assert_ <- function(
     )
 }
 
-assert_s3_class <- function(
-    x, is_class, what, ...,
-    arg = rlang::caller_arg(x),
-    call = rlang::caller_env()) {
-    if (rlang::is_scalar_character(is_class)) {
-        class <- is_class
-        is_class <- function(x) {
-            inherits(x, what = class)
-        }
-        if (missing(what)) {
-            what <- class
-        }
-    }
-    assert_(
-        x = x, assert_fn = is_class, what = what,
-        ..., arg = arg, call = call
-    )
-}
-
-assert_s4_class <- function(
-    x, is_class, what, ...,
-    arg = rlang::caller_arg(x),
-    call = rlang::caller_env()) {
-    if (rlang::is_scalar_character(is_class)) {
-        class <- is_class
-        is_class <- function(x) {
-            methods::is(x, class)
-        }
-        if (missing(what)) {
-            what <- class
-        }
-    }
-    assert_(
-        x = x, assert_fn = is_class, what = what,
-        ..., arg = arg, call = call
-    )
-}
-
 stop_input_type <- function(
     x, what,
     null_ok = FALSE,
@@ -127,6 +89,104 @@ is_installed <- local({
     }
 })
 
+# scalar object
+assert_string <- function(
+    x, empty_ok = TRUE, na_ok = FALSE, show_length = TRUE, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    what <- "a single string"
+    if (!empty_ok) {
+        what <- paste0(what, "(empty string is not allowed)")
+    }
+    if (na_ok) {
+        what <- c(what, format_code("NA"))
+    }
+    assert_(
+        x = x,
+        assert_fn = function(x) {
+            .rlang_check_is_string(x, empty_ok = empty_ok, na_ok = na_ok)
+        }, what = what,
+        show_length = show_length,
+        ...,
+        arg = arg,
+        call = call
+    )
+}
+
+.rlang_check_is_string <- function(x, empty_ok, na_ok) {
+    if (rlang::is_string(x)) {
+        if (empty_ok || !rlang::is_string(x, "")) {
+            return(TRUE)
+        }
+    }
+    if (na_ok && (identical(x, NA) || identical(x, NA_character_))) {
+        return(TRUE)
+    }
+    FALSE
+}
+
+# S3 object
+assert_s3_class <- function(
+    x, is_class, what, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    if (rlang::is_string(is_class)) {
+        class <- is_class
+        is_class <- function(x) {
+            inherits(x, what = class)
+        }
+        if (missing(what)) {
+            what <- class
+        }
+    }
+    assert_(
+        x = x, assert_fn = is_class, what = what,
+        ..., arg = arg, call = call
+    )
+}
+
+assert_data_frame <- function(x, ..., arg = rlang::caller_arg(), call = rlang::caller_env()) {
+    assert_s3_class(x = x, is_class = "data.frame",
+        what = "a data frame",
+        ..., arg = arg, call = call
+    )
+}
+
+assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(x), call = rlang::caller_env()) {
+    missing_cols <- setdiff(columns, names(x))
+    if (length(missing_cols)) {
+        rlang::abort(
+            sprintf(
+                "One of %s must contain columns (%s), missing columns: %s",
+                format_arg(args),
+                oxford_comma(columns),
+                oxford_comma(missing_cols)
+            ), ...,
+            call = call
+        )
+    }
+}
+
+# S4 object
+assert_s4_class <- function(
+    x, is_class, what, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    if (rlang::is_string(is_class)) {
+        class <- is_class
+        is_class <- function(x) {
+            methods::is(x, class)
+        }
+        if (missing(what)) {
+            what <- class
+        }
+    }
+    assert_(
+        x = x, assert_fn = is_class, what = what,
+        ..., arg = arg, call = call
+    )
+}
+
 #' Report if an argument has specific length
 #' @keywords internal
 #' @noRd
@@ -173,28 +233,8 @@ stop_input_length <- function(
     rlang::abort(msg, ..., call = call)
 }
 
-assert_data_frame <- function(x, ..., arg = rlang::caller_arg(), call = rlang::caller_env()) {
-    assert_s3_class(x, "data.frame",
-        what = "a data frame",
-        ..., arg = arg, call = call
-    )
-}
 
-assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(x), call = rlang::caller_env()) {
-    missing_cols <- setdiff(columns, names(x))
-    if (length(missing_cols)) {
-        rlang::abort(
-            sprintf(
-                "One of %s must contain columns (%s), missing columns: %s",
-                format_arg(args),
-                oxford_comma(columns),
-                oxford_comma(missing_cols)
-            ), ...,
-            call = call
-        )
-    }
-}
-
+# Other utils
 assert_data_frame_hierarchy <- function(x, parent_field, child_field = NULL, arg_children = rlang::caller_arg(child_field), ..., arg = rlang::caller_arg(x), call = rlang::caller_env()) {
     id1 <- format_code(sprintf("%s[[\"%s\"]]", arg, parent_field))
     id2 <- child_field %|n|%
@@ -232,12 +272,12 @@ assert_hierarchy <- function(parents, children = NULL, id1 = rlang::caller_arg(p
     }
 }
 
-assert_in <- function(x, y, arg_x = rlang::caller_arg(x), call = rlang::caller_env()) {
+assert_in <- function(x, y, arg = rlang::caller_arg(x), call = rlang::caller_env()) {
     missing_items <- setdiff(x, y)
     if (length(missing_items)) {
         cli::cli_abort(
             c(
-                "value allowed in {.arg {arg_x}}: {.val {y}}",
+                "value allowed in {.arg {arg}}: {.val {y}}",
                 x = "erroneous value{?s}: {.val {missing_items}}"
             ),
             call = call

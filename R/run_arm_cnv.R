@@ -35,14 +35,8 @@ run_arm_cnv <- function(
     assert_pkg("GenomeInfoDb")
     assert_pkg("matrixStats")
     cnv_mode <- match.arg(cnv_mode)
-    assert_(sample_field, rlang::is_scalar_character,
-        "a string",
-        null_ok = TRUE, show_length = TRUE
-    )
-    assert_(
-        cnv_field, rlang::is_scalar_character,
-        "a string",
-    )
+    assert_string(sample_field, empty_ok = FALSE, null_ok = TRUE)
+    assert_string(cnv_field, empty_ok = FALSE)
     group_fields <- NULL
     if (cnv_mode == "abs") {
         assert_(ploidy_field,

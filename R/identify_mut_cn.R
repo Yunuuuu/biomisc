@@ -45,40 +45,33 @@ mut_match_cn <- function(
     start_field_arg = rlang::caller_arg(start_field),
     end_field_arg = rlang::caller_arg(end_field),
     call = parent.frame()) {
-    assert_(on_patient, rlang::is_scalar_character,
-        "a string",
-        null_ok = TRUE, show_length = TRUE,
-        arg = on_patient_arg,
+    assert_string(on_patient,
+        empty_ok = FALSE,
+        null_ok = TRUE, arg = on_patient_arg,
         call = call
     )
-    assert_(on_sample, rlang::is_scalar_character,
-        "a string",
-        cross_msg = NULL,
-        null_ok = TRUE, show_length = TRUE,
-        arg = on_sample_arg,
+    assert_string(on_sample,
+        empty_ok = FALSE,
+        null_ok = TRUE, arg = on_sample_arg,
         call = call
     )
-    assert_(on_chr, rlang::is_scalar_character,
-        "a string",
-        cross_msg = NULL, show_length = TRUE,
+    assert_string(on_chr,
+        empty_ok = FALSE,
         arg = on_chr_arg,
         call = call
     )
-    assert_(mut_pos, rlang::is_scalar_character,
-        "a string",
-        cross_msg = NULL, show_length = TRUE,
+    assert_string(mut_pos,
+        empty_ok = FALSE,
         arg = mut_pos_arg,
         call = call
     )
-    assert_(start_field, rlang::is_scalar_character,
-        "a string",
-        cross_msg = NULL, show_length = TRUE,
+    assert_string(start_field,
+        empty_ok = FALSE,
         arg = start_field_arg,
         call = call
     )
-    assert_(end_field, rlang::is_scalar_character,
-        "a string",
-        cross_msg = NULL, show_length = TRUE,
+    assert_string(end_field,
+        empty_ok = FALSE,
         arg = end_field_arg,
         call = call
     )

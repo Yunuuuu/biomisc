@@ -16,21 +16,9 @@ estimate_phylo_ccf <- function(
     chr_field = NULL, pos_field = NULL, ref_field = NULL,
     alt_field = NULL, indel_field = NULL,
     min_vaf_to_explain = NULL, conipher = FALSE) {
-    assert_(
-        ref_field, rlang::is_scalar_character,
-        "a string",
-        null_ok = is.null(indel_field), show_length = TRUE
-    )
-    assert_(
-        alt_field, rlang::is_scalar_character,
-        "a string",
-        null_ok = TRUE, show_length = TRUE
-    )
-    assert_(
-        indel_field, rlang::is_scalar_character,
-        "a string",
-        null_ok = TRUE, show_length = TRUE
-    )
+    assert_string(ref_field, empty_ok = FALSE, null_ok = is.null(indel_field))
+    assert_string(alt_field, empty_ok = FALSE, null_ok = TRUE)
+    assert_string(indel_field, empty_ok = FALSE, null_ok = TRUE)
     assert_(min_vaf_to_explain, is_scalar_numeric,
         "a number",
         null_ok = TRUE, show_length = TRUE
