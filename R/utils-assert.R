@@ -195,47 +195,40 @@ assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(
     }
 }
 
-# assert hierarchy relationship, every value only correspond to a unique id
-assert_nest <- function(data, uid, group = NULL, arg = rlang::caller_arg(data), tag_uid = uid, tag_group = group, msg = NULL, cross_msg = NULL, cross_format = c("pair", "group", "uid"), info_msg = NULL, call = rlang::caller_env()) {
-    if (is.null(group)) {
-        pairs <- list(unique(uid))
-    } else {
-        pairs <- lapply(
-            split(data[[uid]], data[[group]], drop = TRUE),
-            unique
-        )
-    }
-    pairs <- pairs[lengths(pairs) > 1L]
-    if (length(pairs) > 0L) {
-        cross_format <- match.arg(cross_format)
-        if (is.null(group)) {
-            msg <- msg %||% "A single {.field {tag_group}}"
-            cross_msg <- cross_msg %||%
-                switch(cross_format,
-                    group = NULL,
-                    uid = ,
-                    pair = "Incorrect {.field {tag_uid}}: {.val {pairs[[1L]]}}",
-                )
-        } else {
-            msg <- msg %||% "Every {.field {tag_group}}"
-            cross_msg <- cross_msg %||%
-                switch(cross_format,
-                    group = "{tag_group} with multiple {tag_uid}: {.val {names(pairs)}}",
-                    uid = "{tag_uid} with multiple {tag_group}: {.val {pairs}}",
-                    pair = vapply(seq_along(pairs), function(i) {
-                        sprintf(
-                            "{.field {names(pairs)[[%d]]}}: {.val {pairs[[%d]]}}",
-                            i, i
-                        )
-                    }, character(1L), USE.NAMES = FALSE)
-                )
+assert_data_frame_hierarchy <- function(x, parent_field, child_field = NULL, arg_children = rlang::caller_arg(child_field), ..., arg = rlang::caller_arg(x), call = rlang::caller_env()) {
+    id1 <- format_code(sprintf("%s[[\"%s\"]]", arg, parent_field))
+    id2 <- child_field %|n|%
+        format_code(sprintf("%s[[\"%s\"]]", arg, child_field))
+    assert_hierarchy(
+        parents = x[[parent_field]],
+        children = child_field %|n|% x[[child_field]],
+        id1 = id1, id2 = id2, arg_children = arg_children,
+        ..., call = call
+    )
+}
+
+# assert hierarchy relationship, every child only has one parent
+assert_hierarchy <- function(parents, children = NULL, id1 = rlang::caller_arg(parents), id2 = rlang::caller_arg(children), arg_children = rlang::caller_arg(children), ..., call = rlang::caller_env()) {
+    if (is.null(children)) {
+        n_unique <- length(unique(parents))
+        if (n_unique > 1L) {
+            rlang::abort(sprintf(
+                "Only a unique value of %s can be used as no %s provided",
+                id1, format_arg(arg_children, final = "or")
+            ), ..., call = call)
         }
-        msg <- paste(
-            msg,
-            "can only have one {.field {tag_uid}} value in {.arg {arg}}"
+    } else {
+        n_unique <- vapply(
+            split(parents, children, drop = TRUE),
+            function(x) length(unique(x)), integer(1L)
         )
-        names(cross_msg) <- rlang::rep_along(cross_msg, "x")
-        cli::cli_abort(c(msg, cross_msg, i = info_msg), call = call)
+        failed_idx <- n_unique > 1L
+        if (any(failed_idx)) {
+            rlang::abort(sprintf(
+                "Multiple %s found in %s (%s)", id1, id2,
+                format_val(names(n_unique)[failed_idx])
+            ), ..., call = call)
+        }
     }
 }
 

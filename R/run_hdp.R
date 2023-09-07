@@ -182,7 +182,7 @@ run_hdp <- function(
     )
 }
 
-hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree), arg2 = rlang::caller_arg(matrix), call = parent.frame()) {
+hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree), arg2 = rlang::caller_arg(matrix), call = rlang::caller_env()) {
     assert_s3_class(
         dp_tree, "data.frame",
         null_ok = TRUE, arg = arg1, call = call
@@ -198,7 +198,10 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
         if (ncol(dp_tree) >= 2L) {
             all_items <- names(dp_tree)
             for (kk in seq_len(ncol(dp_tree) - 1L)) {
-                assert_nest(dp_tree, all_items[[kk + 1L]], all_items[[kk]])
+                assert_data_frame_hierarchy(
+                    dp_tree, all_items[[kk + 1L]], all_items[[kk]],
+                    call = call
+                )
             }
         }
     } else {
@@ -317,7 +320,8 @@ hdp_data_internal <- function(
     }, "a number in [0, 1]")
     assert_(
         remove_zero_lower_ci, rlang::is_scalar_logical,
-        "a scalar {.cls logical}", show_length = TRUE
+        "a scalar {.cls logical}",
+        show_length = TRUE
     )
     assert_(cohort_threshold, function(x) {
         is_scalar_numeric(x) && x >= 0L

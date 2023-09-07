@@ -52,7 +52,7 @@ run_arm_cnv <- function(
             null_ok = TRUE, show_length = TRUE
         )
         if (is.character(ploidy_field)) {
-            assert_nest(seg_data, ploidy_field, group = sample_field)
+            assert_data_frame_hierarchy(seg_data, ploidy_field, sample_field)
             group_fields <- ploidy_field
         }
     } else {

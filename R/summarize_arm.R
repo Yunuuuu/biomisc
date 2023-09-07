@@ -53,9 +53,9 @@ summarize_arm <- function(
     )
     if (!is.null(group_fields)) {
         lapply(as.character(group_fields),
-            assert_nest,
-            data = seg_data,
-            group = sample_field
+            assert_data_frame_hierarchy,
+            x = seg_data,
+            child_field = sample_field
         )
     }
     seg_ranges <- prepare_granges(

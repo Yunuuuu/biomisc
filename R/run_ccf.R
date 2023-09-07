@@ -101,19 +101,23 @@ run_ccf <- function(
     )
     assert_(
         on_chr, rlang::is_scalar_character,
-        "a scalar {.cls character}", show_length = TRUE
+        "a scalar {.cls character}",
+        show_length = TRUE
     )
     assert_(
         mut_pos, rlang::is_scalar_character,
-        "a scalar {.cls character}", show_length = TRUE
+        "a scalar {.cls character}",
+        show_length = TRUE
     )
     assert_(
         start_field, rlang::is_scalar_character,
-        "a scalar {.cls character}", show_length = TRUE
+        "a scalar {.cls character}",
+        show_length = TRUE
     )
     assert_(
         end_field, rlang::is_scalar_character,
-        "a scalar {.cls character}", show_length = TRUE
+        "a scalar {.cls character}",
+        show_length = TRUE
     )
     assert_(normal_cn,
         function(x) {
@@ -182,7 +186,8 @@ run_ccf <- function(
 
     # assert every sample has only one patient
     if (!is.null(on_sample) && !is.null(on_patient)) {
-        assert_nest(out, on_patient, on_sample)
+        assert_data_frame_hierarchy(out, on_patient, on_sample)
+        group <- on_sample
         init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {length(unique(out[[on_sample]]))}} sample{?s} from {.val {length(unique(out[[on_patient]]))}} patient{?s}"
     } else if (!is.null(on_patient)) {
         group <- on_patient
@@ -195,22 +200,18 @@ run_ccf <- function(
         init_msg <- "Processing {.val 1} sample"
     }
 
-    if (is.null(group)) {
-        info_msg <- "try to set {.arg on_patient} or {.arg on_sample}"
-    } else {
-        info_msg <- NULL
-    }
-
     # assert every necessary column is in the combined data
     assert_data_frame_columns(out, c(purity_field, kept_cols),
         arg = c("mut_data", "cnv_data")
     )
 
     # assert every samples provided only have one purity value
-    assert_nest(out, purity_field, group, info_msg = info_msg)
+    assert_data_frame_hierarchy(out, purity_field, group,
+        arg_children = c("on_patient", "on_sample")
+    )
     data.table::setnames(out, purity_field, "purity")
     if (!all(data.table::between(out$purity, 0L, 1L))) {
-        cli::cli_abort("purity must in [0, 1]")
+        cli::cli_abort("The value of purity must be [0, 1]")
     }
     all_seqs <- as.character(out[[on_chr]])
     if (!is.null(contigs)) {
@@ -252,7 +253,8 @@ run_ccf <- function(
         )
         assert_(
             gender_field, rlang::is_scalar_character,
-            "a scalar {.cls character}", show_length = TRUE
+            "a scalar {.cls character}",
+            show_length = TRUE
         )
         # assert every samples provided only one gender value
         assert_data_frame_columns(out, gender_field,
@@ -261,9 +263,8 @@ run_ccf <- function(
         if (!all(out[[gender_field]] %in% c("male", "female"))) {
             cli::cli_abort("Only {.val male} and {.val female} are supported in {.field {gender_field}} column")
         }
-        assert_nest(
-            out, gender_field, group,
-            cross_format = "group", info_msg = info_msg
+        assert_data_frame_hierarchy(out, gender_field, group,
+            arg_children = c("on_patient", "on_sample")
         )
         out$normal_cn <- define_normal_cn(
             out[[gender_field]], all_seqs, allosomes
