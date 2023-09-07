@@ -80,14 +80,9 @@ stop_input_type <- function(
     if (length(what)) {
         what <- oxford_comma(what, final = "or")
     }
-    if (inherits(arg, "AsIs")) {
-        .format_arg <- identity
-    } else {
-        .format_arg <- format_arg
-    }
     msg <- sprintf(
         "%s must be %s, not %s.",
-        .format_arg(arg),
+        format_arg(arg),
         what,
         obj_type_friendly(x, value = show_value, length = show_length)
     )
@@ -170,14 +165,9 @@ stop_input_length <- function(
     if (length(what)) {
         what <- paste0(what, collapse = " or ")
     }
-    if (inherits(arg, "AsIs")) {
-        .format_arg <- identity
-    } else {
-        .format_arg <- format_arg
-    }
     msg <- sprintf(
         "%s must be %s, not of length %s.",
-        .format_arg(arg),
+        format_arg(arg),
         what, format_val(length(x))
     )
     rlang::abort(msg, ..., call = call)
@@ -193,15 +183,10 @@ assert_data_frame <- function(x, ..., arg = rlang::caller_arg(), call = rlang::c
 assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(x), call = rlang::caller_env()) {
     missing_cols <- setdiff(columns, names(x))
     if (length(missing_cols)) {
-        if (inherits(args, "AsIs")) {
-            .format_arg <- oxford_comma
-        } else {
-            .format_arg <- format_arg
-        }
         rlang::abort(
             sprintf(
                 "One of %s must contain columns (%s), missing columns: %s",
-                .format_arg(args), 
+                format_arg(args),
                 oxford_comma(columns),
                 oxford_comma(missing_cols)
             ), ...,
@@ -296,7 +281,9 @@ format_cls <- function(x, ...) {
 #' @return A string
 #' @noRd
 .rlang_cli_format_inline <- function(x, span, fallback = "`%s`", ...) {
-    if (.rlang_cli_has_cli()) {
+    if (inherits(x, "AsIs")) {
+        oxford_comma(chr = x, ...)
+    } else if (.rlang_cli_has_cli()) {
         cli::format_inline(oxford_comma(chr = paste0("{.", span, " {x}}"), ...))
     } else {
         oxford_comma(
