@@ -35,8 +35,8 @@
 cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_fraction = 0.002, silhouette = TRUE, ..., cores = 0L) {
     if (isTRUE(silhouette)) assert_pkg("cluster")
     # RcppML package must be loaded to run nmf
-    if (require("RcppML", quietly = TRUE, character.only = TRUE) &&
-        utils::packageVersion("RcppML") >= "0.5.5") { # nolint
+    if (utils::packageVersion("RcppML") < "0.5.5" ||
+        !require("RcppML", quietly = TRUE, character.only = TRUE)) { # nolint
         cli::cli_abort(sprintf(
             "%s (>=0.5.5) must be installed to use %s.",
             format_pkg("RcppML"), format_fn("cnmf")
