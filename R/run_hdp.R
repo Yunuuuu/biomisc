@@ -299,7 +299,7 @@ print.HDP <- function(x, ...) {
 #' @export
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
-    assert_(x, "HDP", "a {.cls HDP} object returned by {.fn run_hdp}",
+    assert_s3_class(x, "HDP", "a {.cls HDP} object returned by {.fn run_hdp}",
         cross_msg = NULL
     )
     hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
