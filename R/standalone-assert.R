@@ -332,7 +332,7 @@ assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::cal
 #' principle, cli themes can create different stylings depending on the message
 #' type.
 #' @noRd
-format_val <- function(x, ...) .rlang_cli_format_inline(x, ".val", NULL, ...)
+format_val <- function(x, ...) .rlang_cli_format_inline(x, "val", NULL, ...)
 format_emph <- function(x, ...) .rlang_cli_format_inline(x, "emph", "%s", ...)
 format_strong <- function(x, ...) {
     .rlang_cli_format_inline(x, "strong", "%s", ...)
