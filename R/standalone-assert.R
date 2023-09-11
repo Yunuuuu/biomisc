@@ -3,9 +3,8 @@
 # file: standalone-assert.R
 # last-updated: 2023-09-07
 # license: https://unlicense.org
-# dependencies:
-#   standalone-obj-type.R,
-#   standalone-cli.R
+# dependencies: standalone-obj-type.R
+# dependencies: standalone-cli.R
 # imports: rlang (>= 1.1.0)
 # ---
 
