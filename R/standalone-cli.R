@@ -16,10 +16,9 @@
 #' type.
 #' @noRd
 format_val <- function(x) .rlang_cli_format_inline(x, "val", NULL)
-format_emph <- function(x) .rlang_cli_format_inline(x, "emph", "%s")
-format_strong <- function(x) {
-    .rlang_cli_format_inline(x, "strong", "%s")
-}
+format_emph <- function(x) .rlang_cli_format_inline(x, "emph", NULL)
+format_strong <- function(x) .rlang_cli_format_inline(x, "strong", NULL)
+
 format_code <- function(x) .rlang_cli_format_inline(x, "code", "`%s`")
 format_q <- function(x) .rlang_cli_format_inline(x, "q", NULL)
 format_pkg <- function(x) .rlang_cli_format_inline(x, "pkg", NULL)
