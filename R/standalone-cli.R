@@ -3,7 +3,6 @@
 # file: standalone-cli.R
 # last-updated: 2023-05-01
 # license: https://unlicense.org
-# imports: utils
 # ---
 #
 # Provides a minimal shim API to format message elements consistently
@@ -101,3 +100,24 @@ is_installed <- local({
         out
     }
 })
+
+# utils function to collapse characters ---------------------------
+oxford_comma <- function(chr, sep = ", ", final = "and") {
+    n <- length(chr)
+
+    if (n < 2L) {
+        return(chr)
+    }
+
+    head <- chr[seq_len(n - 1L)]
+    last <- chr[n]
+
+    head <- paste(head, collapse = sep)
+
+    # Write a or b. But a, b, or c.
+    if (n > 2L) {
+        paste0(head, sep, final, " ", last)
+    } else {
+        paste0(head, " ", final, " ", last)
+    }
+}

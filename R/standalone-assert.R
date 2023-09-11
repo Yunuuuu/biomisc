@@ -315,24 +315,3 @@ assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::cal
         )
     }
 }
-
-# utils function for assert_* -----------------------------
-oxford_comma <- function(chr, sep = ", ", final = "and") {
-    n <- length(chr)
-
-    if (n < 2L) {
-        return(chr)
-    }
-
-    head <- chr[seq_len(n - 1L)]
-    last <- chr[n]
-
-    head <- paste(head, collapse = sep)
-
-    # Write a or b. But a, b, or c.
-    if (n > 2L) {
-        paste0(head, sep, final, " ", last)
-    } else {
-        paste0(head, " ", final, " ", last)
-    }
-}
