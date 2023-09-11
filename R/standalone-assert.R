@@ -3,7 +3,9 @@
 # file: standalone-assert.R
 # last-updated: 2023-09-07
 # license: https://unlicense.org
-# dependencies: standalone-obj-type.R
+# dependencies:
+#   standalone-obj-type.R
+#   standalone-cli.R
 # imports: rlang (>= 1.1.0)
 # ---
 
@@ -60,6 +62,8 @@ stop_input_type <- function(
     rlang::abort(msg, ..., call = call, arg = arg)
 }
 
+#' Report if an package installed
+#' @noRd 
 assert_pkg <- function(pkg, version = NULL, fun = NULL, call = rlang::caller_env()) {
     if (!is_installed(pkg, version = version)) {
         if (is.null(fun)) {
@@ -79,24 +83,6 @@ assert_pkg <- function(pkg, version = NULL, fun = NULL, call = rlang::caller_env
         )
     }
 }
-
-is_installed <- local({
-    cache <- new.env()
-    function(pkg, version = NULL) {
-        id <- if (is.null(version)) pkg else paste(pkg, version, sep = ":")
-        out <- cache[[id]]
-        if (is.null(out)) {
-            if (is.null(version)) {
-                out <- requireNamespace(pkg, quietly = TRUE)
-            } else {
-                out <- requireNamespace(pkg, quietly = TRUE) &&
-                    utils::packageVersion(pkg) >= version
-            }
-            cache[[id]] <<- out
-        }
-        out
-    }
-})
 
 # scalar object ----------------------------------
 assert_string <- function(
@@ -138,7 +124,7 @@ assert_bool <- function(
     x, na_ok = FALSE, show_length = TRUE, ...,
     arg = rlang::caller_arg(x),
     call = rlang::caller_env()) {
-    what <-  c("`TRUE`", "`FALSE`")
+    what <- c("`TRUE`", "`FALSE`")
     if (na_ok) {
         what <- c(what, format_code("NA"))
     }
@@ -197,12 +183,15 @@ assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(
     missing_cols <- setdiff(columns, names(x))
     if (length(missing_cols)) {
         rlang::abort(
-            sprintf(
-                "One of %s must contain columns (%s), missing columns: %s",
-                format_arg(args),
-                oxford_comma(columns),
-                oxford_comma(missing_cols)
-            ), ...,
+            c(
+                sprintf(
+                    "One of %s must contain columns: %s",
+                    oxford_comma(format_arg(args), final = "or"),
+                    oxford_comma(columns)
+                ),
+                x = sprintf("missing columns: %s", oxford_comma(missing_cols))
+            ),
+            ...,
             call = call
         )
     }
@@ -275,27 +264,27 @@ stop_input_length <- function(
 }
 
 
-# Other utils ---------------------------------
+# Other assert function ---------------------------------
 assert_data_frame_hierarchy <- function(x, parent_field, child_field = NULL, arg_children = rlang::caller_arg(child_field), ..., arg = rlang::caller_arg(x), call = rlang::caller_env()) {
-    id1 <- format_code(sprintf("%s[[\"%s\"]]", arg, parent_field))
-    id2 <- child_field %|n|%
+    id_parent <- format_code(sprintf("%s[[\"%s\"]]", arg, parent_field))
+    id_child <- child_field %|n|%
         format_code(sprintf("%s[[\"%s\"]]", arg, child_field))
     assert_hierarchy(
         parents = x[[parent_field]],
         children = child_field %|n|% x[[child_field]],
-        id1 = id1, id2 = id2, arg_children = arg_children,
+        id_parent = id_parent, id_child = id_child, arg_children = arg_children,
         ..., call = call
     )
 }
 
 # assert hierarchy relationship, every child only has one parent
-assert_hierarchy <- function(parents, children = NULL, id1 = rlang::caller_arg(parents), id2 = rlang::caller_arg(children), arg_children = rlang::caller_arg(children), ..., call = rlang::caller_env()) {
+assert_hierarchy <- function(parents, children = NULL, id_parent = rlang::caller_arg(parents), id_child = rlang::caller_arg(children), arg_children = rlang::caller_arg(children), ..., call = rlang::caller_env()) {
     if (is.null(children)) {
         n_unique <- length(unique(parents))
         if (n_unique > 1L) {
             rlang::abort(sprintf(
                 "Only a unique value of %s can be used as no %s provided",
-                id1, format_arg(arg_children, final = "or")
+                id_parent, oxford_comma(format_arg(arg_children), final = "or")
             ), ..., call = call)
         }
     } else {
@@ -305,9 +294,12 @@ assert_hierarchy <- function(parents, children = NULL, id1 = rlang::caller_arg(p
         )
         failed_idx <- n_unique > 1L
         if (any(failed_idx)) {
-            rlang::abort(sprintf(
-                "Multiple %s found in %s (%s)", id1, id2,
-                format_val(names(n_unique)[failed_idx])
+            rlang::abort(c(
+                sprintf("Multiple %s found in %s", id_parent, id_child),
+                x = sprintf(
+                    "wrong %s: %s", id_child,
+                    oxford_comma(format_val(names(n_unique)[failed_idx]))
+                )
             ), ..., call = call)
         }
     }
@@ -326,70 +318,7 @@ assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::cal
     }
 }
 
-#' The `format_` functions are easier to work with because they format the style
-#' eagerly. However they produce slightly incorrect style in corner cases
-#' because the formatting doesn't take into account the message type. In
-#' principle, cli themes can create different stylings depending on the message
-#' type.
-#' @noRd
-format_val <- function(x, ...) .rlang_cli_format_inline(x, "val", NULL, ...)
-format_emph <- function(x, ...) .rlang_cli_format_inline(x, "emph", "%s", ...)
-format_strong <- function(x, ...) {
-    .rlang_cli_format_inline(x, "strong", "%s", ...)
-}
-format_code <- function(x, ...) .rlang_cli_format_inline(x, "code", "`%s`", ...)
-format_q <- function(x, ...) .rlang_cli_format_inline(x, "q", NULL, ...)
-format_pkg <- function(x, ...) .rlang_cli_format_inline(x, "pkg", NULL, ...)
-format_fn <- function(x, ...) .rlang_cli_format_inline(x, "fn", "`%s()`", ...)
-format_arg <- function(x, ...) .rlang_cli_format_inline(x, "arg", "`%s`", ...)
-format_kbd <- function(x, ...) .rlang_cli_format_inline(x, "kbd", "[%s]", ...)
-format_key <- function(x, ...) .rlang_cli_format_inline(x, "key", "[%s]", ...)
-format_file <- function(x, ...) .rlang_cli_format_inline(x, "file", NULL, ...)
-format_path <- function(x, ...) .rlang_cli_format_inline(x, "path", NULL, ...)
-format_email <- function(x, ...) .rlang_cli_format_inline(x, "email", NULL, ...)
-format_url <- function(x, ...) .rlang_cli_format_inline(x, "url", "<%s>", ...)
-format_var <- function(x, ...) .rlang_cli_format_inline(x, "var", "`%s`", ...)
-format_envvar <- function(x, ...) {
-    .rlang_cli_format_inline(x, "envvar", "`%s`", ...)
-}
-format_field <- function(x, ...) .rlang_cli_format_inline(x, "field", NULL, ...)
-format_cls <- function(x, ...) {
-    fallback <- function(x) sprintf("<%s>", paste0(x, collapse = "/"))
-    .rlang_cli_format_inline(x, "cls", fallback, ...)
-}
-
-#' @return A string
-#' @noRd
-.rlang_cli_format_inline <- function(x, span, fallback = "`%s`", ...) {
-    if (inherits(x, "AsIs")) {
-        oxford_comma(chr = x, ...)
-    } else if (.rlang_cli_has_cli()) {
-        cli::format_inline(oxford_comma(chr = paste0("{.", span, " {x}}"), ...))
-    } else {
-        oxford_comma(
-            chr = .rlang_cli_style_inline(x, span, fallback = fallback), ...
-        )
-    }
-}
-
-#' @return An atomic character with the same length of x
-#' @noRd
-.rlang_cli_style_inline <- function(x, span, fallback = "`%s`") {
-    if (.rlang_cli_has_cli()) {
-        paste0("{.", span, " {\"", encodeString(x), "\"}}")
-    } else if (is.null(fallback)) {
-        x
-    } else if (is.function(fallback)) {
-        fallback(x)
-    } else {
-        sprintf(fallback, x)
-    }
-}
-
-.rlang_cli_has_cli <- function(version = "3.0.0") {
-    is_installed("cli", version = version)
-}
-
+# utils function for assert_* -----------------------------
 oxford_comma <- function(chr, sep = ", ", final = "and") {
     n <- length(chr)
 
