@@ -61,7 +61,7 @@ stop_input_type <- function(
 }
 
 #' Report if an package installed
-#' @noRd 
+#' @noRd
 assert_pkg <- function(pkg, version = NULL, fun = NULL, call = rlang::caller_env()) {
     if (!is_installed(pkg, version = version)) {
         if (is.null(fun)) {
@@ -309,7 +309,9 @@ assert_inclusive <- function(x, y, arg = rlang::caller_arg(x), call = rlang::cal
         rlang::abort(
             sprintf(
                 "Only values (%s) are allowed in %s, not %s",
-                format_val(y), format_arg(arg), format_val(missing_items)
+                oxford_comma(format_val(y)),
+                format_arg(arg),
+                oxford_comma(format_val(missing_items))
             ),
             call = call
         )
