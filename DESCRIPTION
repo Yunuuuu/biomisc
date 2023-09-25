@@ -12,7 +12,8 @@ Imports:
     stats,
     utils,
     future.apply,
-    progressr
+    progressr,
+    SummarizedExperiment
 Suggests: 
     ABSOLUTE,
     ComplexHeatmap,
@@ -28,7 +29,6 @@ Suggests:
     roxygen2,
     testthat (>= 3.0.0),
     curl,
-    SummarizedExperiment,
     BSgenome,
     Biostrings,
     BiocManager,
@@ -42,7 +42,8 @@ Suggests:
     igraph,
     BiocSingular,
     RcppML (>= 0.5.5),
-    cluster
+    cluster,
+    AnnotationDbi
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
