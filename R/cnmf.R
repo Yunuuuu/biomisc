@@ -4,6 +4,10 @@
 #'
 #' @param matrix A matrix with row is features and column is samples.
 #' @param rank Specification of the factorization rank.
+#' @param threthold The threshold to define the existence of a feature in a
+#'  sample. 
+#' @param min_fraction Only featuers with value (above `threthold`) in at least
+#' `min_fraction` of samples are used in cNMF.
 #' @param n_iters The number of times to run NMF internally before making the
 #' consensus
 #' @param rho Determines number of neighbors to use for calculating KNN distance
@@ -13,10 +17,10 @@
 #' @param min_dist distance threshold that determines how close a component must
 #' be to its nearest neighbors in Euclidean space to be considered
 #' ‘approximately matching’.
-#' @param min_fraction Only featuers with value (above 0) in at least
-#' `min_fraction` of samples are used in cNMF.
 #' @param silhouette If TRUE, will calculate silhouette score.
-#' @inheritDotParams RcppML::nmf -data -k
+#' @inheritParams RcppML::nmf
+#' @inheritParams RcppML::project
+#' @inheritDotParams RcppML::nmf -data -k -seed -tol -maxit
 #' @param cores Parallelization is applied with OpenMP using the number of
 #' threads; `0` corresponds to all threads.
 #' @return A list.
@@ -32,7 +36,7 @@
 #' - <https://github.com/seanken/CompareSequence>
 #' - <https://github.com/dylkot/cNMF>
 #' @export
-cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_fraction = 0.002, silhouette = TRUE, ..., cores = 0L) {
+cnmf <- function(matrix, rank, threthold = 0L, min_fraction = 0.002, n_iters = 100L, rho = 0.3, min_dist = 0.03, silhouette = TRUE, tol = 1e-04, maxit = 100L, ..., upper_bound = 0L, cores = 0L) {
     if (isTRUE(silhouette)) assert_pkg("cluster")
     # RcppML package must be loaded to run nmf
     if (utils::packageVersion("RcppML") < "0.5.5" ||
@@ -48,7 +52,7 @@ cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_f
 
     orig_matrix <- matrix
     matrix <- orig_matrix[
-        rowMeans(orig_matrix > 0L) > min_fraction, ,
+        rowMeans(orig_matrix > threthold) > min_fraction, ,
         drop = FALSE
     ]
 
@@ -58,7 +62,11 @@ cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_f
     on.exit(do.call(`options`, old_threads))
     rank <- as.integer(rank)
     w_list <- lapply(seq_len(n_iters), function(i) {
-        RcppML::nmf(data = matrix, k = rank, ...)@w
+        RcppML::nmf(
+            data = matrix, k = rank, 
+            seed = NULL, tol = tol, maxit = maxit,
+            ...
+        )@w
     })
 
     cli::cli_inform("Identifying consensus programs")
@@ -94,8 +102,15 @@ cnmf <- function(matrix, rank, n_iters = 100L, rho = 0.3, min_dist = 0.03, min_f
     w_consensus <- as.matrix(w_consensus[, !".__groups"])
     w_consensus <- t(w_consensus / rowSums(abs(w_consensus)))
 
-    h <- RcppML::project(w = w_consensus, data = matrix)
-    w_final <- t(RcppML::project(w = h, data = t(orig_matrix)))
+    h <- RcppML::project(
+        w = w_consensus,
+        data = matrix, ...,
+        upper_bound = upper_bound
+    )
+    w_final <- t(RcppML::project(
+        w = h, data = t(orig_matrix), ...,
+        upper_bound = upper_bound
+    ))
 
     list(w = w_final, h = h, rank = rank, silhouette_score = silhouette_score)
 }
