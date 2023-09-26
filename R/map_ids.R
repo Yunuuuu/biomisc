@@ -31,7 +31,7 @@ methods::setMethod("map_ids", "ANY", function(x, db, column, keytype, decreasing
         id = rownames(x), db = db,
         column = column, keytype = keytype,
         decreasing = decreasing,
-        order_by = rowMeans(x, na.rm = TRUE)
+        order_by_matrix = x
     )
     x <- x[feature_data$idx, , drop = FALSE]
     rownames(x) <- feature_data[[column]]
@@ -42,7 +42,7 @@ methods::setMethod("map_ids", "ANY", function(x, db, column, keytype, decreasing
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @export
 methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, keytype, swap_rownames = NULL, assay_name = NULL, decreasing = TRUE) {
-    out <- map_ids_for_s4(
+    out <- map_ids_swap(
         x = x, db = db, column = column, keytype = keytype,
         decreasing = decreasing, swap_rownames = swap_rownames,
         rowdata = SummarizedExperiment::rowData(x),
@@ -58,7 +58,7 @@ methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, ke
 #' @importClassesFrom Biobase ExpressionSet
 #' @export
 methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, swap_rownames = NULL, assay_name = NULL, decreasing = TRUE) {
-    out <- map_ids_for_s4(
+    out <- map_ids_swap(
         x = x, db = db, column = column, keytype = keytype,
         decreasing = decreasing, swap_rownames = swap_rownames,
         rowdata = Biobase::fData(x),
@@ -79,7 +79,7 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
 #' @name map_ids
 NULL
 
-map_ids_for_s4 <- function(x, db, column, keytype, decreasing, swap_rownames, rowdata, assay, call = rlang::caller_call()) {
+map_ids_swap <- function(x, db, column, keytype, decreasing, swap_rownames, rowdata, assay, call = rlang::caller_call()) {
     assert_(swap_rownames, function(x) {
         length(x) == 1L && (is.character(x) || is.numeric(x))
     }, "a string or integer", null_ok = TRUE, call = call)
@@ -94,7 +94,7 @@ map_ids_for_s4 <- function(x, db, column, keytype, decreasing, swap_rownames, ro
     feature_data <- map_ids_internal(
         id = id, db = db,
         column = column, keytype = keytype, decreasing = decreasing,
-        order_by = rowMeans(assay, na.rm = TRUE),
+        order_by_matrix = assay,
         call = call
     )
     x <- x[feature_data$idx, ]
@@ -103,7 +103,7 @@ map_ids_for_s4 <- function(x, db, column, keytype, decreasing, swap_rownames, ro
     list(x = x, feature_data = feature_data)
 }
 
-map_ids_internal <- function(id, db, column, keytype, order_by, decreasing = TRUE, call = rlang::caller_env()) {
+map_ids_internal <- function(id, db, column, keytype, order_by_matrix, decreasing = TRUE, call = rlang::caller_env()) {
     assert_pkg("AnnotationDbi", fun = "map_ids", call = call)
     assert_string(keytype, empty_ok = FALSE, call = call)
     assert_string(column, empty_ok = FALSE, call = call)
@@ -115,7 +115,7 @@ map_ids_internal <- function(id, db, column, keytype, order_by, decreasing = TRU
         x = db, keys = out[[keytype]], column = column,
         keytype = keytype
     )
-    out$val <- order_by
+    out$val <- rowMeans(order_by_matrix, na.rm = TRUE)
     out <- eval(data.table::substitute2(
         out[.id != "" & !is.na(.id)][ # nolint
             order(val, decreasing = decreasing)
