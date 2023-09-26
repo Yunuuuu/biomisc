@@ -35,7 +35,7 @@ read_internal_extdata <- function(...) {
 .use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use), call = rlang::caller_call()) {
     if (anyNA(use)) {
         rlang::abort(
-            sprintf("%s cannot contain NA values", format_arg(arg)),
+            sprintf("%s cannot contain `NA`", format_arg(arg)),
             call = call
         )
     }
@@ -45,12 +45,16 @@ read_internal_extdata <- function(...) {
         use <- integer(0L)
     } else if (is.character(use)) {
         use <- match(use, names)
+        if (anyNA(use)) {
+            rlang::abort(sprintf(
+                "%s contains invalid values", format_arg(arg)
+            ), call = call)
+        }
     } else if (is.numeric(use)) {
         if (any(use < 1L) || any(use > length(names))) {
-            rlang::abort(
-                sprintf("%s contains out-of-bounds indices", format_arg(arg)),
-                call = call
-            )
+            rlang::abort(sprintf(
+                "%s contains out-of-bounds indices", format_arg(arg)
+            ), call = call)
         }
     } else {
         rlang::abort(
