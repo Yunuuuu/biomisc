@@ -32,6 +32,35 @@ read_internal_extdata <- function(...) {
     readRDS(system.file("extdata", ..., package = "biomisc"))
 }
 
+.use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use), call = rlang::caller_call()) {
+    if (anyNA(use)) {
+        rlang::abort(
+            sprintf("%s cannot contain NA values", format_arg(arg)),
+            call = call
+        )
+    }
+    if (isTRUE(use)) {
+        use <- seq_along(names)
+    } else if (isFALSE(use)) {
+        use <- integer(0L)
+    } else if (is.character(use)) {
+        use <- match(use, names)
+    } else if (is.numeric(use)) {
+        if (any(use < 1L) || any(use > length(names))) {
+            rlang::abort(
+                sprintf("%s contains out-of-bounds indices", format_arg(arg)),
+                call = call
+            )
+        }
+    } else {
+        rlang::abort(
+            sprintf("%s must be a bool or an atomic numeic/character", format_arg(arg)),
+            call = call
+        )
+    }
+    use
+}
+
 trim_value <- function(x, threshold = 1 - .Machine$double.neg.eps) {
     x[x > threshold] <- threshold
     x
