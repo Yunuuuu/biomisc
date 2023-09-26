@@ -5,7 +5,7 @@
 #' @description This function maps the feature names to a specific keytype.
 #' Unmapped features are removed, and any duplicate mapped features are also
 #' removed, retaining only the first occurrence based on the mean values across
-#' all samples. 
+#' all samples.
 #' @param x A matrix-like object.
 #' @param ... Other arguments passed to specific methods.
 #' @name map_ids
@@ -37,22 +37,23 @@ methods::setMethod("map_ids", "ANY", function(x, db, column, keytype, decreasing
     x
 })
 
-#' @param rowdata_name Use column in `rowData(x)` to map feature ids, if `NULL`,
-#' the `rownames(x)` will be used. 
-#' @param assay_name A string or integer scalar indicating which `assays` in the
-#' `x` to calculate the mean value for each row. IF `NULL`, the first assay will
-#' be used.
+#' @param swap_rownames String or integer specifying the
+#' [rowData][SummarizedExperiment::rowData] column containing the features
+#' names. If `NULL`, `rownames(x)` will be used. 
+#' @param assay_name A string or integer scalar indicating which
+#' [assay][SummarizedExperiment::assay] in the `x` to calculate the mean value
+#' for each row. IF `NULL`, the first assay will be used.
 #' @rdname map_ids
 #' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @export
-methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, keytype, rowdata_name = NULL, assay_name = NULL, decreasing = TRUE) {
-    assert_(rowdata_name, function(x) {
+methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, keytype, swap_rownames = NULL, assay_name = NULL, decreasing = TRUE) {
+    assert_(swap_rownames, function(x) {
         length(x) == 1L && (is.character(x) || is.numeric(x))
     }, "a string or integer", null_ok = TRUE)
-    if (is.null(rowdata_name)) {
+    if (is.null(swap_rownames)) {
         id <- rownames(x)
     } else {
-        id <- SummarizedExperiment::rowData(x)[[rowdata_name]]
+        id <- SummarizedExperiment::rowData(x)[[swap_rownames]]
     }
     feature_data <- map_ids_internal(
         id = id, db = db,
@@ -63,6 +64,7 @@ methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, ke
         )
     )
     x <- x[feature_data$idx, ]
+    feature_data <- feature_data[c(keytype, column)]
     rownames(x) <- feature_data[[column]]
     SummarizedExperiment::rowData(x) <- cbind(
         feature_data, SummarizedExperiment::rowData(x)
@@ -72,22 +74,25 @@ methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, ke
 
 map_ids_internal <- function(id, db, column, keytype, order_by, decreasing = TRUE, call = rlang::caller_env()) {
     assert_pkg("AnnotationDbi", fun = "map_ids", call = call)
-    out <- data.table::substitute2(
+    assert_string(keytype, empty_ok = FALSE, call = call)
+    assert_string(column, empty_ok = FALSE, call = call)
+    out <- eval(data.table::substitute2(
         data.table::data.table(name = id), list(name = keytype)
-    )
+    ))
     out$idx <- seq_along(id)
     out[[column]] <- AnnotationDbi::mapIds(
         x = db, keys = out[[keytype]], column = column,
         keytype = keytype
     )
     out$val <- order_by
-    expr <- data.table::substitute2(
-        out[x != "" & !is.na(x)][order(val, decreasing = decreasing)], # nolint
-        list(x = column)
-    )
-    out <- eval(expr)
-    out <- data.table::unique(out, by = column, cols = c("idx", keytype))
+    out <- eval(data.table::substitute2(
+        out[.id != "" & !is.na(.id)][ # nolint
+            order(val, decreasing = decreasing)
+        ], 
+        list(.id = column)
+    ))
+    out <- unique(out, by = column, cols = c("idx", keytype))
     data.table::setcolorder(out, c("idx", keytype, column))
     data.table::setDF(out, rownames = out[[column]])
 }
-utils::globalVariables("val")
+utils::globalVariables(c("val", ".id"))

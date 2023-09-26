@@ -16,7 +16,7 @@ map_ids(x, ...)
   db,
   column,
   keytype,
-  rowdata_name = NULL,
+  swap_rownames = NULL,
   assay_name = NULL,
   decreasing = TRUE
 )
@@ -37,12 +37,13 @@ database.}
 
 \item{decreasing}{A bool, Should the sort order be increasing or decreasing?}
 
-\item{rowdata_name}{Use column in \code{rowData(x)} to map feature ids, if \code{NULL},
-the \code{rownames(x)} will be used.}
+\item{swap_rownames}{String or integer specifying the
+\link[SummarizedExperiment:SummarizedExperiment-class]{rowData} column containing the features
+names. If \code{NULL}, \code{rownames(x)} will be used.}
 
-\item{assay_name}{A string or integer scalar indicating which \code{assays} in the
-\code{x} to calculate the mean value for each row. IF \code{NULL}, the first assay will
-be used.}
+\item{assay_name}{A string or integer scalar indicating which
+\link[SummarizedExperiment:SummarizedExperiment-class]{assay} in the \code{x} to calculate the mean value
+for each row. IF \code{NULL}, the first assay will be used.}
 }
 \description{
 This function maps the feature names to a specific keytype.
