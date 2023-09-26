@@ -3,7 +3,7 @@
 #' Create a per-cell data.frame (i.e., where each row represents a sample /
 #' cell) from a
 #' [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment], most
-#' typically for creating custom ggplot2 plots. 
+#' typically for creating custom ggplot2 plots.
 #' @param x A [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment]
 #'   or [ExpressionSet][Biobase::ExpressionSet] object.
 #' @param ... Other arguments passed to specific methods.
@@ -17,25 +17,32 @@ methods::setGeneric(
 )
 
 #' @param features Character or integer vector specifying the features for which
-#' to extract expression profiles across samples. 
+#' to extract expression profiles across samples.
 #' @param assay.type String or integer scalar indicating the assay to use to
 #' obtain expression values. Must refer to a matrix-like object with integer or
-#' numeric values. 
+#' numeric values.
 #' @param use.coldata Logical scalar indicating whether column metadata of x
 #' should be included. Alternatively, a character or integer vector specifying
-#' the column metadata fields to use. 
+#' the column metadata fields to use.
 #' @param swap.rownames String or integer specifying the
 #' [rowData][SummarizedExperiment::rowData] column containing the features
-#' names. If `NULL`, `rownames(x)` will be used. 
+#' names. If `NULL`, `rownames(x)` will be used.
 #' @param check.names Logical scalar indicating whether column names of the
-#' output should be made syntactically valid and unique. 
-#' @rdname makePerCellDF
+#' output should be made syntactically valid and unique.
+#' @name makePerCellDF
+NULL
+
+#' @importClassesFrom SummarizedExperiment SummarizedExperiment
 #' @export
 methods::setMethod("makePerCellDF", "SummarizedExperiment", function(x, features = NULL, assay.type = NULL, use.coldata = TRUE, swap.rownames = NULL, check.names = FALSE) {
     # Initialize output list
-    output <- .harvest_se_by_column(x,
+    output <- harvest_by_column(x,
         features = features,
-        assay.type = assay.type,
+        use.coldata = use.coldata,
+        swap.rownames = swap.rownames,
+        assay_data = SummarizedExperiment::assay(x, assay.type %||% 1L),
+        rowdata = SummarizedExperiment::rowData(x),
+        coldata = SummarizedExperiment::colData(x),
         swap.rownames = swap.rownames
     )
 
@@ -47,23 +54,41 @@ methods::setMethod("makePerCellDF", "SummarizedExperiment", function(x, features
     output
 })
 
-.harvest_se_by_column <- function(x, features, assay.type, swap.rownames = NULL) {
+#' @importClassesFrom Biobase ExpressionSet
+#' @export
+methods::setMethod("makePerCellDF", "ExpressionSet", function(x, features = NULL, assay.type = NULL, use.coldata = TRUE, swap.rownames = NULL, check.names = FALSE) {
+    # Initialize output list
+    output <- harvest_by_column(x,
+        features = features,
+        use.coldata = use.coldata,
+        swap.rownames = swap.rownames,
+        assay_data = Biobase::assayData(x)[[assay.type %||% "exprs"]],
+        rowdata = Biobase::fData(x),
+        coldata = Biobase::pData(x),
+        swap.rownames = swap.rownames
+    )
+
+    # Checking the names.
+    output <- do.call(cbind, output)
+    if (check.names) {
+        colnames(output) <- make.names(colnames(output), unique = TRUE)
+    }
+    output
+})
+
+harvest_by_column <- function(x, features, use.coldata = TRUE, swap.rownames = NULL, assay_data, rowdata, coldata) {
     # Collecting feature data from assay
     if (is.null(swap.rownames)) {
         all_feats <- rownames(x)
     } else {
-        rowdata <- SummarizedExperiment::rowData(x)
-        swap.rownames <- .use_names_to_integer_indices(
+        swap.rownames <- use_names_to_integer_indices(
             swap.rownames, colnames(rowdata)
         )
         all_feats <- rowdata[[swap.rownames]]
     }
-    features <- .use_names_to_integer_indices(features, all_feats)
+    features <- use_names_to_integer_indices(features %||% TRUE, all_feats)
     if (length(features)) {
-        assay_data <- SummarizedExperiment::assay(x, assay.type)[
-            features, ,
-            drop = FALSE
-        ]
+        assay_data <- assay_data[features, , drop = FALSE]
         assay_data <- data.frame(as.matrix(t(assay_data)),
             check.names = FALSE, fix.empty.names = FALSE,
             row.names = colnames(x)
@@ -74,8 +99,7 @@ methods::setMethod("makePerCellDF", "SummarizedExperiment", function(x, features
     }
 
     # Collecting the column metadata.
-    coldata <- SummarizedExperiment::colData(x)
-    use.coldata <- .use_names_to_integer_indices(
+    use.coldata <- use_names_to_integer_indices(
         use.coldata,
         names = colnames(coldata)
     )

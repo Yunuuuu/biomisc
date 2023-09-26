@@ -2,19 +2,9 @@
 % Please edit documentation in R/makePerCellDF.R
 \name{makePerCellDF}
 \alias{makePerCellDF}
-\alias{makePerCellDF,SummarizedExperiment-method}
 \title{Create a per-cell data.frame}
 \usage{
 makePerCellDF(x, ...)
-
-\S4method{makePerCellDF}{SummarizedExperiment}(
-  x,
-  features = NULL,
-  assay.type = NULL,
-  use.coldata = TRUE,
-  swap.rownames = NULL,
-  check.names = FALSE
-)
 }
 \arguments{
 \item{x}{A \link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}
