@@ -55,10 +55,9 @@ specified in \code{swap_rownames}) used.}
 \link[SummarizedExperiment:SummarizedExperiment-class]{rowData} or \link[Biobase:featureData]{fData} column
 containing the features names. If \code{NULL}, \code{rownames(x)} will be used.}
 
-\item{assay_name}{A string or integer scalar indicating which
-\link[SummarizedExperiment:SummarizedExperiment-class]{assay} or \link[Biobase:assayData]{assayData} in
-the \code{x} to calculate the mean value for each row. If \code{NULL}, the \verb{1st} assay
-(if x is a \link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}
+\item{assay_name}{A string or integer scalar indicating which assay in the
+\code{x} to calculate the mean value for each row. If \code{NULL}, the \verb{1st} assay (if
+x is a \link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}
 object) or \link[Biobase:exprs]{exprs} (if x is an
 \link[Biobase:class.ExpressionSet]{ExpressionSet} object) will be used.}
 }

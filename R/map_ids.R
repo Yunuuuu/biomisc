@@ -73,10 +73,9 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
 #' @param swap_rownames String or integer specifying the
 #' [rowData][SummarizedExperiment::rowData] or [fData][Biobase::fData] column
 #' containing the features names. If `NULL`, `rownames(x)` will be used.
-#' @param assay_name A string or integer scalar indicating which
-#' [assay][SummarizedExperiment::assay] or [assayData][Biobase::assayData] in
-#' the `x` to calculate the mean value for each row. If `NULL`, the `1st` assay
-#' (if x is a [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment]
+#' @param assay_name A string or integer scalar indicating which assay in the
+#' `x` to calculate the mean value for each row. If `NULL`, the `1st` assay (if
+#' x is a [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment]
 #' object) or [exprs][Biobase::exprs] (if x is an
 #' [ExpressionSet][Biobase::ExpressionSet] object) will be used.
 #' @name map_ids
