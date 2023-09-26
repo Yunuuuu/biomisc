@@ -13,7 +13,8 @@ Imports:
     utils,
     future.apply,
     progressr,
-    SummarizedExperiment
+    SummarizedExperiment,
+    Biobase
 Suggests: 
     ABSOLUTE,
     ComplexHeatmap,

@@ -2,8 +2,8 @@
 % Please edit documentation in R/map_ids.R
 \name{map_ids}
 \alias{map_ids}
-\alias{map_ids,ANY-method}
 \alias{map_ids,SummarizedExperiment-method}
+\alias{map_ids,ExpressionSet-method}
 \title{Gets the mapped ids (column) for a set of keys that are of a particular
 keytype}
 \usage{
@@ -12,6 +12,16 @@ map_ids(x, ...)
 \S4method{map_ids}{ANY}(x, db, column, keytype, decreasing = TRUE)
 
 \S4method{map_ids}{SummarizedExperiment}(
+  x,
+  db,
+  column,
+  keytype,
+  swap_rownames = NULL,
+  assay_name = NULL,
+  decreasing = TRUE
+)
+
+\S4method{map_ids}{ExpressionSet}(
   x,
   db,
   column,
@@ -33,17 +43,20 @@ a \code{OrgDb} or \code{ChipDb} object.}
 \item{column}{The columns or kinds of things that can be retrieved from the
 database.}
 
-\item{keytype}{The keytype that matches the keys (\code{rownames(x)}) used.}
+\item{keytype}{The keytype that matches the keys (\code{rownames(x)} or column
+specified in \code{swap_rownames}) used.}
 
 \item{decreasing}{A bool, Should the sort order be increasing or decreasing?}
 
 \item{swap_rownames}{String or integer specifying the
-\link[SummarizedExperiment:SummarizedExperiment-class]{rowData} column containing the features
-names. If \code{NULL}, \code{rownames(x)} will be used.}
+\link[SummarizedExperiment:SummarizedExperiment-class]{rowData} or \link[Biobase:featureData]{fData} column
+containing the features names. If \code{NULL}, \code{rownames(x)} will be used.}
 
 \item{assay_name}{A string or integer scalar indicating which
-\link[SummarizedExperiment:SummarizedExperiment-class]{assay} in the \code{x} to calculate the mean value
-for each row. IF \code{NULL}, the first assay will be used.}
+\link[SummarizedExperiment:SummarizedExperiment-class]{assay} or \link[Biobase:assayData]{assayData} in
+the \code{x} to calculate the mean value for each row. IF \code{NULL}, the 1st assay
+(\link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}) or
+"exprs" (\link[Biobase:class.ExpressionSet]{fData}) will be used.}
 }
 \description{
 This function maps the feature names to a specific keytype.
