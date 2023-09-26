@@ -21,7 +21,10 @@ methods::setGeneric(
 #' features for which to extract expression profiles across samples.
 #' @param assay.type String or integer scalar indicating the assay to use to
 #' obtain expression values. Must refer to a matrix-like object with integer or
-#' numeric values.
+#' numeric values. If `NULL`, the `1st` assay
+#' (if x is a [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment]
+#' object) or [exprs][Biobase::exprs] (if x is an
+#' [ExpressionSet][Biobase::ExpressionSet] object) will be used.
 #' @param use.coldata Logical scalar indicating whether column metadata of `x`
 #' should be included. Alternatively, a character or integer vector specifying
 #' the column metadata fields to use.

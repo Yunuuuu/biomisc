@@ -2,6 +2,7 @@
 % Please edit documentation in R/map_ids.R
 \name{map_ids}
 \alias{map_ids}
+\alias{map_ids,ANY-method}
 \alias{map_ids,SummarizedExperiment-method}
 \alias{map_ids,ExpressionSet-method}
 \title{Gets the mapped ids (column) for a set of keys that are of a particular
@@ -32,7 +33,9 @@ map_ids(x, ...)
 )
 }
 \arguments{
-\item{x}{A matrix-like object.}
+\item{x}{A matrix-like entity, such as a
+\link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment} or an
+\link[Biobase:class.ExpressionSet]{ExpressionSet} object.}
 
 \item{...}{Other arguments passed to specific methods.}
 
@@ -54,9 +57,10 @@ containing the features names. If \code{NULL}, \code{rownames(x)} will be used.}
 
 \item{assay_name}{A string or integer scalar indicating which
 \link[SummarizedExperiment:SummarizedExperiment-class]{assay} or \link[Biobase:assayData]{assayData} in
-the \code{x} to calculate the mean value for each row. IF \code{NULL}, the 1st assay
-(\link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}) or
-"exprs" (\link[Biobase:class.ExpressionSet]{fData}) will be used.}
+the \code{x} to calculate the mean value for each row. If \code{NULL}, the \verb{1st} assay
+(if x is a \link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}
+object) or \link[Biobase:exprs]{exprs} (if x is an
+\link[Biobase:class.ExpressionSet]{ExpressionSet} object) will be used.}
 }
 \description{
 This function maps the feature names to a specific keytype.

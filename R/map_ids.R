@@ -6,7 +6,9 @@
 #' Unmapped features are removed, and any duplicate mapped features are also
 #' removed, retaining only the first occurrence based on the mean values across
 #' all samples.
-#' @param x A matrix-like object.
+#' @param x A matrix-like entity, such as a
+#' [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment] or an
+#' [ExpressionSet][Biobase::ExpressionSet] object. 
 #' @param ... Other arguments passed to specific methods.
 #' @name map_ids
 #' @export
@@ -24,7 +26,7 @@ methods::setGeneric(
 #' @param keytype The keytype that matches the keys (`rownames(x)` or column
 #' specified in `swap_rownames`) used.
 #' @param decreasing A bool, Should the sort order be increasing or decreasing?
-#' @name map_ids
+#' @rdname map_ids
 #' @export
 methods::setMethod("map_ids", "ANY", function(x, db, column, keytype, decreasing = TRUE) {
     feature_data <- map_ids_internal(
@@ -49,7 +51,7 @@ methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, ke
         assay = SummarizedExperiment::assay(x, i = assay_name %||% 1L)
     )
     SummarizedExperiment::rowData(out$x) <- cbind(
-        x$feature_data, SummarizedExperiment::rowData(out$x)
+        out$feature_data, SummarizedExperiment::rowData(out$x)
     )
     out$x
 })
@@ -64,7 +66,7 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
         rowdata = Biobase::fData(x),
         assay = Biobase::assayData(x)[[assay_name %||% "exprs"]]
     )
-    Biobase::fData(out$x) <- cbind(x$feature_data, Biobase::fData(out$x))
+    Biobase::fData(out$x) <- cbind(out$feature_data, Biobase::fData(out$x))
     out$x
 })
 
@@ -73,9 +75,10 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
 #' containing the features names. If `NULL`, `rownames(x)` will be used.
 #' @param assay_name A string or integer scalar indicating which
 #' [assay][SummarizedExperiment::assay] or [assayData][Biobase::assayData] in
-#' the `x` to calculate the mean value for each row. IF `NULL`, the 1st assay
-#' ([SummarizedExperiment][SummarizedExperiment::SummarizedExperiment]) or
-#' "exprs" ([fData][Biobase::ExpressionSet]) will be used.
+#' the `x` to calculate the mean value for each row. If `NULL`, the `1st` assay
+#' (if x is a [SummarizedExperiment][SummarizedExperiment::SummarizedExperiment]
+#' object) or [exprs][Biobase::exprs] (if x is an
+#' [ExpressionSet][Biobase::ExpressionSet] object) will be used.
 #' @name map_ids
 NULL
 

@@ -38,7 +38,10 @@ features for which to extract expression profiles across samples.}
 
 \item{assay.type}{String or integer scalar indicating the assay to use to
 obtain expression values. Must refer to a matrix-like object with integer or
-numeric values.}
+numeric values. If \code{NULL}, the \verb{1st} assay
+(if x is a \link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment}
+object) or \link[Biobase:exprs]{exprs} (if x is an
+\link[Biobase:class.ExpressionSet]{ExpressionSet} object) will be used.}
 
 \item{use.rowdata}{Logical scalar indicating whether row metadata of \code{x}
 should be included. Alternatively, a character or integer vector specifying
