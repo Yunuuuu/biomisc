@@ -32,7 +32,7 @@ read_internal_extdata <- function(...) {
     readRDS(system.file("extdata", ..., package = "biomisc"))
 }
 
-.use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use), call = rlang::caller_call()) {
+use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use), call = rlang::caller_call()) {
     if (anyNA(use)) {
         rlang::abort(
             sprintf("%s cannot contain `NA`", format_arg(arg)),

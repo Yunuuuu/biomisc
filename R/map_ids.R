@@ -86,7 +86,7 @@ map_ids_for_s4 <- function(x, db, column, keytype, decreasing, swap_rownames, ro
     if (is.null(swap_rownames)) {
         id <- rownames(x)
     } else {
-        swap_rownames <- .use_names_to_integer_indices(
+        swap_rownames <- use_names_to_integer_indices(
             swap_rownames, colnames(rowdata)
         )
         id <- rowdata[[swap_rownames]]
