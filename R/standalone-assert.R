@@ -150,6 +150,54 @@ assert_bool <- function(
     FALSE
 }
 
+# matrix -------------------------------------------
+assert_matrix <- function(
+    x, mode = NULL, any_na = TRUE, show_length = FALSE, ...,
+    arg = rlang::caller_arg(x),
+    call = rlang::caller_env()) {
+    if (!is.null(mode)) {
+        mode <- match.arg(mode, c(
+            "integer", "numeric", "character", "logical"
+        ))
+        what <- switch(mode,
+            integer = "an integer",
+            paste("a", mode)
+        )
+        fn <- function(x) {
+            all(match.fun(paste("is", mode, sep = "."))(x))
+        }
+    } else {
+        what <- "a"
+        fn <- NULL
+    }
+    what <- paste(what, format_cls("matrix"))
+    if (!any_na) {
+        what <- paste0(what, sprintf(
+            " (%s is not allowed)", format_code("NA")
+        ))
+    }
+    assert_(
+        x = x,
+        assert_fn = function(x) {
+            .rlang_check_is_matrix(x, any_na = any_na, fn = fn)
+        }, what = what,
+        show_length = show_length,
+        ...,
+        arg = arg,
+        call = call
+    )
+}
+
+.rlang_check_is_matrix <- function(x, any_na, fn = NULL) {
+    if (is.matrix(x)) {
+        if (is.null(fn) || fn(x)) {
+            if (any_na || !anyNA(x)) {
+                return(TRUE)
+            }
+        }
+    }
+    FALSE
+}
 
 # S3 object ----------------------------------------
 assert_s3_class <- function(
@@ -182,11 +230,16 @@ assert_data_frame <- function(x, ..., arg = rlang::caller_arg(), call = rlang::c
 assert_data_frame_columns <- function(x, columns, ..., args = rlang::caller_arg(x), call = rlang::caller_env()) {
     missing_cols <- setdiff(columns, names(x))
     if (length(missing_cols)) {
+        args <- format_arg(args)
+        if (length(args) == 1L) {
+            msg <- args
+        } else {
+            msg <- sprintf("One of %s", oxford_comma(args, final = "or"))
+        }
         rlang::abort(
             c(
                 sprintf(
-                    "One of %s must contain columns: %s",
-                    oxford_comma(format_arg(args), final = "or"),
+                    "%s must contain columns: %s", msg,
                     oxford_comma(columns)
                 ),
                 x = sprintf("missing columns: %s", oxford_comma(missing_cols))
