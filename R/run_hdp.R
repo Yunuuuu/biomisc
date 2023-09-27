@@ -41,19 +41,24 @@ run_hdp <- function(
     matrix, priors = NULL, prior_pseudoc = NULL,
     dp_tree = NULL, initcc = 10L, ..., n_posterior = 15L, seed = 1234L) {
     assert_pkg("hdp")
-    assert_(matrix, is.matrix, "a matrix")
-    if (anyNA(matrix)) {
-        cli::cli_abort("NA is not allowed in {.arg matrix}")
-    }
-    assert_(priors, is.matrix, "a matrix", null_ok = TRUE)
+    assert_matrix(matrix, any_na = FALSE)
+    assert_matrix(priors, null_ok = TRUE)
     if (!is.null(priors)) {
         if (is.null(colnames(matrix))) {
             if (ncol(matrix) != nrow(priors)) {
-                cli::cli_abort("{.code ncol(matrix)} and {.code nrow(priors)} must be equal")
+                rlang::abort(sprintf(
+                    "%s and %s must be equal",
+                    format_code("ncol(matrix)"),
+                    format_code("nrow(priors)")
+                ))
             }
         } else {
             if (!all(colnames(matrix) == rownames(priors))) {
-                cli::cli_abort("{.code colnames(matrix)} and {.code rownames(priors)} must be the same")
+                rlang::abort(sprintf(
+                    "%s and %s must be the same",
+                    format_code("colnames(matrix)"),
+                    format_code("rownames(priors)")
+                ))
             }
         }
     }
@@ -80,7 +85,7 @@ run_hdp <- function(
     ##################################
     ###  initialise HDP structure  ###
     ##################################
-    cli::cli_inform("Preparing data")
+    rlang::inform("Preparing data")
     if (!is.null(priors)) {
         ### with priors ###
         nps <- ncol(priors)
@@ -160,7 +165,7 @@ run_hdp <- function(
     ############
     ### run posterior sampling chains
     ############
-    cli::cli_inform("Running chain sampling")
+    rlang::inform("Running chain sampling")
     posteriors <- lapply(seq_len(n_posterior), function(i) {
         # with different dp_activate seeds to start the clustering from a
         # different random starting point each time.
@@ -183,15 +188,15 @@ run_hdp <- function(
 }
 
 hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree), arg2 = rlang::caller_arg(matrix), call = rlang::caller_env()) {
-    assert_s3_class(
-        dp_tree, "data.frame",
-        null_ok = TRUE, arg = arg1, call = call
-    )
+    assert_data_frame(dp_tree, null_ok = TRUE, arg = arg1, call = call)
     if (!is.null(dp_tree)) {
         dp_tree <- data.table::as.data.table(dp_tree)
         if (!all(dp_tree[[1L]] == rownames(matrix))) {
-            cli::cli_abort(
-                "The first column of {.arg {arg1}} must match {.code rownames({arg2})}",
+            rlang::abort(
+                sprintf(
+                    "the first column of %s must match %s",
+                    format_arg(arg1), format_code(sprintf("rownames(%s)", arg2))
+                ),
                 call = call
             )
         }
@@ -299,9 +304,10 @@ print.HDP <- function(x, ...) {
 #' @export
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
-    assert_s3_class(x, "HDP", "a {.cls HDP} object returned by {.fn run_hdp}",
-        cross_msg = NULL
-    )
+    assert_s3_class(x, "HDP", sprintf(
+        "a %s object returned by %s",
+        format_cls("HDP"), format_fn("run_hdp")
+    ))
     hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
     x$components <- hdp::hdp_extract_components(hdp_multi_chain)
     x$statistics <- hdp_data_internal(
@@ -322,14 +328,15 @@ hdp_data_internal <- function(
     assert_(cohort_threshold, function(x) {
         is_scalar_numeric(x) && x >= 0L
     }, "a number not less than 0")
-    if (length(hdp::comp_categ_counts(hdpsample)) == 0L) {
-        cli::cli_abort("No component info for hdpsample. First run hdp_extract_components")
-    }
+
     # define signature
     comp_distn <- hdp::comp_categ_distn(hdpsample)
     signatures <- comp_distn$mean
     if (ncol(input_matrix) != ncol(signatures)) {
-        cli::cli_abort("{.arg input_matrix} is not compatible with {.arg hdpsample}")
+        rlang::abort(sprintf(
+            "%s is not compatible with %s",
+            format_code("x$input"), format_code("x$components")
+        ))
     }
     colnames(signatures) <- colnames(input_matrix)
 
@@ -349,7 +356,9 @@ hdp_data_internal <- function(
     } else if (!is.numeric(dpindices) ||
         !any(round(dpindices) == dpindices) ||
         any(dpindices < 1L) || any(dpindices > ndp)) {
-        cli::cli_abort("dpindices must be integers between 1 and {ndp}")
+        rlang::abort(sprintf(
+            "%s must be an atomic integer between 1 and %s", format_arg("dpindices"), ndp
+        ))
     }
     dps <- dps[dpindices]
     pps <- pps[dpindices]
@@ -357,7 +366,10 @@ hdp_data_internal <- function(
     # caculate signatures and exposures --------------------------------
     exposures <- dp_distn$mean[dpindices, , drop = FALSE]
     if (nrow(exposures) != nrow(input_matrix)) {
-        cli::cli_warn("{.arg dpindices} is not compatible with {.arg input_matrix}")
+        rlang::warn(sprintf(
+            "%s is not compatible with %s",
+            format_arg("dpindices"), format_arg("input_matrix")
+        ))
     } else {
         rownames(exposures) <- rownames(input_matrix)
     }
@@ -400,9 +412,9 @@ hdp_data_internal <- function(
         cohort_threshold <- cohort_threshold * nrow(exposures)
     }
     cohort_threshold <- as.integer(cohort_threshold)
-    cli::cli_inform(
-        "Filtering components in less than {cohort_threshold} sample{?s}"
-    )
+    rlang::inform(sprintf(
+        "Filtering components in less than %s samples", cohort_threshold
+    ))
     signif_metrics[, active_samples := sum(sig_active, na.rm = TRUE), # nolint
         by = "components"
     ]
