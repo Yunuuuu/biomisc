@@ -128,20 +128,19 @@ methods::setMethod("makePerFeatureDF", "ExpressionSet", function(x, features = T
 })
 
 ########################### Utils Function ###############################
-harvest_by_extra_data <- function(x, features, use_extra_data = TRUE, swap.rownames = NULL, check.names = FALSE, transpose, assay_data, rowdata, extra_data, call = rlang::caller_call()) {
-    assert_(swap.rownames, function(x) {
-        length(x) == 1L && (is.character(x) || is.numeric(x))
-    }, "a string or integer", null_ok = TRUE)
+harvest_by_extra_data <- function(x, features, use_extra_data = TRUE, swap.rownames = NULL, check.names = FALSE, transpose, assay_data, rowdata, extra_data, call = rlang::caller_env()) {
     assay_data <- makeAssayDF(
         x = x, features = features,
         swap.rownames = swap.rownames, assay_data = assay_data,
         rowdata = rowdata,
-        transpose = transpose
+        transpose = transpose,
+        call = call
     )
     # Collecting the column metadata.
     use_extra_data <- use_names_to_integer_indices(
         use_extra_data,
-        names = colnames(extra_data)
+        names = colnames(extra_data),
+        call = call
     )
     if (length(use_extra_data)) {
         extra_data <- data.frame(extra_data,
@@ -159,17 +158,22 @@ harvest_by_extra_data <- function(x, features, use_extra_data = TRUE, swap.rowna
     output
 }
 
-makeAssayDF <- function(x, features, swap.rownames, assay_data, rowdata, transpose) {
+makeAssayDF <- function(x, features, swap.rownames, assay_data, rowdata, transpose, call = rlang::caller_env()) {
+    assert_(swap.rownames, function(x) {
+        length(x) == 1L && (is.character(x) || is.numeric(x))
+    }, "a string or integer", null_ok = TRUE, call = call)
+
     # Collecting feature data from assay
     if (is.null(swap.rownames)) {
         all_feats <- rownames(x)
     } else {
         swap.rownames <- use_names_to_integer_indices(
-            swap.rownames, colnames(rowdata)
+            swap.rownames, colnames(rowdata),
+            call = call
         )
         all_feats <- rowdata[[swap.rownames]]
     }
-    features <- use_names_to_integer_indices(features, all_feats)
+    features <- use_names_to_integer_indices(features, all_feats, call = call)
     if (length(features)) {
         assay_data <- assay_data[features, , drop = FALSE]
         if (transpose) assay_data <- t(assay_data)

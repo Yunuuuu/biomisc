@@ -81,7 +81,7 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
     out$x
 })
 
-map_ids_internal <- function(x, db, column, keytype, decreasing, assay, swap_rownames = NULL, rowdata, call = rlang::caller_call()) {
+map_ids_internal <- function(x, db, column, keytype, decreasing, assay, swap_rownames = NULL, rowdata, call = rlang::caller_env()) {
     assert_pkg("AnnotationDbi", fun = "map_ids", call = call)
     assert_string(keytype, empty_ok = FALSE, call = call)
     assert_string(column, empty_ok = FALSE, call = call)
