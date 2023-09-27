@@ -87,9 +87,11 @@ assert_string <- function(
     x, empty_ok = TRUE, na_ok = FALSE, show_length = TRUE, ...,
     arg = rlang::caller_arg(x),
     call = rlang::caller_env()) {
-    what <- "a single string"
+    what <- "a string"
     if (!empty_ok) {
-        what <- paste0(what, "(empty string is not allowed)")
+        what <- paste0(what, sprintf(
+            "(empty %s is not allowed)", format_val("")
+        ))
     }
     if (na_ok) {
         what <- c(what, format_code("NA"))
