@@ -94,7 +94,9 @@ map_ids_internal <- function(x, db, column, keytype, decreasing, assay, swap_row
     if (is.null(swap_rownames)) {
         id <- rownames(x)
         if (is.null(id)) {
-            rlang::abort(sprintf("no rownames found in %s", format_arg(x)))
+            rlang::abort(sprintf("no rownames found in %s", format_arg(x)),
+                call = call
+            )
         }
     } else {
         swap_rownames <- use_names_to_integer_indices(
