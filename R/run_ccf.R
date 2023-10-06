@@ -160,13 +160,13 @@ run_ccf <- function(
     if (!is.null(on_sample) && !is.null(on_patient)) {
         assert_data_frame_hierarchy(out, on_patient, on_sample)
         group <- on_sample
-        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {length(unique(out[[on_sample]]))}} sample{?s} from {.val {length(unique(out[[on_patient]]))}} patient{?s}"
+        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {unique_n(out[[on_sample]])}} sample{?s} from {.val {unique_n(out[[on_patient]])}} patient{?s}"
     } else if (!is.null(on_patient)) {
         group <- on_patient
-        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} from {.val {length(unique(out[[on_patient]]))}} patient{?s} (each has one sample)"
+        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} from {.val {unique_n(out[[on_patient]])}} patient{?s} (each has one sample)"
     } else if (!is.null(on_sample)) {
         group <- on_sample
-        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {length(unique(out[[on_sample]]))}} sample{?s} from {.val {1}} patient"
+        init_msg <- "Processing {.val {nrow(out)}} mutation{?s} of {.val {unique_n(out[[on_sample]])}} sample{?s} from {.val {1}} patient"
     } else {
         group <- NULL
         init_msg <- "Processing {.val 1} sample"

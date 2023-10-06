@@ -28,6 +28,10 @@ format_percent <- function(x, digits = 2L, format = "f", ...) {
     sprintf("%s%%", formatC(x * 100L, format = format, digits = digits, ...))
 }
 
+unique_n <- function(x) {
+    length(unique(x))
+}
+
 read_internal_extdata <- function(...) {
     readRDS(system.file("extdata", ..., package = "biomisc"))
 }

@@ -272,11 +272,11 @@ estimate_phylo_ccf <- function(
             out[, ..tmp_nsamples.. := 1L] # nolint
         } else {
             if (is.null(patient_field)) {
-                out[, ..tmp_nsamples.. := length(unique(.SD[[1L]])), # nolint
+                out[, ..tmp_nsamples.. := unique_n(.SD[[1L]]), # nolint
                     .SDcols = sample_field
                 ]
             } else {
-                out[, ..tmp_nsamples.. := length(unique(.SD[[1L]])), # nolint
+                out[, ..tmp_nsamples.. := unique_n(.SbD[[1L]]), # nolint
                     .SDcols = sample_field, by = patient_field
                 ]
             }
