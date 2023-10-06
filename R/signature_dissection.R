@@ -163,7 +163,7 @@ run_em <- function(signature, targets, maxiter = 1000L, threshold = 1e-5) {
     alpha <- alpha / sum(alpha)
     # alpha = rep(1/num_signatures,num_signatures) # Uniform start
 
-    for (iter in 1:maxiter) {
+    for (iter in seq_len(maxiter)) {
         contr <- t(array(alpha, dim = c(num_signatures, ncol(targets)))) * t(targets)
         probs <- contr / array(rowSums(contr), dim = dim(contr))
         probs[is.na(probs)] <- 0
