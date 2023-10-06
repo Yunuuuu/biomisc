@@ -150,6 +150,19 @@ assert_bool <- function(
     FALSE
 }
 
+# atomic vector ------------------------------------
+is_character <- function(x, empty_ok = TRUE, na_ok = TRUE) {
+    out <- is.character(x)
+    if (!na_ok) {
+        out <- out && !anyNA(x)
+    }
+    if (!empty_ok) {
+        out <- out && !any(x == "")
+    }
+    out
+}
+
+
 # matrix -------------------------------------------
 assert_matrix <- function(
     x, mode = NULL, any_na = TRUE, show_length = FALSE, ...,
