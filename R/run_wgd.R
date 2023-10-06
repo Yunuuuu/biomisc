@@ -102,7 +102,7 @@ run_wgd <- function(
             .SDcols = c("A", "B", "A_prob", "B_prob"),
             by = c(sample_field, "ploidy")
         ]
-        out[, wGD := wgd_staus(pvalue, ploidy)][]
+        out[, wGD := wgd_state(pvalue, ploidy)][]
         # nolint end
     }
 }
@@ -158,7 +158,7 @@ perm_wgd <- function(A, B, A_prob, B_prob, total, times = 1000L) {
     }, numeric(1L), genotype = genotype)
 }
 
-wgd_staus <- function(pvalue, ploidy) {
+wgd_state <- function(pvalue, ploidy) {
     ploidy <- round(ploidy)
     data.table::fcase(
         ploidy >= 6L & pvalue <= 1L, "GD",
