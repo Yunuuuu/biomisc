@@ -13,6 +13,7 @@ Imports:
     utils,
     future.apply,
     progressr,
+    methods,
     SummarizedExperiment,
     Biobase
 Suggests: 
@@ -38,7 +39,6 @@ Suggests:
     sequenza,
     boot,
     ggplot2,
-    methods,
     NMF,
     igraph,
     BiocSingular,

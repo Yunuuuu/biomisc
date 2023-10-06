@@ -41,29 +41,19 @@ run_hdp <- function(
     matrix, priors = NULL, prior_pseudoc = NULL,
     dp_tree = NULL, initcc = 10L, ..., n_posterior = 15L, seed = 1234L) {
     assert_pkg("hdp")
-    assert_matrix(matrix, any_na = FALSE)
-    assert_matrix(priors, null_ok = TRUE)
-    if (!is.null(priors)) {
-        if (is.null(colnames(matrix))) {
-            if (ncol(matrix) != nrow(priors)) {
-                rlang::abort(sprintf(
-                    "%s and %s must be equal",
-                    format_code("ncol(matrix)"),
-                    format_code("nrow(priors)")
-                ))
-            }
-        } else {
-            if (!all(colnames(matrix) == rownames(priors))) {
-                rlang::abort(sprintf(
-                    "%s and %s must be the same",
-                    format_code("colnames(matrix)"),
-                    format_code("rownames(priors)")
-                ))
-            }
-        }
-    }
+    out <- methods::new("HDP", matrix = matrix, priors = priors)
     assert_(initcc, is_scalar_numeric, "a number", show_length = TRUE)
     assert_(n_posterior, is_scalar_numeric, "a number", show_length = TRUE)
+    assert_(prior_pseudoc,
+        function(x) {
+            is.numeric(x) && length(x) == ncol(priors)
+        },
+        sprintf(
+            "a numeric with the same length of %s",
+            format_code("ncol(priors)")
+        ),
+        null_ok = TRUE
+    )
     oldseed <- get0(".Random.seed", envir = .GlobalEnv)
     if (is.null(oldseed)) {
         on.exit(rm(".Random.seed", envir = .GlobalEnv))
@@ -77,9 +67,6 @@ run_hdp <- function(
     )
     initcc <- as.integer(initcc)
     n_posterior <- as.integer(n_posterior)
-    if (is.null(rownames(matrix))) {
-        rownames(matrix) <- seq_len(nrow(matrix))
-    }
     dp_tree <- hdp_prepare_tree(dp_tree, matrix)
 
     ##################################
@@ -89,8 +76,6 @@ run_hdp <- function(
     if (!is.null(priors)) {
         ### with priors ###
         nps <- ncol(priors)
-        assert_(prior_pseudoc, is.numeric, "a numeric", null_ok = TRUE)
-        assert_length(prior_pseudoc, nps, scalar_ok = TRUE, null_ok = TRUE)
         # (don’t activate the frozen pseudo-count nodes for the prior
         # signatures)
         initial <- nps + 2L
@@ -124,7 +109,7 @@ run_hdp <- function(
     # add dp and conparam --------------------------
     number_groups <- ncol(dp_tree)
     for (i in rev(seq_len(number_groups))) {
-        numdp <- length(unique(dp_tree[[i]]))
+        numdp <- unique_n(dp_tree[[i]])
         if (i == number_groups) {
             idx <- rep_len(1L, numdp)
             # the first parent idx should run over the length of current ppindex
@@ -157,9 +142,10 @@ run_hdp <- function(
 
     # add data to leaf nodes (one per sample, in row order of matrix)
     terminal <- hdp::numdp(hdp_data)
-    hdp_data <- hdp::hdp_setdata(hdp_data,
+    hdp_data <- hdp::hdp_setdata(
+        hdp = hdp_data,
         dpindex = (terminal - nrow(matrix) + 1L):terminal,
-        matrix
+        data = matrix
     )
 
     ############
@@ -176,26 +162,75 @@ run_hdp <- function(
         )
         hdp::hdp_posterior(hdp = new_hdp_data, ...)
     })
-
-    structure(
-        list(
-            input = matrix, priors = priors,
-            posteriors = posteriors,
-            components = NULL, statistics = NULL
-        ),
-        class = "HDP"
-    )
+    out@posteriors <- posteriors
+    out
 }
+
+methods::setClassUnion("MatrixOrNULL", c("matrix", "NULL"))
+methods::setClassUnion("ListOrNULL", c("list", "NULL"))
+
+#' @rdname run_hdp
+#' @export
+methods::setClass(
+    "HDP",
+    slots = list(
+        matrix = "matrix",
+        priors = "MatrixOrNULL",
+        posteriors = "ListOrNULL",
+        components = "ANY",
+        hdpdata = "ListOrNULL"
+    ),
+    prototype = list(
+        priors = NULL,
+        posteriors = NULL,
+        components = NULL,
+        hdpdata = NULL
+    )
+)
+
+methods::setValidity("HDP", function(object) {
+    if (!is.matrix(object@matrix) || !is.numeric(object@matrix)) {
+        return("@matrix must be a numeric matrix")
+    }
+    if (anyNA(object@matrix)) {
+        return("`NA` is not allowed in @matrix")
+    }
+    if (!is.matrix(object@priors) || !is.numeric(object@priors)) {
+        return("@priors must be a numeric matrix")
+    }
+    if (anyNA(object@priors)) {
+        return("`NA` is not allowed in @priors")
+    }
+    if (!is.null(object@priors)) {
+        if (!is.null(colnames(matrix)) && !rownames(priors)) {
+            if (!all(colnames(object@matrix) == rownames(object@priors))) {
+                return("`colnames(@matrix)` and `rownames(@priors)` must be the same")
+            }
+        } else {
+            if (ncol(object@matrix) != nrow(object@priors)) {
+                return("`ncol(@matrix)` and `nrow(@priors)` must be compatible")
+            }
+        }
+    }
+    TRUE
+})
 
 hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree), arg2 = rlang::caller_arg(matrix), call = rlang::caller_env()) {
     assert_data_frame(dp_tree, null_ok = TRUE, arg = arg1, call = call)
+    match_idx <- rownames(matrix)
+    if (is.null(match_idx)) {
+        match_idx <- seq_len(nrow(matrix))
+        match_idx_chr <- sprintf("seq_len(nrow(%s))", arg2)
+    } else {
+        match_idx_chr <- sprintf("rownames(%s)", arg2)
+    }
     if (!is.null(dp_tree)) {
         dp_tree <- data.table::as.data.table(dp_tree)
-        if (!all(dp_tree[[1L]] == rownames(matrix))) {
+        if (!all(dp_tree[[1L]] == match_idx)) {
             rlang::abort(
                 sprintf(
                     "the first column of %s must match %s",
-                    format_arg(arg1), format_code(sprintf("rownames(%s)", arg2))
+                    format_arg(arg1), format_code(match_idx_chr)
                 ),
                 call = call
             )
@@ -210,16 +245,22 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
             }
         }
     } else {
-        dp_tree <- data.table::data.table(sample = rownames(matrix))
+        dp_tree <- data.table::data.table(sample = match_idx)
     }
     dp_tree
 }
 
+#' @param object A `HDP` object returned by `run_hdp()`
+#' @importFrom methods show
 #' @export
-print.HDP <- function(x, ...) {
-    cli::cli_text("A {.cls HDP} object with {.val {length(x$posteriors)}} Posterior sampling chain{?s}")
-    if (!is.null(x$statistics)) {
-        stats <- x$statistics
+#' @rdname run_hdp
+methods::setMethod("show", "HDP", function(object) {
+    cli::cli_text(sprintf(
+        "A {.cls %s} object with {.val {%s}} Posterior sampling chain{?s}",
+        "HDP", length(object@posteriors)
+    ))
+    stats <- object@hdpdata
+    if (!is.null(stats)) {
         comps <- sort(rownames(stats$signif_signatures))
         new_components <- comps[startsWith(comps, "N")]
         prior_components <- comps[startsWith(comps, "P")]
@@ -227,7 +268,7 @@ print.HDP <- function(x, ...) {
         components_to_counts <- colSums(stats$signif_exposures_counts)
 
         if (length(prior_components)) {
-            values <- paste(
+            values <- paste0(
                 "A total of {.val {",
                 components_to_counts[prior_components],
                 "}} count{?s} in {.val {",
@@ -239,7 +280,7 @@ print.HDP <- function(x, ...) {
             cli::cli_dl(values)
         }
         if (length(new_components)) {
-            values <- paste(
+            values <- paste0(
                 "A total of {.val {",
                 components_to_counts[new_components],
                 "}} count{?s} in {.val {",
@@ -251,38 +292,8 @@ print.HDP <- function(x, ...) {
             cli::cli_dl(values)
         }
     }
-    invisible(x)
-}
-
-#' @export
-`$.HDP` <- function(x, i) {
-    NextMethod()
-}
-
-#' @export
-`$<-.HDP` <- function(x, i, value) {
-    NextMethod()
-}
-
-#' @export
-`[[.HDP` <- function(x, i) {
-    NextMethod()
-}
-
-#' @export
-`[[<-.HDP` <- function(x, i, value) {
-    NextMethod()
-}
-
-#' @export
-`[.HDP` <- function(x, i) {
-    NextMethod()
-}
-
-#' @export
-`[<-.HDP` <- function(x, i, value) {
-    NextMethod()
-}
+    invisible(object)
+})
 
 #############################################################################
 #' Extract hdp results
@@ -300,19 +311,19 @@ print.HDP <- function(x, ...) {
 #'    zero lower confidence interval should be removed.
 #'  * cohort_threshold: A numeric of the minimal proportion (if <1L) or number
 #'    of samples (if >= 1L) to regard a component as active. Default: `0.05`.
-#' @return A `HDP` object with `components` and `statistics` added.
+#' @return A `HDP` object with `components` and `hdpdata` added.
 #' @export
 hdp_data <- function(x, ...) {
     assert_pkg("hdp")
-    assert_s3_class(x, "HDP", sprintf(
+    assert_s4_class(x, "HDP", sprintf(
         "a %s object returned by %s",
         format_cls("HDP"), format_fn("run_hdp")
     ))
-    hdp_multi_chain <- hdp::hdp_multi_chain(x$posteriors)
-    x$components <- hdp::hdp_extract_components(hdp_multi_chain)
-    x$statistics <- hdp_data_internal(
-        hdpsample = x$components,
-        input_matrix = x$input, ...
+    hdp_multi_chain <- hdp::hdp_multi_chain(x@posteriors)
+    x@components <- hdp::hdp_extract_components(hdp_multi_chain)
+    x@hdpdata <- hdp_data_internal(
+        hdpsample = x@components,
+        input_matrix = x@matrix, ...
     )
     x
 }
@@ -357,7 +368,8 @@ hdp_data_internal <- function(
         !any(round(dpindices) == dpindices) ||
         any(dpindices < 1L) || any(dpindices > ndp)) {
         rlang::abort(sprintf(
-            "%s must be an atomic integer between 1 and %s", format_arg("dpindices"), ndp
+            "%s must be an atomic integer between 1 and %s",
+            format_arg("dpindices"), ndp
         ))
     }
     dps <- dps[dpindices]
@@ -429,7 +441,7 @@ hdp_data_internal <- function(
         drop = FALSE
     ]
     mutBurden <- data.table::data.table(
-        sample = rownames(input_matrix),
+        sample = rownames(input_matrix) %||% seq_len(nrow(input_matrix)),
         nMut = rowSums(input_matrix)
     )
     list(

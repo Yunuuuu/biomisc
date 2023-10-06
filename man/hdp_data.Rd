@@ -20,7 +20,7 @@ of samples (if >= 1L) to regard a component as active. Default: \code{0.05}.
 }}
 }
 \value{
-A \code{HDP} object with \code{components} and \code{statistics} added.
+A \code{HDP} object with \code{components} and \code{hdpdata} added.
 }
 \description{
 This involves collecting multiple independent HDP sampling chains into an
