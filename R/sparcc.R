@@ -51,7 +51,7 @@ sparcc <- function(data, ..., times = 200L) {
     pvals[outofrange] <- NaN
 
     # coerce pvals into a matrix ----------------------
-    pvals_mat <- diag(rep_len(0L, nrow(data)))
+    pvals_mat <- diag(rep_len(0L, ncol(data)))
     pvals_mat[upper.tri(pvals_mat, diag = FALSE)] <- pvals
     pvals_mat <- pvals_mat + t(pvals_mat)
     diag(pvals_mat) <- 0L
