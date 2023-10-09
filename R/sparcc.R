@@ -57,7 +57,7 @@ sparcc <- function(data, ..., times = 200L) {
     diag(pvals_mat) <- 0L
 
     # return SparCC and P-value
-    colnames(sparcc0$Cor) <- rownames(sparcc0$Cor) <- rownames(data)
-    colnames(pvals_mat) <- rownames(pvals_mat) <- rownames(data)
+    colnames(sparcc0$Cor) <- rownames(sparcc0$Cor) <- colnames(data)
+    colnames(pvals_mat) <- rownames(pvals_mat) <- colnames(data)
     c(sparcc0, list(pvals = pvals_mat))
 }
