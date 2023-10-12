@@ -60,7 +60,7 @@ format_run <- function(x, target = NULL) {
 
 .rlang_cli_format_inline <- function(x, span, fallback = "`%s`") {
     if (.rlang_cli_has_cli()) {
-        cli::format_inline(paste0("{.", span, " {x}}"))
+        cli::format_inline(paste0("{.", span, " {x}}"), collapse = FALSE)
     } else {
         .rlang_cli_style_inline(x, span, fallback = fallback)
     }
@@ -69,9 +69,11 @@ format_run <- function(x, target = NULL) {
 .rlang_cli_format_inline_link <- function(x, target, span, fallback = "`%s`") {
     if (.rlang_cli_has_cli()) {
         if (is.null(target)) {
-            cli::format_inline(paste0("{.", span, " {x}}"))
+            cli::format_inline(paste0("{.", span, " {x}}"), collapse = FALSE)
         } else {
-            cli::format_inline(paste0("{.", span, " [{x}]({target})}"))
+            cli::format_inline(paste0("{.", span, " [{x}]({target})}"),
+                collapse = FALSE
+            )
         }
     } else {
         .rlang_cli_style_inline(x, span, fallback = fallback)
