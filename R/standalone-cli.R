@@ -9,41 +9,37 @@
 # with cli in packages that can't depend on it. If available, cli is
 # used to format the elements. Otherwise a fallback format is used.
 
-#' The `format_` functions are easier to work with because they format the style
-#' eagerly. However they produce slightly incorrect style in corner cases
-#' because the formatting doesn't take into account the message type. In
-#' principle, cli themes can create different stylings depending on the message
-#' type.
+#' The `style_` functions are helper to work with cli message. 
 #' @noRd
-format_val <- function(x) .rlang_cli_format_inline(x, "val", NULL)
-format_emph <- function(x) .rlang_cli_format_inline(x, "emph", NULL)
-format_strong <- function(x) .rlang_cli_format_inline(x, "strong", NULL)
+style_val <- function(x) .rlang_cli_style_inline(x, "val", NULL)
+style_emph <- function(x) .rlang_cli_style_inline(x, "emph", NULL)
+style_strong <- function(x) .rlang_cli_style_inline(x, "strong", NULL)
 
-format_code <- function(x) .rlang_cli_format_inline(x, "code", "`%s`")
-format_q <- function(x) .rlang_cli_format_inline(x, "q", NULL)
-format_pkg <- function(x) .rlang_cli_format_inline(x, "pkg", NULL)
-format_fn <- function(x) .rlang_cli_format_inline(x, "fn", "`%s()`")
-format_arg <- function(x) .rlang_cli_format_inline(x, "arg", "`%s`")
-format_kbd <- function(x) .rlang_cli_format_inline(x, "kbd", "[%s]")
-format_key <- function(x) .rlang_cli_format_inline(x, "key", "[%s]")
-format_file <- function(x) .rlang_cli_format_inline(x, "file", NULL)
-format_path <- function(x) .rlang_cli_format_inline(x, "path", NULL)
-format_email <- function(x) .rlang_cli_format_inline(x, "email", NULL)
-format_url <- function(x) .rlang_cli_format_inline(x, "url", "<%s>")
-format_var <- function(x) .rlang_cli_format_inline(x, "var", "`%s`")
-format_envvar <- function(x) {
-    .rlang_cli_format_inline(x, "envvar", "`%s`")
+style_code <- function(x) .rlang_cli_style_inline(x, "code", "`%s`")
+style_q <- function(x) .rlang_cli_style_inline(x, "q", NULL)
+style_pkg <- function(x) .rlang_cli_style_inline(x, "pkg", NULL)
+style_fn <- function(x) .rlang_cli_style_inline(x, "fn", "`%s()`")
+style_arg <- function(x) .rlang_cli_style_inline(x, "arg", "`%s`")
+style_kbd <- function(x) .rlang_cli_style_inline(x, "kbd", "[%s]")
+style_key <- function(x) .rlang_cli_style_inline(x, "key", "[%s]")
+style_file <- function(x) .rlang_cli_style_inline(x, "file", NULL)
+style_path <- function(x) .rlang_cli_style_inline(x, "path", NULL)
+style_email <- function(x) .rlang_cli_style_inline(x, "email", NULL)
+style_url <- function(x) .rlang_cli_style_inline(x, "url", "<%s>")
+style_var <- function(x) .rlang_cli_style_inline(x, "var", "`%s`")
+style_envvar <- function(x) {
+    .rlang_cli_style_inline(x, "envvar", "`%s`")
 }
-format_field <- function(x) .rlang_cli_format_inline(x, "field", NULL)
-format_cls <- function(x) {
+style_field <- function(x) .rlang_cli_style_inline(x, "field", NULL)
+style_cls <- function(x) {
     fallback <- function(x) sprintf("<%s>", paste0(x, collapse = "/"))
-    .rlang_cli_format_inline(x, "cls", fallback)
+    .rlang_cli_style_inline(x, "cls", fallback)
 }
-format_href <- function(x, target = NULL) {
-    .rlang_cli_format_inline_link(x, target, "href", "<%s>")
+style_href <- function(x, target = NULL) {
+    .rlang_cli_style_inline_link(x, target, "href", "<%s>")
 }
-format_run <- function(x, target = NULL) {
-    .rlang_cli_format_inline_link(x, target, "run", "`%s`")
+style_run <- function(x, target = NULL) {
+    .rlang_cli_style_inline_link(x, target, "run", "`%s`")
 }
 
 .rlang_cli_style_inline <- function(x, span, fallback = "`%s`") {
@@ -58,23 +54,9 @@ format_run <- function(x, target = NULL) {
     }
 }
 
-.rlang_cli_format_inline <- function(x, span, fallback = "`%s`") {
-    if (.rlang_cli_has_cli()) {
-        cli::format_inline(paste0("{.", span, " {x}}"), collapse = FALSE)
-    } else {
-        .rlang_cli_style_inline(x, span, fallback = fallback)
-    }
-}
-
-.rlang_cli_format_inline_link <- function(x, target, span, fallback = "`%s`") {
-    if (.rlang_cli_has_cli()) {
-        if (is.null(target)) {
-            cli::format_inline(paste0("{.", span, " {x}}"), collapse = FALSE)
-        } else {
-            cli::format_inline(paste0("{.", span, " [{x}]({target})}"),
-                collapse = FALSE
-            )
-        }
+.rlang_cli_style_inline_link <- function(x, target, span, fallback = "`%s`") {
+    if (!is.null(target) && .rlang_cli_has_cli()) {
+        sprintf("{.%s [%s](%s)}", span, x, target)
     } else {
         .rlang_cli_style_inline(x, span, fallback = fallback)
     }

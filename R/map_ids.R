@@ -94,7 +94,7 @@ map_ids_internal <- function(x, db, column, keytype, decreasing, assay, swap_row
     if (is.null(swap_rownames)) {
         id <- rownames(x)
         if (is.null(id)) {
-            rlang::abort(sprintf("no rownames found in %s", format_arg(x)),
+            rlang::abort(sprintf("no rownames found in %s", style_arg(x)),
                 call = call
             )
         }
@@ -116,7 +116,7 @@ map_ids_internal <- function(x, db, column, keytype, decreasing, assay, swap_row
             feature_data[[column]] <- db[feature_data[[keytype]]]
         } else {
             rlang::abort(
-                sprintf("atomic %s must be named", format_arg("db")),
+                sprintf("atomic %s must be named", style_arg("db")),
                 call = call
             )
         }

@@ -50,7 +50,7 @@ run_hdp <- function(
         },
         sprintf(
             "a numeric with the same length of %s",
-            format_code("ncol(priors)")
+            style_code("ncol(priors)")
         ),
         null_ok = TRUE
     )
@@ -230,7 +230,7 @@ hdp_prepare_tree <- function(dp_tree, matrix, arg1 = rlang::caller_arg(dp_tree),
             rlang::abort(
                 sprintf(
                     "the first column of %s must match %s",
-                    format_arg(arg1), format_code(match_idx_chr)
+                    style_arg(arg1), style_code(match_idx_chr)
                 ),
                 call = call
             )
@@ -317,7 +317,7 @@ hdp_data <- function(x, ...) {
     assert_pkg("hdp")
     assert_s4_class(x, "HDP", sprintf(
         "a %s object returned by %s",
-        format_cls("HDP"), format_fn("run_hdp")
+        style_cls("HDP"), style_fn("run_hdp")
     ))
     hdp_multi_chain <- hdp::hdp_multi_chain(x@posteriors)
     x@components <- hdp::hdp_extract_components(hdp_multi_chain)
@@ -346,7 +346,7 @@ hdp_data_internal <- function(
     if (ncol(input_matrix) != ncol(signatures)) {
         rlang::abort(sprintf(
             "%s is not compatible with %s",
-            format_code("x$input"), format_code("x$components")
+            style_code("x$input"), style_code("x$components")
         ))
     }
     colnames(signatures) <- colnames(input_matrix)
@@ -369,7 +369,7 @@ hdp_data_internal <- function(
         any(dpindices < 1L) || any(dpindices > ndp)) {
         rlang::abort(sprintf(
             "%s must be an atomic integer between 1 and %s",
-            format_arg("dpindices"), ndp
+            style_arg("dpindices"), ndp
         ))
     }
     dps <- dps[dpindices]
@@ -380,7 +380,7 @@ hdp_data_internal <- function(
     if (nrow(exposures) != nrow(input_matrix)) {
         rlang::warn(sprintf(
             "%s is not compatible with %s",
-            format_arg("dpindices"), format_arg("input_matrix")
+            style_arg("dpindices"), style_arg("input_matrix")
         ))
     } else {
         rownames(exposures) <- rownames(input_matrix)

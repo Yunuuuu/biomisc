@@ -43,7 +43,7 @@ cnmf <- function(matrix, rank, threthold = 0L, min_fraction = 0.002, n_iters = 1
         utils::packageVersion("RcppML") < "0.5.5") { # nolint
         cli::cli_abort(sprintf(
             "%s (>=0.5.5) must be installed to use %s.",
-            format_pkg("RcppML"), format_fn("cnmf")
+            style_pkg("RcppML"), style_fn("cnmf")
         ))
     }
     assert_(rho, function(x) {
