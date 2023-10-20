@@ -18,16 +18,22 @@ sparcc <- function(data, ..., times = 200L) {
     # bootstrap to calculate P-value ----------------------
     t0 <- SpiecEasi::triu(sparcc0$Cor)
     n <- NROW(data)
+    cli::cli_alert("Bootstraping")
+    p1 <- progressr::progressor(steps = times)
     bootstrap_list <- future.apply::future_lapply(seq_len(times), function(i) {
         out <- SpiecEasi::sparcc(
             data = data[sample(n, size = n, replace = TRUE), , drop = FALSE],
             ...
         )
+        p1()
         SpiecEasi::triu(out$Cor)
     }, future.seed = TRUE)
     bootstrap_out <- do.call("rbind", bootstrap_list)
+    cli::cli_alert("Permutation...")
+    p2 <- progressr::progressor(steps = times)
     permutation_list <- future.apply::future_lapply(seq_len(times), function(i) {
         out <- SpiecEasi::sparcc(data = apply(data, 2L, sample), ...)
+        p2()
         SpiecEasi::triu(out$Cor)
     }, future.seed = TRUE)
     permutation_out <- do.call("rbind", permutation_list)
