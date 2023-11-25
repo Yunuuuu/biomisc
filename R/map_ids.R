@@ -36,6 +36,7 @@ methods::setMethod("map_ids", "ANY", function(x, db, column, keytype, decreasing
         decreasing = decreasing,
         assay = x
     )
+    rownames(out$x) <- rownames(out$feature_data)
     out$x
 })
 
