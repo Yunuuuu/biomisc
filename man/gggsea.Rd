@@ -10,14 +10,14 @@ gggsea(
   subplots = 1:3,
   rel_heights = c(1.8, 0.4, 0.8),
   ES_geom = "line",
-  add_bar = TRUE,
-  ...
+  add_bar = TRUE
 )
 }
 \arguments{
 \item{x}{An \code{gseaResult} object returned by clusterProfiler.}
 
-\item{geneSetID}{gene set ID}
+\item{geneSetID}{A character or numeric vector indicates the Gene set ID in
+\code{x@result$ID}.}
 
 \item{subplots}{which subplots to be displayed}
 
