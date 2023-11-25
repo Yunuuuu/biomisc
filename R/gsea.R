@@ -10,7 +10,7 @@
 #' @references 
 #' <https://github.com/YuLab-SMU/enrichplot/blob/devel/R/gseaplot.R>
 #' @export 
-gggsea <- function(x, geneSetID = NULL, subplots = 1:3, rel_heights = c(1.8, .4, 0.8), ES_geom = "line", add_bar = TRUE, ...) {
+gggsea <- function(x, geneSetID = NULL, subplots = 1:3, rel_heights = c(1.8, .4, 0.8), ES_geom = "line", add_bar = TRUE) {
     assert_s4_class(x, "gseaResult")
     assert_inclusive(subplots, 1:3, null_ok = TRUE)
     geneSetID <- geneSetID %||% 1:3
@@ -76,11 +76,11 @@ gggsea <- function(x, geneSetID = NULL, subplots = 1:3, rel_heights = c(1.8, .4,
                 color = .data$Description
             )
         ) +
+        ggplot2::guides(color = "none") +
         ggplot2::scale_x_continuous(name = NULL, expand = c(0, 0)) +
         ggplot2::scale_y_continuous(name = NULL, expand = c(0, 0)) +
         ggplot2::theme_classic(base_size = 11) +
         ggplot2::theme(
-            legend.position = "none",
             plot.margin = ggplot2::margin(t = -.1, b = 0, unit = "cm"),
             axis.ticks = ggplot2::element_blank(),
             axis.text = ggplot2::element_blank(),
