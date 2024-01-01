@@ -91,7 +91,7 @@ methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, ke
     x <- x[added$.idx, ]
     SummarizedExperiment::rowData(x) <- cbind(
         .subset(added, setdiff(names(added), ".idx")),
-        rowdata
+        rowdata[added$.idx, ]
     )
     x
 })
@@ -130,7 +130,7 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
     x <- x[added$.idx, ]
     Biobase::fData(x) <- cbind(
         .subset(added, setdiff(names(added), ".idx")),
-        rowdata
+        rowdata[added$.idx, ]
     )
     x
 })
