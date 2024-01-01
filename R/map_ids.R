@@ -93,6 +93,7 @@ methods::setMethod("map_ids", "SummarizedExperiment", function(x, db, column, ke
         .subset(added, setdiff(names(added), ".idx")),
         rowdata[added$.idx, ]
     )
+    rownames(x) <- rownames(added)
     x
 })
 
@@ -132,6 +133,7 @@ methods::setMethod("map_ids", "ExpressionSet", function(x, db, column, keytype, 
         .subset(added, setdiff(names(added), ".idx")),
         rowdata[added$.idx, ]
     )
+    rownames(x) <- rownames(added)
     x
 })
 
