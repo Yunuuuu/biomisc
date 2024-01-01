@@ -10,13 +10,14 @@ keytype}
 \usage{
 map_ids(x, ...)
 
-\S4method{map_ids}{ANY}(x, db, column, keytype, decreasing = TRUE)
+\S4method{map_ids}{ANY}(x, db, column, keytype, ..., decreasing = TRUE)
 
 \S4method{map_ids}{SummarizedExperiment}(
   x,
   db,
   column,
   keytype,
+  ...,
   swap_rownames = NULL,
   assay_name = NULL,
   decreasing = TRUE
@@ -27,6 +28,7 @@ map_ids(x, ...)
   db,
   column,
   keytype,
+  ...,
   swap_rownames = NULL,
   assay_name = NULL,
   decreasing = TRUE
@@ -37,7 +39,8 @@ map_ids(x, ...)
 \link[SummarizedExperiment:RangedSummarizedExperiment-class]{SummarizedExperiment} or an
 \link[Biobase:class.ExpressionSet]{ExpressionSet} object.}
 
-\item{...}{Other arguments passed to specific methods.}
+\item{...}{Other arguments passed to specific methods. For method, additional
+arguments passed to \link[AnnotationDbi:AnnotationDb-class]{mapIds}.}
 
 \item{db}{An \link[AnnotationDbi:AnnotationDb-class]{AnnotationDb} object. But in
 practice this will mean an object derived from an AnnotationDb object such as
@@ -45,7 +48,7 @@ a \code{OrgDb} or \code{ChipDb} object. Alternatively, a named atomic vector can
 used to match \code{keytype} by names.}
 
 \item{column}{The columns or kinds of things that can be retrieved from the
-\code{db} database.}
+\code{db} database. Multiple column items can be extracted simutaneously.}
 
 \item{keytype}{The keytype that matches the keys (\code{rownames(x)} or column
 specified in \code{swap_rownames}) used.}
