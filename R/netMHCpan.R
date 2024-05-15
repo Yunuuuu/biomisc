@@ -32,7 +32,7 @@ parse_netmhcpan <- function(file, ids = NULL, rth = 0.5, rlt = 2.0) {
     nms[4:(length(nms) - 2L)] <- measure_vars
     # nolint start
     data[, identifiers := cumsum(
-        c(0L, diff(nchar(Peptide))) > 0L |
+        c(0L, diff(nchar(V2))) > 0L |
             V3 != data.table::shift(V3, type = "lag", fill = head(V3, n = 1L))
     ) + 1L]
     data.table::setnames(data, nms)
