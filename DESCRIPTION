@@ -50,8 +50,8 @@ Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,
     Yunuuuu/sequenza,
-    Rdatatable/data.table,
-    zdebruine/RcppML
+    zdebruine/RcppML,
+    zdk123/SpiecEasi
 Depends: 
     R (>= 3.5.0)
 Config/testthat/edition: 3
@@ -59,4 +59,4 @@ Config/testthat/parallel: true
 ByteCompile: true
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1.9000
