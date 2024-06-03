@@ -45,6 +45,7 @@ Suggests:
     RcppML (>= 0.5.5),
     cluster,
     AnnotationDbi,
+    AnnotationHub,
     SpiecEasi
 Remotes:
     Yunuuuu/ABSOLUTE,
