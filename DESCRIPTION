@@ -46,7 +46,10 @@ Suggests:
     cluster,
     AnnotationDbi,
     AnnotationHub,
-    SpiecEasi
+    SpiecEasi,
+    enrichplot,
+    patchwork,
+    RColorBrewer
 Remotes:
     Yunuuuu/ABSOLUTE,
     Yunuuuu/hdp,

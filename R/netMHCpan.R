@@ -33,7 +33,9 @@ parse_netmhcpan <- function(file, ids = NULL, rth = 0.5, rlt = 2.0) {
     # nolint start
     data[, identifiers := cumsum(
         c(0L, diff(nchar(V2))) > 0L |
-            V3 != data.table::shift(V3, type = "lag", fill = head(V3, n = 1L))
+            V3 != data.table::shift(V3,
+                type = "lag", fill = utils::head(V3, n = 1L)
+            )
     ) + 1L]
     data.table::setnames(data, c(nms, "identifiers"))
     if (!is.null(ids)) {
