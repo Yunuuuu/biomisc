@@ -739,9 +739,7 @@ rrho_heatmap <- function(
         column_split = column_split,
         cluster_columns = FALSE,
         cluster_column_slices = FALSE,
-        heatmap_legend_param = list(
-            title_position = "leftcenter-rot"
-        ),
+        heatmap_legend_param = list(title_position = "leftcenter-rot"),
         ...,
         use_raster = use_raster
     )
@@ -921,7 +919,6 @@ rrho_correct_pval <- function(rrho_obj, method = "BY", perm = 200L, quadrant = c
 #'   Otherwise, the rank of list1 and list2.
 #' @inheritDotParams ggplot2::geom_point
 #' @return A ggplot Object
-#' @importFrom rlang .data
 #' @export
 rrho_dots <- function(rrho_obj, type = c("normal", "rank"), ...) {
     assert_pkg("ggplot2")
