@@ -17,7 +17,7 @@ gggsea <- function(x, geneSetID = NULL, subplots = 1:3, rel_heights = c(1.8, .4,
     assert_pkg("RColorBrewer")
     assert_s4_class(x, "gseaResult")
     assert_inclusive(subplots, 1:3, null_ok = TRUE)
-    geneSetID <- geneSetID %||% 1:3
+    geneSetID <- geneSetID %||% seq_len(min(3L, nrow(x)))
     ES_geom <- match.arg(ES_geom, c("line", "dot"))
     geneSetID <- unique(geneSetID)
     if (length(geneSetID) == 1L) {
