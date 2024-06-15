@@ -147,10 +147,8 @@ harvest_by_extra_data <- function(x, features, use_extra_data = TRUE, swap.rowna
             check.names = FALSE, fix.empty.names = FALSE
         )
         extra_data <- extra_data[, use_extra_data, drop = FALSE]
-    } else {
-        extra_data <- NULL
+        output <- cbind(assay_data, extra_data)
     }
-    output <- cbind(assay_data, extra_data)
     # Checking the names.
     if (check.names) {
         colnames(output) <- make.names(colnames(output), unique = TRUE)
