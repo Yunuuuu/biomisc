@@ -148,6 +148,8 @@ harvest_by_extra_data <- function(x, features, use_extra_data = TRUE, swap.rowna
         )
         extra_data <- extra_data[, use_extra_data, drop = FALSE]
         output <- cbind(assay_data, extra_data)
+    } else {
+        output <- assay_data
     }
     # Checking the names.
     if (check.names) {
