@@ -49,12 +49,14 @@ use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use
     } else if (isFALSE(use)) {
         use <- integer(0L)
     } else if (is.character(use)) {
-        use <- match(use, names)
-        if (anyNA(use)) {
+        index <- match(use, names)
+        if (anyNA(index)) {
             rlang::abort(sprintf(
-                "%s contains invalid values", style_arg(arg)
+                "%s contains invalid values (%s)",
+                style_arg(arg), style_val(use[index])
             ), call = call)
         }
+        use <- index
     } else if (is.numeric(use)) {
         if (any(use < 1L) || any(use > length(names))) {
             rlang::abort(sprintf(
