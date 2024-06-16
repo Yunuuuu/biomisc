@@ -37,6 +37,7 @@ read_internal_extdata <- function(...) {
 }
 
 use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use), call = rlang::caller_env()) {
+    force(arg)
     if (anyNA(use)) {
         rlang::abort(
             sprintf("%s cannot contain `NA`", style_arg(arg)),

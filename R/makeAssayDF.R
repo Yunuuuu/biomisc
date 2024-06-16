@@ -159,6 +159,8 @@ harvest_by_extra_data <- function(x, features, use_extra_data = TRUE, swap.rowna
 }
 
 makeAssayDF <- function(x, features, swap.rownames, assay_data, rowdata, transpose, call = rlang::caller_env()) {
+    arg1 <- rlang::caller_arg(swap.rownames)
+    arg2 <- rlang::caller_arg(features)
     assert_(swap.rownames, function(x) {
         length(x) == 1L && (is.character(x) || is.numeric(x))
     }, "a string or integer", null_ok = TRUE, call = call)
@@ -169,11 +171,14 @@ makeAssayDF <- function(x, features, swap.rownames, assay_data, rowdata, transpo
     } else {
         swap.rownames <- use_names_to_integer_indices(
             swap.rownames, colnames(rowdata),
-            call = call
+            arg = arg1, call = call
         )
         all_feats <- rowdata[[swap.rownames]]
     }
-    features <- use_names_to_integer_indices(features, all_feats, call = call)
+    features <- use_names_to_integer_indices(
+        features, all_feats,
+        arg = arg2, call = call
+    )
     if (length(features)) {
         assay_data <- assay_data[features, , drop = FALSE]
         if (transpose) assay_data <- t(assay_data)
