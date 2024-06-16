@@ -53,7 +53,7 @@ use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use
         if (anyNA(index)) {
             rlang::abort(sprintf(
                 "%s contains invalid values (%s)",
-                style_arg(arg), style_val(use[index])
+                style_arg(arg), style_val(use[is.na(index)])
             ), call = call)
         }
         use <- index
