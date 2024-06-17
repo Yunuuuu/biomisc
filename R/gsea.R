@@ -128,7 +128,7 @@ gggsea <- function(x, geneSetID = NULL, subplots = 1:3,
             data = d,
             alpha = .9,
             inherit.aes = FALSE
-        ) + ggplot2::scale_fill_continuous(guide = "none")
+        ) + ggplot2::scale_fill_identity(guide = "none")
     }
 
     # P3
