@@ -11,14 +11,20 @@
 #' @references
 #' <https://github.com/YuLab-SMU/enrichplot/blob/devel/R/gseaplot.R>
 #' @export
-gggsea <- function(x, geneSetID = NULL, subplots = 1:3, rel_heights = c(1.8, .4, 0.8), ES_geom = "line", add_bar = TRUE) {
+gggsea <- function(x, geneSetID = NULL, subplots = 1:3,
+                   rel_heights = c(1.8, .4, 0.8), ES_geom = "line",
+                   add_bar = TRUE) {
     assert_pkg("enrichplot")
     assert_pkg("patchwork")
     assert_pkg("RColorBrewer")
     assert_s4_class(x, "gseaResult")
     assert_inclusive(subplots, 1:3, null_ok = TRUE)
-    geneSetID <- geneSetID %||% seq_len(min(3L, nrow(x)))
     ES_geom <- match.arg(ES_geom, c("line", "dot"))
+    geneSetID <- geneSetID %||% seq_len(min(3L, nrow(x)))
+    geneSetID <- use_names_to_integer_indices(
+        geneSetID, x@result$ID,
+        bool_ok = FALSE
+    )
     geneSetID <- unique(geneSetID)
     if (length(geneSetID) == 1L) {
         gsdata <- enrichplot:::gsInfo(x, geneSetID)
@@ -117,12 +123,12 @@ gggsea <- function(x, geneSetID = NULL, subplots = 1:3, rel_heights = c(1.8, .4,
             ggplot2::aes(
                 xmin = .data$xmin, xmax = .data$xmax,
                 ymin = .data$ymin, ymax = .data$ymax,
-                fill = .env$col
+                fill = .data$col
             ),
             data = d,
             alpha = .9,
             inherit.aes = FALSE
-        )
+        ) + ggplot2::scale_fill_continuous(guide = "none")
     }
 
     # P3

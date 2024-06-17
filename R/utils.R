@@ -36,7 +36,9 @@ read_internal_extdata <- function(...) {
     readRDS(system.file("extdata", ..., package = "biomisc"))
 }
 
-use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use), call = rlang::caller_env()) {
+use_names_to_integer_indices <- function(use, names, bool_ok = TRUE,
+                                         arg = rlang::caller_arg(use),
+                                         call = rlang::caller_env()) {
     force(arg)
     if (anyNA(use)) {
         rlang::abort(
@@ -44,10 +46,23 @@ use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use
             call = call
         )
     }
-    if (isTRUE(use)) {
-        use <- seq_along(names)
-    } else if (isFALSE(use)) {
-        use <- integer(0L)
+    if (is.logical(use)) {
+        if (bool_ok) {
+            if (isTRUE(use)) {
+                use <- seq_along(names)
+            } else if (isFALSE(use)) {
+                use <- integer(0L)
+            } else {
+                rlang::abort(sprintf(
+                    "%s must be a single bool value", style_arg(arg)
+                ), call = call)
+            }
+        } else {
+            rlang::abort(sprintf(
+                "%s must be an atomic numeic/character",
+                style_arg(arg)
+            ), call = call)
+        }
     } else if (is.character(use)) {
         index <- match(use, names)
         if (anyNA(index)) {
@@ -64,10 +79,14 @@ use_names_to_integer_indices <- function(use, names, arg = rlang::caller_arg(use
             ), call = call)
         }
     } else {
-        rlang::abort(
-            sprintf("%s must be a bool or an atomic numeic/character", style_arg(arg)),
-            call = call
-        )
+        rlang::abort(sprintf(
+            "%s must be %s", style_arg(arg),
+            if (bool_ok) {
+                "a bool or an atomic numeic/character"
+            } else {
+                "an atomic numeic/character"
+            }
+        ), call = call)
     }
     use
 }
