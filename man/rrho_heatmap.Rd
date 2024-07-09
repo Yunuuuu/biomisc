@@ -104,8 +104,6 @@ in \code{rrho_obj} with something like \code{sprintf("Signed |log\%s(P-value)|",
     \item{\code{height}}{Height of the heatmap body.}
     \item{\code{heatmap_width}}{Width of the whole heatmap (including heatmap components)}
     \item{\code{heatmap_height}}{Height of the whole heatmap (including heatmap components). Check \url{https://jokergoo.github.io/ComplexHeatmap-reference/book/a-single-heatmap.html#size-of-the-heatmap} .}
-    \item{\code{heatmap_legend_list}}{use-defined legends which are put after the heatmap legends}
-    \item{\code{annotation_legend_list}}{user-defined legends which are put after the annotation legends}
     \item{\code{show_heatmap_legend}}{Whether show heatmap legend?}
     \item{\code{raster_device}}{Graphic device which is used to generate the raster image.}
     \item{\code{raster_quality}}{A value larger than 1.}
