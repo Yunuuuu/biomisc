@@ -195,13 +195,13 @@ methods::setValidity("HDP", function(object) {
     if (anyNA(object@matrix)) {
         return("`NA` is not allowed in @matrix")
     }
-    if (!is.matrix(object@priors) || !is.numeric(object@priors)) {
-        return("@priors must be a numeric matrix")
-    }
-    if (anyNA(object@priors)) {
-        return("`NA` is not allowed in @priors")
-    }
     if (!is.null(object@priors)) {
+        if ((!is.matrix(object@priors) || !is.numeric(object@priors))) {
+            return("@priors must be a numeric matrix")
+        }
+        if (anyNA(object@priors)) {
+            return("`NA` is not allowed in @priors")
+        }
         if (!is.null(colnames(matrix)) && !rownames(priors)) {
             if (!all(colnames(object@matrix) == rownames(object@priors))) {
                 return("`colnames(@matrix)` and `rownames(@priors)` must be the same")
